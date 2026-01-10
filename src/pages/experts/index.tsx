@@ -208,17 +208,18 @@ const ExpertsPage: React.FC = () => {
   return (
     <div className={styles.expertsPage}>
       <Header
-        variant="transparent"
+        variant="white"
         onMenuClick={() => setIsMenuOpen(true)}
-        onLogoClick={() => router.push('/')}
+        isFixed={true}
       />
       <Menu isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
+      <div className={styles.headerImage}></div>
 
-      <div className={styles.pageContent}>
+      <div className="container">
         {/* Page Header */}
         <div className={styles.pageHeaderSection}>
           <PageHeader
-            title="전문가 소개"
+            // title="전문가 소개"
             breadcrumbs={[
               { label: '전문가 소개' }
             ]}
@@ -228,19 +229,13 @@ const ExpertsPage: React.FC = () => {
 
         {/* Hero Section */}
         <div className={styles.heroSection}>
-          <div className={styles.heroBackground}>
-            <div className={styles.heroOverlay} />
-          </div>
-          <p className={styles.heroSubtitle}>(전문가 소개)</p>
+          
+          <p className={styles.heroSubtitle}>Team of Experts</p>
           <div className={styles.heroTitle}>
-            <span className={styles.heroTitleText}>TEAM OF</span>
-            <span className={`${styles.heroTitleText} ${styles.heroTitleItalic}`}>EXPERTS</span>
+            세무법인 함께, <br /> <span>라인업</span>에서 나옵니다
           </div>
           <div className={styles.heroContent}>
-            <div className={styles.heroDescription}>
-              <p className={styles.heroDescriptionTitle}>
-                세무법인 함께, 라인업에서 나옵니다
-              </p>
+              
               <div className={styles.heroDescriptionText}>
                 <p>
                   <span>국세청 근무 경력을 포함 </span>
@@ -252,7 +247,6 @@ const ExpertsPage: React.FC = () => {
                 </p>
                 <p>함께 하는 신뢰와 함께, 든든한 구성원을 안내드립니다.</p>
               </div>
-            </div>
             <div className={styles.fieldSelector} ref={dropdownRef}>
               <div
                 className={styles.fieldSelectorInput}
@@ -348,7 +342,7 @@ const ExpertsPage: React.FC = () => {
         )}
 
         {/* Organization Section - shown when no field is selected */}
-        {selectedField === '분야를 선택해주세요' && (
+        {/* {selectedField === '분야를 선택해주세요' && (
           <div className={styles.organizationSection}>
             <div className={styles.organizationContent}>
               <div className={styles.organizationTitle}>
@@ -362,13 +356,13 @@ const ExpertsPage: React.FC = () => {
               </div>
             </div>
           </div>
-        )}
+        )} */}
 
-        <Footer />
       </div>
+        <Footer />
 
       {/* Floating Buttons */}
-      <div className={styles.floatingButtons}>
+      {/* <div className={styles.floatingButtons}>
         <FloatingButton
           variant="consult"
           label="상담 신청하기"
@@ -378,7 +372,7 @@ const ExpertsPage: React.FC = () => {
           variant="top"
           onClick={handleTopClick}
         />
-      </div>
+      </div> */}
     </div>
   );
 };

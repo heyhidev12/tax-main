@@ -10,36 +10,7 @@ export interface FloatingButtonProps {
   label?: string;
 }
 
-// 상담 신청하기 아이콘 (pencil)
-const PencilIcon = () => (
-  <svg
-    width="24"
-    height="24"
-    viewBox="0 0 24 24"
-    fill="none"
-    xmlns="http://www.w3.org/2000/svg"
-  >
-    <path
-      d="M16.3506 2.604L21.25 7.50339L8.14939 20.604L3.25461 20.5994L3.25 15.7046L16.3506 2.604Z"
-      stroke="white"
-      strokeWidth="1.5"
-      strokeLinecap="square"
-    />
-    <path
-      d="M16.3506 2.604L21.25 7.50339L9.14939 19.604L4.25 14.7046L16.3506 2.604Z"
-      fill="white"
-      stroke="white"
-      strokeWidth="1.5"
-      strokeLinecap="square"
-    />
-    <path
-      d="M20.5722 20.5987L3.25488 20.5981"
-      stroke="white"
-      strokeWidth="1.5"
-      strokeLinecap="square"
-    />
-  </svg>
-);
+
 
 // 위로 가기 아이콘
 const TopIcon = () => (

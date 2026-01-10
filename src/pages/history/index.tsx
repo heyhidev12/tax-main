@@ -965,13 +965,12 @@ const HistoryPage: React.FC = () => {
 
         {activeTab === "awards" && (
           <div className={styles.awardsSection}>
-             <div className={styles.headerInfo}>
+            <div className={styles.headerInfo}>
               <p>Awards / Certifications</p>
               <h2>수상/인증</h2>
             </div>
-            
+
             <div className={styles.awardsContent}>
-              
               <div className={styles.awardsList}>
                 {awardsLoading ? (
                   <div className={styles.loading}>
@@ -1031,7 +1030,6 @@ const HistoryPage: React.FC = () => {
                           ))}
                         </div>
                         <div className={styles.awardsYearDivider} />
-
                       </div>
                     );
                   })
@@ -1048,17 +1046,177 @@ const HistoryPage: React.FC = () => {
               <h2>CI 가이드</h2>
             </div>
 
-            
+            <div className={styles.ciGuideSection}>
+              {/* Main Logo Block */}
+              <div className={styles.ciMainLogoBlock}>
+                <div className={styles.ciMainLogo}>
+                  <img src="/images/logo/logo_main.png" alt="세무법인 함께" />
+                </div>
+                <div className={styles.ciDivider} />
+                <p className={styles.ciTagline}>
+                  세무법인 함께 컬러는,{" "}
+                  <span className={styles.ciTaglineHighlight}>신뢰</span>,{" "}
+                  <span className={styles.ciTaglineHighlight}>전문성</span>,{" "}
+                  <span className={styles.ciTaglineHighlight}>안정감</span>을
+                  상징합니다.
+                </p>
+              </div>
+
+              {/* Three Value Items */}
+              <div className={styles.ciValueItems}>
+                <div className={styles.ciValueItem}>
+                  <div className={styles.ciValueIcon}>
+                    <img src="/images/about/trust.svg" alt="신뢰" />
+                  </div>
+                  <h3 className={styles.ciValueTitle}>신뢰</h3>
+                  <p className={styles.ciValueSubtitle}>Trust</p>
+                  <p className={styles.ciValueDescription}>
+                    풍부한 경험과 체계적인 분석을 바탕으로 정확한 해결책을
+                    도출하며, 세무, 회계, 재무의 통합 전문성을 통해 고객의
+                    비즈니스에 실질적인 가치를 더합니다.
+                  </p>
+                </div>
+                <div className={styles.ciValueDivider} />
+
+                <div className={styles.ciValueItem}>
+                  <div className={styles.ciValueIcon}>
+                    <img src="/images/about/work.svg" alt="전문성" />
+                  </div>
+                  <h3 className={styles.ciValueTitle}>전문성</h3>
+                  <p className={styles.ciValueSubtitle}>Expertise</p>
+                  <p className={styles.ciValueDescription}>
+                    풍부한 경험과 체계적인 분석을 바탕으로 정확한 해결책을
+                    도출하며, 세무, 회계, 재무의 통합 전문성을 통해 고객의
+                    비즈니스에 실질적인 가치를 더합니다.
+                  </p>
+                </div>
+                <div className={styles.ciValueDivider} />
+
+                <div className={styles.ciValueItem}>
+                  <div className={styles.ciValueIcon}>
+                    <img src="/images/about/leaves.png" alt="안정감" />
+                  </div>
+                  <h3 className={styles.ciValueTitle}>안정감</h3>
+                  <p className={styles.ciValueSubtitle}>Stability</p>
+                  <p className={styles.ciValueDescription}>
+                    변화하는 세법 속에서도 일관된 관리와 지속가능한 지원을
+                    제공하여 고객의 현재를 보호하고 미래의 불안을 덜어드리는
+                    든든한 버팀목이 되겠습니다.
+                  </p>
+                </div>
+              </div>
+
+              {/* CI Logo Section */}
+              <div className={styles.ciSectionWrapper}>
+                <div className="container">
+                  <div className={styles.ciLogoSection}>
+                    <div className={styles.ciSectionTitle}>
+                      <h3>CI Logo</h3>
+                      <p>로고</p>
+                    </div>
+                    <div className={styles.ciLogoVariations}>
+                      <div className={styles.ciLogoVariationsTop}>
+                        <div className={styles.ciLogoVariation}>
+                          <div className={styles.ciLogoWhiteBg}>
+                            <img
+                              src="/images/logo/logo_main.png"
+                              alt="세무법인 함께"
+                            />
+                          </div>
+                        </div>
+                        <div className={styles.ciLogoVariation}>
+                          <div className={styles.ciLogoWhiteBg}>
+                            <img
+                              src="/images/logo/logo_square.png"
+                              alt="세무법인 함께"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                      <div className={styles.ciLogoVariationsBottom}>
+                        <div className={styles.ciLogoVariation}>
+                          <div className={styles.ciLogoGreenBg}>
+                            <img
+                              src="/images/logo/logo.svg"
+                              alt="세무법인 함께"
+                            />
+                          </div>
+                        </div>
+                        <div className={styles.ciLogoVariation}>
+                          <div className={styles.ciLogoGreenBg}>
+                            <img
+                              src="/images/logo/logo_square_white.svg"
+                              alt="세무법인 함께"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* CI Color Section */}
+                  <div className={styles.ciColorSection}>
+                    <div className={styles.ciSectionTitle}>
+                      <h3>CI Color</h3>
+                      <p>컬러</p>
+                    </div>
+                    <div className={styles.ciColorSwatches}>
+                      <div className={styles.ciColorSwatch}>
+                        <div
+                          className={`${styles.ciColorCircle} ${styles.ciColorCircleGreen}`}
+                        >
+                          <span
+                            className={`${styles.ciColorName} ${styles.ciColorNameWhite}`}
+                          >
+                            TOGETHER Green
+                          </span>
+                          <p className={`${styles.ciColorValues} ${styles.ciColorValuesWhite}`}>RGB 0/158/149</p>
+                        <p className={`${styles.ciColorValues} ${styles.ciColorValuesWhite}`}>CMYK 100/0/6/38</p>
+                        </div>
+                        
+                      </div>
+
+                      <div className={styles.ciColorSwatch}>
+                        <div
+                          className={`${styles.ciColorCircle} ${styles.ciColorCircleGray}`}
+                        >
+                          <span
+                            className={`${styles.ciColorName} ${styles.ciColorNameWhite}`}
+                          >
+                            TOGETHER Gray
+                          </span>
+                          <p className={`${styles.ciColorValues} ${styles.ciColorValuesWhite}`}>RGB 62/58/57</p>
+                        <p className={`${styles.ciColorValues} ${styles.ciColorValuesWhite}`}>CMYK 0/6/8/76</p>
+                        </div>
+                        
+                      </div>
+
+                      <div className={styles.ciColorSwatch}>
+                        <div
+                          className={`${styles.ciColorCircle} ${styles.ciColorCircleWhite}`}
+                        >
+                          <span className={styles.ciColorName}>
+                            TOGETHER White
+                          </span>
+                          <p className={styles.ciColorValues}>RGB 255/255/255</p>
+                        <p className={styles.ciColorValues}>CMYK 0/0/0/0</p>
+                        </div>
+                        
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </>
         )}
 
         {activeTab === "branches" && (
           <>
-          <div className={styles.headerInfo}>
+            <div className={styles.headerInfo}>
               <p>Office locations</p>
               <h2>본점/지점 안내</h2>
             </div>
-           
 
             <div className={styles.branchesContent}>
               {branchesLoading ? (
@@ -1087,9 +1245,10 @@ const HistoryPage: React.FC = () => {
                           style={{ cursor: "pointer" }}
                         >
                           <div className={styles.branchHeader}>
-                            <h3 className={styles.branchName}>{branch.name} 
+                            <h3 className={styles.branchName}>
+                              {branch.name}
 
-                              <ArrowForwardIos/>
+                              <ArrowForwardIos />
                             </h3>
                             <div className={styles.branchSocialLinks}>
                               {branch.blogUrl && (
@@ -1219,7 +1378,7 @@ const HistoryPage: React.FC = () => {
 
         {activeTab === "customers" && (
           <>
-           <div className={styles.headerInfo}>
+            <div className={styles.headerInfo}>
               <p>Partners</p>
               <h2>주요 고객</h2>
             </div>

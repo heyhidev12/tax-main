@@ -524,13 +524,11 @@
   padding-bottom: 240px;
 
   @media (max-width: $breakpoint-desktop) {
-  padding-bottom: 200px;
-
+    padding-bottom: 200px;
   }
 
   @media (max-width: $breakpoint-tablet) {
     padding-bottom: 160px;
-
   }
 }
 
@@ -605,13 +603,11 @@
   }
 }
 
-
 .awardsList {
   flex: 1;
   display: flex;
   flex-direction: column;
   gap: 80px;
-
 
   @media (max-width: $breakpoint-tablet) {
     gap: 64px;
@@ -639,7 +635,7 @@
     display: block;
     width: 100vw;
     height: 1px;
-    border-bottom: 1px solid var(--grayscale-30, #D8D8D8);
+    border-bottom: 1px solid var(--grayscale-30, #d8d8d8);
     margin-left: -20px;
     margin-right: -20px;
   }
@@ -815,7 +811,6 @@
 
 // Customers Section
 
-
 .customersSection {
   width: 100%;
   padding: 36px 0 240px;
@@ -851,8 +846,8 @@
   padding: 30px 40px;
   overflow: hidden;
   position: relative;
-  border: 1px solid var(--grayscale-20, #E4E4E4);
-  background: var(--grayscale-0, #FFF);
+  border: 1px solid var(--grayscale-20, #e4e4e4);
+  background: var(--grayscale-0, #fff);
 
   @media (max-width: $breakpoint-tablet) {
     height: 100px;
@@ -879,17 +874,455 @@
 }
 
 // CI Guide Section
+// .ciGuideSection {
+//   padding-bottom: 240px;
+//   width: 100%;
 
+//   @media (max-width: $breakpoint-desktop) {
+//     padding-bottom: 200px;
+//   }
+
+//   @media (max-width: $breakpoint-tablet) {
+//     padding-bottom: 160px;
+//   }
+// }
+
+.ciMainLogoBlock {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 140px;
+  gap: 40px;
+
+  @media (max-width: $breakpoint-tablet) {
+    margin-bottom: 80px;
+    gap: 24px;
+  }
+}
+
+.ciDivider {
+  height: 38px;
+  width: 1px;
+  background: $gray-50;
+  margin-top: 16px;
+}
+
+.ciMainLogo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  img {
+    max-width: 100%;
+    height: auto;
+    object-fit: contain;
+  }
+}
+
+.ciTagline {
+  font-family: $font-pretendard;
+  font-weight: $font-weight-regular;
+  font-size: 17px;
+  line-height: 1.8;
+  letter-spacing: -0.085px;
+  color: $gray-90;
+  margin: 0;
+  text-align: center;
+
+  @media (max-width: $breakpoint-tablet) {
+    font-size: 15px;
+    line-height: 1.7;
+    letter-spacing: -0.075px;
+  }
+}
+
+.ciTaglineHighlight {
+  color: #009e95; // TOGETHER Green
+  font-weight: $font-weight-semibold;
+}
+
+.ciValueItems {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 120px;
+  padding: 0 80px;
+
+  @media (max-width: 1200px) {
+    gap: 6px;
+    padding: 0;
+  }
+
+  @media (max-width: $breakpoint-tablet) {
+    flex-direction: column;
+    align-items: center;
+    gap: 48px;
+  }
+}
+
+.ciValueDivider {
+  height: 200px;
+  background: $gray-10;
+  width: 1px;
+  margin-top: 48px;
+
+  @media (max-width: $breakpoint-tablet) {
+    height: 1px;
+    width: 240px;
+    margin-top: 0;
+  }
+}
+
+.ciValueItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  padding: 0 48px;
+
+  @media (max-width: $breakpoint-tablet) {
+    align-items: center;
+    text-align: center;
+    padding: 0;
+  }
+}
+
+.ciValueIcon {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+
+  @media (max-width: $breakpoint-tablet) {
+    width: 40px;
+    height: 40px;
+  }
+}
+
+.ciValueTitle {
+  font-family: $font-pretendard;
+  font-weight: $font-weight-semibold;
+  font-size: 38px;
+  line-height: 1.5;
+  letter-spacing: -0.12px;
+  color: $gray-90;
+  margin: 0;
+
+  @media (max-width: $breakpoint-tablet) {
+    font-size: 20px;
+    letter-spacing: -0.1px;
+  }
+}
+
+.ciValueSubtitle {
+  font-family: $font-pretendard;
+  font-weight: $font-weight-regular;
+  font-size: 20px;
+  line-height: 1.5;
+  letter-spacing: -0.085px;
+  color: #002c2c;
+  margin: 0;
+
+  @media (max-width: $breakpoint-tablet) {
+    font-size: 15px;
+    letter-spacing: -0.075px;
+  }
+}
+
+.ciValueDescription {
+  font-family: $font-pretendard;
+  font-weight: $font-weight-regular;
+  font-size: 17px;
+  line-height: 1.8;
+  letter-spacing: -0.085px;
+  color: $gray-90;
+  margin: 0;
+  text-align: center;
+
+  @media (max-width: $breakpoint-tablet) {
+    font-size: 15px;
+    line-height: 1.7;
+    letter-spacing: -0.075px;
+  }
+}
+.ciSectionWrapper {
+  background: var(--grayscale-5, #f8f8f8);
+  margin-inline: -2rem;
+  padding: 120px 0 80px;
+
+  @media (max-width: 768px) {
+    margin-inline: -20px;
+    padding-bottom: 40px;
+  }
+}
+.ciLogoSection,
+.ciColorSection {
+  display: flex;
+  gap: 120px;
+  margin-bottom: 120px;
+  align-items: flex-start;
+
+  @media (max-width: 1200px) {
+    flex-direction: column;
+    gap: 80px;
+    margin-bottom: 100px;
+  }
+
+  @media (max-width: $breakpoint-tablet) {
+    flex-direction: column;
+    gap: 40px;
+    margin-bottom: 80px;
+  }
+}
+
+.ciSectionTitle {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex-shrink: 0;
+  min-width: 200px;
+
+  h3 {
+    font-family: $font-pretendard;
+    font-weight: $font-weight-semibold;
+    font-size: 32px;
+    line-height: 1.5;
+    letter-spacing: -0.16px;
+    color: $gray-90;
+    margin: 0;
+
+  }
+
+  p {
+    font-family: $font-pretendard;
+    font-weight: $font-weight-regular;
+    font-size: 19px;
+    line-height: 1.5;
+    letter-spacing: -0.095px;
+    color: #8e8e8e;
+    margin: 0;
+
+    
+  }
+
+  @media (max-width: $breakpoint-tablet) {
+    min-width: auto;
+    gap: 6px;
+  }
+}
+
+.ciLogoVariations {
+  width: 100%;
+  & > div {
+    width: 100%;
+    display: flex;
+  }
+  &Top {
+    border-top: 1px solid var(--grayscale-10, #f0f0f0);
+    border-right: 1px solid var(--grayscale-10, #f0f0f0);
+    border-left: 1px solid var(--grayscale-10, #f0f0f0);
+    background: #fff;
+    padding: 15px 0;
+
+    & > div:first-child {
+      border-right: 1px solid $gray-20;
+    }
+  }
+
+  &Bottom {
+    padding: 15px 0;
+    background-color: #009e95; // TOGETHER Green
+
+    & > div:first-child {
+      border-right: 1px solid $gray-20;
+    }
+  }
+
+  @media (max-width: $breakpoint-desktop) {
+    gap: 32px;
+  }
+
+  @media (max-width: $breakpoint-tablet) {
+    & > div {
+      flex-direction: column;
+      // gap: 32px;
+      align-items: center;
+      width: 100%;
+    }
+
+    &Top {
+      border: none;
+      border-radius: 8px;
+      & > div:first-child {
+        border-bottom: 1px solid $gray-20;
+        border-right: none;
+      }
+    }
+
+    &Bottom {
+      border-radius: 8px;
+      margin-top: 20px;
+      & > div:first-child {
+        border-right: none;
+        border-bottom: 1px solid rgba(216, 216, 216, 0.3);
+      }
+    }
+  }
+}
+
+.ciLogoVariation {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 160px;
+
+  @media (max-width: $breakpoint-tablet) {
+    width: 100%;
+    max-width: 400px;
+    min-height: 180px;
+  }
+}
+
+.ciLogoWhiteBg,
+.ciLogoGreenBg {
+  width: 100%;
+  height: 100%;
+  // padding: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  img {
+    max-width: 100%;
+    height: auto;
+    object-fit: contain;
+  }
+
+  @media (max-width: $breakpoint-tablet) {
+    // padding: 40px;
+  }
+}
+
+.ciColorSwatches {
+  display: flex;
+  gap: 32px;
+  align-items: flex-start;
+  flex: 1;
+
+  @media (max-width: $breakpoint-desktop) {
+    gap: 24px;
+    flex-wrap: wrap;
+  }
+
+  @media (max-width: $breakpoint-tablet) {
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+  }
+}
+
+.ciColorSwatch {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+  flex: 1;
+
+  @media (max-width: $breakpoint-tablet) {
+    max-width: 300px;
+    width: 100%;
+  }
+}
+
+.ciColorCircle {
+  width: 320px;
+  height: 320px;
+  border-radius: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  gap: 16px;
+
+  @media (max-width: 1200px) {
+    width: 260px;
+    height: 260px;
+  }
+
+  @media (max-width: $breakpoint-tablet) {
+    width: 220px;
+    height: 220px;
+  }
+}
+
+.ciColorCircleGreen {
+  background-color: #009e95; // TOGETHER Green
+}
+
+.ciColorCircleGray {
+  background-color: #3e3a39; // TOGETHER Gray
+}
+
+.ciColorCircleWhite {
+  background-color: #ffffff;
+  border: 1px solid $gray-30;
+}
+
+.ciColorName {
+  font-family: $font-pretendard;
+  font-weight: $font-weight-semibold;
+  font-size: 25px;
+  line-height: 1.5;
+  letter-spacing: -0.085px;
+  color: $gray-70;
+  text-align: center;
+  margin-bottom: 56px;
+
+  @media (max-width: $breakpoint-tablet) {
+    font-size: 15px;
+    letter-spacing: -0.075px;
+    margin-bottom: 0px;
+  }
+}
+
+.ciColorNameWhite {
+  color: #ffffff;
+}
+
+.ciColorValues {
+  font-family: $font-pretendard;
+  font-weight: $font-weight-regular;
+  font-size: 15px;
+  line-height: 1.5;
+  letter-spacing: -0.075px;
+  color: $gray-70;
+  margin: 0;
+  text-align: center;
+
+  @media (max-width: $breakpoint-tablet) {
+    font-size: 13px;
+    letter-spacing: -0.065px;
+  }
+}
+.ciColorValuesWhite {
+  color: white;
+}
 
 // ========================================
 // Branches Tab Styles
 // ========================================
 
-
 .branchesContent {
   padding: 36px 0 100px;
   width: 100%;
-
 
   @media (max-width: $breakpoint-tablet) {
     padding: 0px 0 64px;
@@ -940,7 +1373,7 @@
     padding-bottom: 52px;
     padding-top: 36px;
     border-top: 1px solid $gray-10;
-    &:first-child{
+    &:first-child {
       border-top: none;
     }
   }
@@ -971,7 +1404,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  svg{
+  svg {
     height: 22px;
     width: 22px;
   }
