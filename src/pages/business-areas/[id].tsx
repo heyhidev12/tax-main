@@ -17,7 +17,6 @@ import Icon from "@/components/common/Icon";
 import { get } from "@/lib/api";
 import { API_ENDPOINTS } from "@/config/api";
 import styles from "./detail.module.scss";
-import ContactUs from "@/components/common/ContactUs";
 
 // Toast UI Viewer는 클라이언트 사이드에서만 로드
 const Viewer = dynamic(

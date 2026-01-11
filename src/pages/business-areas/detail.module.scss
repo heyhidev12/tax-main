@@ -29,13 +29,8 @@
 }
 
 .pageHeaderWrapper {
-  // padding-top: 320px;
   padding-bottom: 24px;
 
-  @media (max-width: $breakpoint-desktop) {
-    padding-top: 80px;
-    padding-bottom: 16px;
-  }
 
   @media (max-width: $breakpoint-tablet) {
     padding-top: 0px;
@@ -1073,7 +1068,7 @@
 .expertsContent {
   width: 100%;
   margin-top: 64px;
-  overflow: visible;
+  overflow: hidden;
 
   @media (max-width: $breakpoint-desktop) {
     margin-top: 24px;
@@ -1266,7 +1261,7 @@
 .youtubeContent {
   width: 100%;
   margin-top: 48px;
-  overflow: visible;
+  overflow: hidden;
 
   @media (max-width: $breakpoint-tablet) {
     margin-top: 24px;
@@ -1381,7 +1376,7 @@
 .newsContent {
   width: 100%;
   margin-top: 48px;
-  overflow: visible;
+  overflow: hidden;
 
   @media (max-width: $breakpoint-desktop) {
     margin-top: 24px;

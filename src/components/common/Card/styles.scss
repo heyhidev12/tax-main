@@ -21,7 +21,7 @@ $color-card-bg: #1e1e1e;
   flex-direction: column;
   cursor: pointer;
   transition: all 0.2s ease;
-  font-family: 'Pretendard', sans-serif;
+  font-family: "Pretendard", sans-serif;
   overflow: hidden;
   background-color: $color-card-bg;
   outline: none;
@@ -498,6 +498,11 @@ $color-card-bg: #1e1e1e;
       display: flex;
       flex-wrap: wrap;
       gap: 8px;
+
+      // Hide tags on desktop, show only on tablet/mobile
+      @media (min-width: $breakpoint-tablet) {
+        display: none;
+      }
     }
 
     .card__profile-tag {
@@ -505,12 +510,12 @@ $color-card-bg: #1e1e1e;
       align-items: center;
       justify-content: center;
       padding: 8px;
-      border-radius: 4px;
-      background-color: $color-gray-80;
+      border-radius: 2px;
+      background: rgba(0, 132, 124, 0.1);
       font-size: 15px;
       font-weight: 600;
       line-height: 1.5;
-      color: #f8f8fc;
+      color: $primary-50;
       letter-spacing: -0.075px;
     }
 
@@ -591,7 +596,11 @@ $color-card-bg: #1e1e1e;
     .card__testimonial-overlay {
       position: absolute;
       inset: 0;
-      background: linear-gradient(to bottom, transparent 50%, rgba(0, 0, 0, 0.8) 100%);
+      background: linear-gradient(
+        to bottom,
+        transparent 50%,
+        rgba(0, 0, 0, 0.8) 100%
+      );
     }
 
     .card__testimonial-content {
@@ -612,7 +621,7 @@ $color-card-bg: #1e1e1e;
     }
 
     .card__testimonial-quote {
-      font-family: 'Noto Serif KR', serif;
+      font-family: "Noto Serif KR", serif;
       font-size: 20px;
       font-weight: 500;
       line-height: 1.5;

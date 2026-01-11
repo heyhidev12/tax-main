@@ -6,7 +6,7 @@ import Footer from "@/components/Footer";
 import PageHeader from "@/components/common/PageHeader";
 import FloatingButton from "@/components/common/FloatingButton";
 import Icon from "@/components/common/Icon";
-import Card from "@/components/common/Card";
+import Card, { ProfileTag } from "@/components/common/Card";
 import { get } from "@/lib/api";
 import { API_ENDPOINTS } from "@/config/api";
 import styles from "./experts.module.scss";
@@ -342,24 +342,38 @@ const ExpertsPage: React.FC = () => {
                   ) : experts.length > 0 ? (
                     <div className={styles.expertsGridWrapper}>
                       <div className={styles.expertsGrid}>
-                        {experts.map((expert, index) => (
-                          <Card
-                            key={expert.id || index}
-                            variant="profile"
-                            title={expert.name}
-                            position={
-                              expert.position || expert.affiliation || ""
-                            }
-                            tel={expert.tel || expert.phoneNumber || ""}
-                            email={expert.email}
-                            imageUrl={expert.imageUrl || expert.mainPhoto?.url}
-                            size={isMobile ? "mobile" : "web"}
-                            className={styles.expertCard}
-                            onClick={() =>
-                              expert.id && router.push(`/experts/${expert.id}`)
-                            }
-                          />
-                        ))}
+                        {experts.map((expert, index) => {
+                          // Transform workAreas to ProfileTag format
+                          const profileTags: ProfileTag[] | undefined = expert.workAreas && expert.workAreas.length > 0
+                            ? expert.workAreas.map((area, tagIndex) => {
+                                const areaName = typeof area === "string" ? area : area.value;
+                                return {
+                                  label: areaName,
+                                  level: tagIndex === 0 ? "■■■" : tagIndex === 1 ? "■■□" : "■□□",
+                                };
+                              })
+                            : undefined;
+
+                          return (
+                            <Card
+                              key={expert.id || index}
+                              variant="profile"
+                              title={expert.name}
+                              position={
+                                expert.position || expert.affiliation || ""
+                              }
+                              tel={expert.tel || expert.phoneNumber || ""}
+                              email={expert.email}
+                              imageUrl={expert.imageUrl || expert.mainPhoto?.url}
+                              tags={profileTags}
+                              size={isMobile ? "mobile" : "web"}
+                              className={styles.expertCard}
+                              onClick={() =>
+                                expert.id && router.push(`/experts/${expert.id}`)
+                              }
+                            />
+                          );
+                        })}
                       </div>
                     </div>
                   ) : (
