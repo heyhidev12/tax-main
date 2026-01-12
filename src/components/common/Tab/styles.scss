@@ -76,7 +76,7 @@ $color-active-dot: #d11f00;
   // ========================================
   &--box {
 
-    @media (max-width: 768px) {
+    @media (max-width: 767px) {
       // gap: 8px;
     }
 
@@ -148,7 +148,7 @@ $color-active-dot: #d11f00;
         font-size: 21px;
         letter-spacing: -0.105px;
 
-        @media (max-width: 768px) {
+        @media (max-width: 767px) {
           padding: 10px;
           border-radius: 2px;
           font-size: 15px;
@@ -159,7 +159,7 @@ $color-active-dot: #d11f00;
       .tab__content {
         gap: 10px;
 
-        @media (max-width: 768px) {
+        @media (max-width: 767px) {
           gap: 4px;
         }
       }
@@ -168,13 +168,13 @@ $color-active-dot: #d11f00;
         width: 6px;
         height: 6px;
 
-        @media (max-width: 768px) {
+        @media (max-width: 767px) {
           width: 4px;
           height: 4px;
         }
       }
 
-      @media (max-width: 768px) {
+      @media (max-width: 767px) {
         gap: 8px;
       }
     }

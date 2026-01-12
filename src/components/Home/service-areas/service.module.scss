@@ -13,7 +13,7 @@ $bg-light: #f8f8f8;
   background: $white;
   font-family: "Pretendard", sans-serif;
 
-  @media (max-width: 768px) {
+  @media (max-width: 767px) {
     padding: 50px 0 40px;
   }
 
@@ -37,7 +37,7 @@ $bg-light: #f8f8f8;
       left: -300px;
     }
 
-    @media (max-width: 768px) {
+    @media (max-width: 767px) {
       width: 400px;
       height: 400px;
       top: 80px;
@@ -57,7 +57,7 @@ $bg-light: #f8f8f8;
         font-size: 100px;
       }
 
-      @media (max-width: 768px) {
+      @media (max-width: 767px) {
         font-size: 40px;
         letter-spacing: -1px;
       }
@@ -70,7 +70,7 @@ $bg-light: #f8f8f8;
     z-index: 2;
     padding-left: 30px;
 
-    @media (max-width: 768px) {
+    @media (max-width: 767px) {
       padding-left: 20px;
       margin-left: 0;
     }
@@ -84,7 +84,7 @@ $bg-light: #f8f8f8;
       margin-bottom: -60px;
       line-height: 1;
 
-      @media (max-width: 768px) {
+      @media (max-width: 767px) {
         font-size: 110px;
         margin-bottom: -45px;
         margin-left: -10px;
@@ -108,7 +108,7 @@ $bg-light: #f8f8f8;
         font-size: 72px;
       }
 
-      @media (max-width: 768px) {
+      @media (max-width: 767px) {
         font-size: 56px;
         line-height: 1.1;
       }
@@ -120,7 +120,7 @@ $bg-light: #f8f8f8;
       margin-left: 12px;
       margin-top: 8px;
 
-      @media (max-width: 768px) {
+      @media (max-width: 767px) {
         font-size: 12px;
         margin-left: 8px;
         margin-top: 9px;
@@ -136,7 +136,7 @@ $bg-light: #f8f8f8;
       margin-left: 8px;
       margin-top: 8px;
 
-      @media (max-width: 768px) {
+      @media (max-width: 767px) {
         width: 8px;
         height: 8px;
         margin-left: 6px;
@@ -145,7 +145,7 @@ $bg-light: #f8f8f8;
     }
 
     .view-more {
-      @media (max-width: 768px) {
+      @media (max-width: 767px) {
         display: none;
       }
     }
@@ -167,7 +167,7 @@ $bg-light: #f8f8f8;
       gap: 30px;
     }
 
-    @media (max-width: 768px) {
+    @media (max-width: 767px) {
       flex-direction: column;
       margin-left: 0;
       margin-right: 0;
@@ -183,7 +183,7 @@ $bg-light: #f8f8f8;
     flex-shrink: 0;
     padding-top: 20px;
 
-    @media (max-width: 768px) {
+    @media (max-width: 767px) {
       padding: 0 20px;
       min-width: auto;
       padding-top: 0;
@@ -197,7 +197,7 @@ $bg-light: #f8f8f8;
     position: relative;
     margin-top: 32px;
 
-    @media (max-width: 768px) {
+    @media (max-width: 767px) {
       flex-direction: column;
       gap: 4px;
       margin-top: 0;
@@ -216,7 +216,7 @@ $bg-light: #f8f8f8;
       border-radius: 50%;
       top: -10px;
 
-      @media (max-width: 768px) {
+      @media (max-width: 767px) {
         width: 24px;
         height: 24px;
         top: -4px;
@@ -236,7 +236,7 @@ $bg-light: #f8f8f8;
       transition: color 0.3s ease;
       margin-left: 16px;
 
-      @media (max-width: 768px) {
+      @media (max-width: 767px) {
         font-size: 16px;
         margin-left: 12px;
         padding: 4px 0;
@@ -262,7 +262,7 @@ $bg-light: #f8f8f8;
       max-width: 100%;
     }
 
-    @media (max-width: 768px) {
+    @media (max-width: 767px) {
       padding-left: 20px;
       overflow: visible;
     }
@@ -273,7 +273,7 @@ $bg-light: #f8f8f8;
       cursor: pointer;
       padding: 10px 0;
 
-      @media (max-width: 768px) {
+      @media (max-width: 767px) {
         display: none;
       }
 
@@ -285,7 +285,7 @@ $bg-light: #f8f8f8;
         overflow: hidden;
         position: relative;
 
-        @media (max-width: 768px) {
+        @media (max-width: 767px) {
           height: 2px;
         }
       }
@@ -310,7 +310,7 @@ $bg-light: #f8f8f8;
     .swiper-slide {
       height: auto;
 
-      @media (max-width: 768px) {
+      @media (max-width: 767px) {
         width: auto !important;
       }
     }
@@ -420,7 +420,7 @@ $bg-light: #f8f8f8;
     transform: rotate(45deg);
   }
 
-  @media (max-width: 768px) {
+  @media (max-width: 767px) {
     height: 190px;
     width: 150px;
   }
@@ -448,7 +448,7 @@ $bg-light: #f8f8f8;
     right: 0;
     bottom: 0;
 
-    @media (max-width: 768px) {
+    @media (max-width: 767px) {
       border-radius: 4px;
     }
 
@@ -458,7 +458,7 @@ $bg-light: #f8f8f8;
       object-fit: cover;
       transition: transform 0.5s ease;
 
-      @media (max-width: 768px) {
+      @media (max-width: 767px) {
         border-radius: 4px;
       }
     }
@@ -477,7 +477,7 @@ $bg-light: #f8f8f8;
         rgba(0, 0, 0, 0.4) 100%
       );
 
-      @media (max-width: 768px) {
+      @media (max-width: 767px) {
         border-radius: 4px;
       }
     }
@@ -494,7 +494,7 @@ $bg-light: #f8f8f8;
     flex-direction: column;
     z-index: 2;
 
-    @media (max-width: 768px) {
+    @media (max-width: 767px) {
       padding: 12px;
     }
   }
@@ -511,7 +511,7 @@ $bg-light: #f8f8f8;
     font-weight: 600;
     margin: 0;
 
-    @media (max-width: 768px) {
+    @media (max-width: 767px) {
       font-size: 14px;
       line-height: 1.3;
     }
@@ -536,7 +536,7 @@ $bg-light: #f8f8f8;
       height: 20px;
     }
 
-    @media (max-width: 768px) {
+    @media (max-width: 767px) {
       width: 24px;
       height: 24px;
 
@@ -562,7 +562,7 @@ $bg-light: #f8f8f8;
       transform: translateY(0);
     }
 
-    @media (max-width: 768px) {
+    @media (max-width: 767px) {
       display: none;
     }
   }
@@ -576,7 +576,7 @@ $bg-light: #f8f8f8;
     font-size: 15px;
     font-weight: 600;
 
-    @media (max-width: 768px) {
+    @media (max-width: 767px) {
       padding: 3px 6px;
       font-size: 9px;
     }

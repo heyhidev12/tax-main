@@ -10,7 +10,7 @@ $text-gray: #666;
   overflow: hidden;
   position: relative;
 
-  @media (max-width: 768px) {
+  @media (max-width: 767px) {
     padding: 50px 0 40px;
   }
 
@@ -36,7 +36,7 @@ $text-gray: #666;
       font-size: 140px;
     }
 
-    @media (max-width: 768px) {
+    @media (max-width: 767px) {
       font-size: 60px;
       margin-left: 20px;
       margin-top: 10px;
@@ -54,7 +54,7 @@ $text-gray: #666;
       padding-right: 60px;
     }
 
-    @media (max-width: 768px) {
+    @media (max-width: 767px) {
       padding-right: 20px;
       margin-bottom: 24px;
     }
@@ -65,7 +65,7 @@ $text-gray: #666;
     justify-content: center;
     padding-top: 60px;
 
-    @media (max-width: 768px) {
+    @media (max-width: 767px) {
       padding-top: 32px;
 
       .view-more a {
@@ -90,7 +90,7 @@ $text-gray: #666;
       right: 40px;
     }
 
-    @media (max-width: 768px) {
+    @media (max-width: 767px) {
       font-size: 110px;
       top: -15px;
       right: 0;
@@ -103,7 +103,7 @@ $text-gray: #666;
     gap: 8px;
     margin-bottom: 20px;
 
-    @media (max-width: 768px) {
+    @media (max-width: 767px) {
       margin-bottom: 12px;
       gap: 6px;
     }
@@ -116,7 +116,7 @@ $text-gray: #666;
     border-radius: 50%;
     margin-top: 8px;
 
-    @media (max-width: 768px) {
+    @media (max-width: 767px) {
       width: 6px;
       height: 6px;
       margin-top: 6px;
@@ -130,7 +130,7 @@ $text-gray: #666;
     color: $text-dark;
     margin-top: 14px;
 
-    @media (max-width: 768px) {
+    @media (max-width: 767px) {
       font-size: 15px;
       margin-top: 6px;
     }
@@ -144,7 +144,7 @@ $text-gray: #666;
     margin: 0;
     line-height: 1;
 
-    @media (max-width: 768px) {
+    @media (max-width: 767px) {
       font-size: 56px;
     }
   }
@@ -156,7 +156,7 @@ $text-gray: #666;
   flex-direction: column;
   gap: 50px;
 
-  @media (max-width: 768px) {
+  @media (max-width: 767px) {
     gap: 20px;
   }
 
@@ -191,7 +191,7 @@ $text-gray: #666;
     justify-content: center;
     height: 80px;
 
-    @media (max-width: 768px) {
+    @media (max-width: 767px) {
       padding: 0 16px;
       height: 50px;
     }
@@ -208,7 +208,7 @@ $text-gray: #666;
   opacity: 0.85;
   transition: all 0.3s ease;
 
-  @media (max-width: 768px) {
+  @media (max-width: 767px) {
     height: 28px;
     max-width: 100px;
   }

@@ -15,7 +15,7 @@ $bg-light: #f8f8f8;
   padding: 60px 20px 240px;
   background: #fff;
 
-  @media (max-width: 768px) {
+  @media (max-width: 767px) {
     padding: 40px 20px;
     min-height: calc(100vh - 150px);
   }
@@ -34,7 +34,7 @@ $bg-light: #f8f8f8;
     gap: 40px;
   }
 
-  @media (max-width: 768px) {
+  @media (max-width: 767px) {
     gap: 30px;
   }
 }
@@ -45,7 +45,7 @@ $bg-light: #f8f8f8;
   max-width: 400px;
   width: 100%;
 
-  @media (max-width: 768px) {
+  @media (max-width: 767px) {
     max-width: 100%;
   }
 }
@@ -58,7 +58,7 @@ $bg-light: #f8f8f8;
   text-align: center;
   margin-bottom: 56px;
 
-  @media (max-width: 768px) {
+  @media (max-width: 767px) {
     font-size: 24px;
     margin-bottom: 30px;
   }
@@ -70,7 +70,7 @@ $bg-light: #f8f8f8;
   flex-direction: column;
   gap: 24px;
 
-  @media (max-width: 768px) {
+  @media (max-width: 767px) {
     gap: 16px;
   }
 }
@@ -112,7 +112,7 @@ $bg-light: #f8f8f8;
         background: #fff;
       }
 
-      @media (max-width: 768px) {
+      @media (max-width: 767px) {
         font-size: 14px;
       }
     }
@@ -269,7 +269,7 @@ $bg-light: #f8f8f8;
     background: darken($primary-teal, 5%);
   }
 
-  @media (max-width: 768px) {
+  @media (max-width: 767px) {
     height: 48px;
     font-size: 15px;
   }
@@ -301,7 +301,7 @@ $bg-light: #f8f8f8;
   background: $border-color;
   margin: 40px 0;
 
-  @media (max-width: 768px) {
+  @media (max-width: 767px) {
     margin: 24px 0;
   }
 }

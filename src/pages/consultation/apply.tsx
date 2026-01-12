@@ -80,14 +80,11 @@ const ConsultationApplyPage: React.FC = () => {
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [isSubmitAttempted, setIsSubmitAttempted] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [focusedField, setFocusedField] = useState<string | null>(null);
 
   // API에서 가져온 데이터
-  const [consultationFields, setConsultationFields] = useState<SelectOption[]>([
-    { value: '', label: '선택안함' }
-  ]);
-  const [taxAccountants, setTaxAccountants] = useState<SelectOption[]>([
-    { value: '', label: '선택안함' }
-  ]);
+  const [consultationFields, setConsultationFields] = useState<SelectOption[]>([]);
+  const [taxAccountants, setTaxAccountants] = useState<SelectOption[]>([]);
 
   // 로그인 상태 확인 및 API 데이터 가져오기
   useEffect(() => {
@@ -120,15 +117,12 @@ const ConsultationApplyPage: React.FC = () => {
       try {
         const response = await get<CategoryItem[]>(API_ENDPOINTS.BUSINESS_AREAS_CATEGORIES);
         if (response.data) {
-          const options: SelectOption[] = [
-            { value: '', label: '선택안함' },
-            ...response.data
-              .filter(item => item.isExposed)
-              .map(item => ({
-                value: item.id.toString(),
-                label: item.name
-              }))
-          ];
+          const options: SelectOption[] = response.data
+            .filter(item => item.isExposed)
+            .map(item => ({
+              value: item.id.toString(),
+              label: item.name
+            }));
           setConsultationFields(options);
         }
       } catch (error) {
@@ -151,6 +145,10 @@ const ConsultationApplyPage: React.FC = () => {
 
   const fieldDropdownRef = useRef<HTMLDivElement>(null);
   const accountantDropdownRef = useRef<HTMLDivElement>(null);
+  const fieldInputRef = useRef<HTMLInputElement>(null);
+  const accountantInputRef = useRef<HTMLInputElement>(null);
+  const nameInputRef = useRef<HTMLInputElement>(null);
+  const phoneInputRef = useRef<HTMLInputElement>(null);
 
   // 필터링된 옵션
   const filteredFields = consultationFields.filter(field =>
@@ -178,16 +176,33 @@ const ConsultationApplyPage: React.FC = () => {
     };
   }, []);
 
+  // 세무사 목록 미리 로드 (상담 분야가 선택되지 않은 경우)
+  const preloadExperts = async () => {
+    // 이미 세무사 목록이 있거나 상담 분야가 선택된 경우 스킵
+    if (taxAccountants.length > 0 || formData.consultationField) {
+      return;
+    }
+
+    try {
+      const response = await get<MembersResponse>(
+        `${API_ENDPOINTS.MEMBERS}?page=1&limit=20`
+      );
+      if (response.data?.items) {
+        const options: SelectOption[] = response.data.items
+          .filter(item => item.isExposed)
+          .map(item => ({
+            value: item.id.toString(),
+            label: item.name
+          }));
+        setTaxAccountants(options);
+      }
+    } catch (error) {
+      console.error('Failed to preload experts:', error);
+    }
+  };
+
   const handleFieldChange = async (value: string) => {
-    // formData 업데이트 + 세무사 선택 초기화
-    setFormData(prev => ({
-      ...prev,
-      consultationField: value,
-      taxAccountant: ''
-    }));
-    setSearchFieldQuery('');
-    setSearchAccountantQuery('');
-    setIsFieldDropdownOpen(false);
+    const previousTaxAccountant = formData.taxAccountant;
 
     // 분야가 선택된 경우 해당 분야의 세무사 목록 조회
     if (value) {
@@ -196,28 +211,122 @@ const ConsultationApplyPage: React.FC = () => {
           `${API_ENDPOINTS.MEMBERS}?page=1&limit=100&workArea=${value}`
         );
         if (response.data?.items) {
-          const options: SelectOption[] = [
-            { value: '', label: '선택안함' },
-            ...response.data.items
-              .filter(item => item.isExposed)
-              .map(item => ({
-                value: item.id.toString(),
-                label: item.name
-              }))
-          ];
+          const options: SelectOption[] = response.data.items
+            .filter(item => item.isExposed)
+            .map(item => ({
+              value: item.id.toString(),
+              label: item.name
+            }));
           setTaxAccountants(options);
+          
+          // 이전에 선택된 세무사가 새로운 목록에 있는지 확인
+          const isValidAccountant = previousTaxAccountant && 
+            options.some(opt => opt.value === previousTaxAccountant);
+          
+          // 유효하지 않으면 세무사 선택 초기화
+          setFormData(prev => ({
+            ...prev,
+            consultationField: value,
+            taxAccountant: isValidAccountant ? previousTaxAccountant : ''
+          }));
+        } else {
+          // 세무사 목록이 비어있으면 초기화
+          setTaxAccountants([]);
+          setFormData(prev => ({
+            ...prev,
+            consultationField: value,
+            taxAccountant: ''
+          }));
         }
       } catch (error) {
         console.error('Failed to fetch members:', error);
+        setTaxAccountants([]);
+        setFormData(prev => ({
+          ...prev,
+          consultationField: value,
+          taxAccountant: ''
+        }));
       }
     } else {
       // 선택안함인 경우 세무사 목록 초기화
-      setTaxAccountants([{ value: '', label: '선택안함' }]);
+      setTaxAccountants([]);
+      setFormData(prev => ({
+        ...prev,
+        consultationField: value,
+        taxAccountant: ''
+      }));
     }
+    
+    setSearchFieldQuery('');
+    setSearchAccountantQuery('');
+    setIsFieldDropdownOpen(false);
   };
 
-  const handleAccountantChange = (value: string) => {
-    setFormData(prev => ({ ...prev, taxAccountant: value }));
+  const handleAccountantChange = async (value: string) => {
+    const previousConsultationField = formData.consultationField;
+    
+    // 세무사가 선택된 경우 해당 세무사의 업무 분야 목록 조회
+    if (value) {
+      try {
+        const response = await get<CategoryItem[]>(
+          `${API_ENDPOINTS.BUSINESS_AREAS_CATEGORIES}?memberId=${value}`
+        );
+        if (response.data && response.data.length > 0) {
+          const options: SelectOption[] = response.data
+            .filter(item => item.isExposed)
+            .map(item => ({
+              value: item.id.toString(),
+              label: item.name
+            }));
+          setConsultationFields(options);
+          
+          // 이전에 선택된 분야가 새로운 목록에 있는지 확인
+          const isValidField = previousConsultationField && 
+            options.some(opt => opt.value === previousConsultationField);
+          
+          // 유효하지 않으면 분야 선택 초기화
+          setFormData(prev => ({
+            ...prev,
+            taxAccountant: value,
+            consultationField: isValidField ? previousConsultationField : ''
+          }));
+        } else {
+          // 분야 목록이 비어있으면 초기화
+          setConsultationFields([]);
+          setFormData(prev => ({
+            ...prev,
+            taxAccountant: value,
+            consultationField: ''
+          }));
+        }
+      } catch (error) {
+        console.error('Failed to fetch categories:', error);
+        setConsultationFields([]);
+        setFormData(prev => ({
+          ...prev,
+          taxAccountant: value,
+          consultationField: ''
+        }));
+      }
+    } else {
+      // 선택안함인 경우 분야 목록을 전체 목록으로 복원
+      try {
+        const response = await get<CategoryItem[]>(API_ENDPOINTS.BUSINESS_AREAS_CATEGORIES);
+        if (response.data) {
+          const options: SelectOption[] = response.data
+            .filter(item => item.isExposed)
+            .map(item => ({
+              value: item.id.toString(),
+              label: item.name
+            }));
+          setConsultationFields(options);
+        }
+      } catch (error) {
+        console.error('Failed to fetch categories:', error);
+      }
+      setFormData(prev => ({ ...prev, taxAccountant: value }));
+    }
+    
     setSearchAccountantQuery('');
     setIsAccountantDropdownOpen(false);
   };
@@ -364,9 +473,7 @@ const ConsultationApplyPage: React.FC = () => {
   };
 
   const selectedFieldLabel = consultationFields.find(f => f.value === formData.consultationField)?.label || '상담 분야를 선택해주세요';
-  const selectedAccountantLabel = !formData.consultationField
-    ? '상담 분야를 먼저 선택해주세요'
-    : taxAccountants.find(a => a.value === formData.taxAccountant)?.label || '담당 세무사를 선택해주세요';
+  const selectedAccountantLabel = taxAccountants.find(a => a.value === formData.taxAccountant)?.label || '담당 세무사를 선택해주세요';
 
   return (
     <div className={styles.consultationPage}>
@@ -407,6 +514,7 @@ const ConsultationApplyPage: React.FC = () => {
                         }}
                       >
                         <input
+                          ref={fieldInputRef}
                           type="text"
                           className={styles.selectInput}
                           value={searchFieldQuery || (formData.consultationField ? selectedFieldLabel : '')}
@@ -424,22 +532,31 @@ const ConsultationApplyPage: React.FC = () => {
                             setIsFieldDropdownOpen(true);
                           }}
                           onFocus={(e) => {
+                            setFocusedField('consultationField');
                             setIsFieldDropdownOpen(true);
                             if (formData.consultationField && !searchFieldQuery) {
                               setSearchFieldQuery(selectedFieldLabel);
                               e.target.setSelectionRange(0, e.target.value.length);
                             }
                           }}
+                          onBlur={() => {
+                            setFocusedField(null);
+                          }}
                         />
-                        {(formData.consultationField || searchFieldQuery) && (
+                        {focusedField === 'consultationField' && (formData.consultationField || searchFieldQuery) && (
                           <button
                             type="button"
                             className={styles.clearButton}
+                            onMouseDown={(e) => {
+                              e.preventDefault(); // Prevent input blur
+                            }}
                             onClick={(e) => {
                               e.stopPropagation();
-                              setFormData(prev => ({ ...prev, consultationField: '' }));
-                              setSearchFieldQuery('');
-                              setIsFieldDropdownOpen(false);
+                              handleFieldChange('');
+                              // Refocus the input after clearing
+                              setTimeout(() => {
+                                fieldInputRef.current?.focus();
+                              }, 0);
                             }}
                           >
                             <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
@@ -452,6 +569,7 @@ const ConsultationApplyPage: React.FC = () => {
                             </svg>
                           </button>
                         )}
+                        {focusedField !== 'consultationField' && (
                         <svg
                           width="20"
                           height="20"
@@ -461,11 +579,12 @@ const ConsultationApplyPage: React.FC = () => {
                         >
                           <path
                             d="M5 7.5L10 12.5L15 7.5"
-                            stroke="#555"
+                              stroke="#555"
                             strokeWidth="1.5"
                             strokeLinecap="round"
                           />
                         </svg>
+                        )}
                       </div>
                       {isFieldDropdownOpen && (
                         <div className={styles.selectDropdown}>
@@ -495,14 +614,18 @@ const ConsultationApplyPage: React.FC = () => {
                     </label>
                     <div className={styles.selectWrapper}>
                       <div
-                        className={`${styles.selectTrigger} ${isAccountantDropdownOpen ? styles.selectTriggerOpen : ''} ${!formData.consultationField ? styles.selectTriggerDisabled : ''}`}
+                        className={`${styles.selectTrigger} ${isAccountantDropdownOpen ? styles.selectTriggerOpen : ''}`}
                         onClick={(e) => {
                           if ((e.target as HTMLElement).closest(`.${styles.clearButton}`)) return;
-                          if (!formData.consultationField) return;
                           setIsAccountantDropdownOpen(!isAccountantDropdownOpen);
+                          // 상담 분야가 선택되지 않은 경우 세무사 목록 미리 로드
+                          if (!formData.consultationField) {
+                            preloadExperts();
+                          }
                         }}
                       >
                         <input
+                          ref={accountantInputRef}
                           type="text"
                           className={styles.selectInput}
                           value={searchAccountantQuery || (formData.taxAccountant ? selectedAccountantLabel : '')}
@@ -514,33 +637,45 @@ const ConsultationApplyPage: React.FC = () => {
                             }
                             setIsAccountantDropdownOpen(true);
                           }}
-                          placeholder={!formData.consultationField ? '상담 분야를 먼저 선택해주세요' : '담당 세무사를 선택해주세요'}
+                          placeholder="담당 세무사를 선택해주세요"
                           onClick={(e) => {
                             e.stopPropagation();
-                            if (formData.consultationField) {
-                              setIsAccountantDropdownOpen(true);
+                            setIsAccountantDropdownOpen(true);
+                            // 상담 분야가 선택되지 않은 경우 세무사 목록 미리 로드
+                            if (!formData.consultationField) {
+                              preloadExperts();
                             }
                           }}
                           onFocus={(e) => {
-                            if (formData.consultationField) {
-                              setIsAccountantDropdownOpen(true);
-                              if (formData.taxAccountant && !searchAccountantQuery) {
-                                setSearchAccountantQuery(selectedAccountantLabel);
-                                e.target.setSelectionRange(0, e.target.value.length);
-                              }
+                            setFocusedField('taxAccountant');
+                            setIsAccountantDropdownOpen(true);
+                            // 상담 분야가 선택되지 않은 경우 세무사 목록 미리 로드
+                            if (!formData.consultationField) {
+                              preloadExperts();
+                            }
+                            if (formData.taxAccountant && !searchAccountantQuery) {
+                              setSearchAccountantQuery(selectedAccountantLabel);
+                              e.target.setSelectionRange(0, e.target.value.length);
                             }
                           }}
-                          disabled={!formData.consultationField}
+                          onBlur={() => {
+                            setFocusedField(null);
+                          }}
                         />
-                        {(formData.taxAccountant || searchAccountantQuery) && (
+                        {focusedField === 'taxAccountant' && (formData.taxAccountant || searchAccountantQuery) && (
                           <button
                             type="button"
                             className={styles.clearButton}
+                            onMouseDown={(e) => {
+                              e.preventDefault(); // Prevent input blur
+                            }}
                             onClick={(e) => {
                               e.stopPropagation();
-                              setFormData(prev => ({ ...prev, taxAccountant: '' }));
-                              setSearchAccountantQuery('');
-                              setIsAccountantDropdownOpen(false);
+                              handleAccountantChange('');
+                              // Refocus the input after clearing
+                              setTimeout(() => {
+                                accountantInputRef.current?.focus();
+                              }, 0);
                             }}
                           >
                             <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
@@ -553,6 +688,7 @@ const ConsultationApplyPage: React.FC = () => {
                             </svg>
                           </button>
                         )}
+                        {focusedField !== 'taxAccountant' && (
                         <svg
                           width="20"
                           height="20"
@@ -562,11 +698,12 @@ const ConsultationApplyPage: React.FC = () => {
                         >
                           <path
                             d="M5 7.5L10 12.5L15 7.5"
-                            stroke="#555"
+                              stroke="#555"
                             strokeWidth="1.5"
                             strokeLinecap="round"
                           />
                         </svg>
+                        )}
                       </div>
                       {isAccountantDropdownOpen && (
                         <div className={styles.selectDropdown}>
@@ -598,19 +735,33 @@ const ConsultationApplyPage: React.FC = () => {
                       <span className={styles.required}>*</span>
                     </label>
                     <div className={styles.inputWrapper}>
-                      <input
-                        type="text"
-                        className={`${styles.textInput} ${getFieldError('name') ? styles.textInputError : ''}`}
-                        placeholder="이름을 입력해주세요"
-                        value={formData.name}
-                        onChange={(e) => handleInputChange('name')(e.target.value)}
-                        onBlur={() => handleBlur('name')}
+                    <input
+                      ref={nameInputRef}
+                      type="text"
+                      className={`${styles.textInput} ${getFieldError('name') ? styles.textInputError : ''}`}
+                      placeholder="이름을 입력해주세요"
+                      value={formData.name}
+                      onChange={(e) => handleInputChange('name')(e.target.value)}
+                        onFocus={() => setFocusedField('name')}
+                        onBlur={() => {
+                          handleBlur('name');
+                          setFocusedField(null);
+                        }}
                       />
-                      {formData.name && (
+                      {focusedField === 'name' && formData.name && (
                         <button
                           type="button"
                           className={styles.clearButton}
-                          onClick={() => handleInputChange('name')('')}
+                          onMouseDown={(e) => {
+                            e.preventDefault(); // Prevent input blur
+                          }}
+                          onClick={() => {
+                            handleInputChange('name')('');
+                            // Refocus the input after clearing
+                            setTimeout(() => {
+                              nameInputRef.current?.focus();
+                            }, 0);
+                          }}
                         >
                           <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
                             <path
@@ -634,19 +785,33 @@ const ConsultationApplyPage: React.FC = () => {
                       <span className={styles.required}>*</span>
                     </label>
                     <div className={styles.inputWrapper}>
-                      <input
-                        type="tel"
-                        className={`${styles.textInput} ${getFieldError('phone') ? styles.textInputError : ''}`}
-                        placeholder="휴대폰 번호를 입력해주세요"
-                        value={formData.phone}
-                        onChange={(e) => handleInputChange('phone')(e.target.value)}
-                        onBlur={() => handleBlur('phone')}
+                    <input
+                      ref={phoneInputRef}
+                      type="tel"
+                      className={`${styles.textInput} ${getFieldError('phone') ? styles.textInputError : ''}`}
+                      placeholder="휴대폰 번호를 입력해주세요"
+                      value={formData.phone}
+                      onChange={(e) => handleInputChange('phone')(e.target.value)}
+                        onFocus={() => setFocusedField('phone')}
+                        onBlur={() => {
+                          handleBlur('phone');
+                          setFocusedField(null);
+                        }}
                       />
-                      {formData.phone && (
+                      {focusedField === 'phone' && formData.phone && (
                         <button
                           type="button"
                           className={styles.clearButton}
-                          onClick={() => handleInputChange('phone')('')}
+                          onMouseDown={(e) => {
+                            e.preventDefault(); // Prevent input blur
+                          }}
+                          onClick={() => {
+                            handleInputChange('phone')('');
+                            // Refocus the input after clearing
+                            setTimeout(() => {
+                              phoneInputRef.current?.focus();
+                            }, 0);
+                          }}
                         >
                           <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
                             <path
@@ -672,14 +837,14 @@ const ConsultationApplyPage: React.FC = () => {
                     <span className={styles.required}>*</span>
                   </label>
                   <div className={styles.textareaWrapper}>
-                    <textarea
-                      className={`${styles.textarea} ${getFieldError('additionalRequest') ? styles.textareaError : ''}`}
-                      placeholder="상담 내용을 입력해주세요"
-                      value={formData.additionalRequest}
-                      onChange={(e) => handleInputChange('additionalRequest')(e.target.value)}
-                      onBlur={() => handleBlur('additionalRequest')}
-                      rows={8}
-                    />
+                  <textarea
+                    className={`${styles.textarea} ${getFieldError('additionalRequest') ? styles.textareaError : ''}`}
+                    placeholder="상담 내용을 입력해주세요"
+                    value={formData.additionalRequest}
+                    onChange={(e) => handleInputChange('additionalRequest')(e.target.value)}
+                    onBlur={() => handleBlur('additionalRequest')}
+                    rows={8}
+                  />
                   </div>
                   {getFieldError('additionalRequest') && (
                     <p className={styles.fieldError}>{getFieldError('additionalRequest')}</p>

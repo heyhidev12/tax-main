@@ -19,6 +19,9 @@ $breakpoint-mobile: 767px;
   height: 92px;
   padding: 0 88px;
 
+  @media (max-width: 1440px) {
+    padding: 0 2rem;
+  }
   @media (max-width: $breakpoint-mobile) {
     height: 52px;
     padding: 0 20px;

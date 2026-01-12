@@ -12,7 +12,7 @@ $bg-light: #f5f5f5;
   overflow: hidden;
   position: relative;
 
-  @media (max-width: 768px) {
+  @media (max-width: 767px) {
     padding: 50px 0 40px;
   }
 
@@ -24,7 +24,7 @@ $bg-light: #f5f5f5;
     bottom: 0;
     background-color: #f8f8f8;
 
-    @media (max-width: 768px) {
+    @media (max-width: 767px) {
       width: 60%;
       height: 200px;
     }
@@ -35,7 +35,7 @@ $bg-light: #f5f5f5;
     margin: 0 auto;
     padding: 0 40px;
 
-    @media (max-width: 768px) {
+    @media (max-width: 767px) {
       padding: 0 20px;
     }
   }
@@ -47,7 +47,7 @@ $bg-light: #f5f5f5;
   margin-bottom: 50px;
   margin-top: 50px;
 
-  @media (max-width: 768px) {
+  @media (max-width: 767px) {
     margin-bottom: 24px;
   }
 
@@ -68,7 +68,7 @@ $bg-light: #f5f5f5;
       top: -45px;
     }
 
-    @media (max-width: 768px) {
+    @media (max-width: 767px) {
       font-size: 110px;
       left: auto;
     }
@@ -80,7 +80,7 @@ $bg-light: #f5f5f5;
     padding-top: 40px;
     padding-left: 30px;
 
-    @media (max-width: 768px) {
+    @media (max-width: 767px) {
       padding-top: 20px;
       padding-left: 0;
     }
@@ -97,7 +97,7 @@ $bg-light: #f5f5f5;
     gap: 12px;
 
 
-    @media (max-width: 768px) {
+    @media (max-width: 767px) {
       font-size: 56px;
       gap: 6px;
       margin-bottom: 12px;
@@ -111,7 +111,7 @@ $bg-light: #f5f5f5;
     color: $text-dark;
     margin-top: 25px;
 
-    @media (max-width: 768px) {
+    @media (max-width: 767px) {
       font-size: 12px;
       margin-top: 6px;
     }
@@ -124,7 +124,7 @@ $bg-light: #f5f5f5;
     border-radius: 50%;
     margin-top: 15px;
 
-    @media (max-width: 768px) {
+    @media (max-width: 767px) {
       width: 8px;
       height: 8px;
       margin-top: 8px;
@@ -136,7 +136,7 @@ $bg-light: #f5f5f5;
 .insight-slider {
   margin-bottom: 80px;
 
-  @media (max-width: 768px) {
+  @media (max-width: 767px) {
     margin-bottom: 24px;
   }
 }
@@ -147,7 +147,7 @@ $bg-light: #f5f5f5;
   .swiper-slide {
     height: auto;
 
-    @media (max-width: 768px) {
+    @media (max-width: 767px) {
     width: 260px !important;
   }
   }
@@ -167,7 +167,7 @@ $bg-light: #f5f5f5;
   width: 400px;
   height: 385px;
 
-  @media (max-width: 768px) {
+  @media (max-width: 767px) {
     width: 260px;
     height: auto;
     min-height: 280px;
@@ -185,7 +185,7 @@ $bg-light: #f5f5f5;
     height: 250px;
     overflow: hidden;
 
-    @media (max-width: 768px) {
+    @media (max-width: 767px) {
       height: 150px;
       border-radius: 8px 8px 0 0;
     }
@@ -196,7 +196,7 @@ $bg-light: #f5f5f5;
       object-fit: cover;
       transition: transform 0.4s ease;
 
-      @media (max-width: 768px) {
+      @media (max-width: 767px) {
         border-radius: 6px 6px 0 0;
       }
     }
@@ -208,7 +208,7 @@ $bg-light: #f5f5f5;
     flex-direction: column;
     flex: 1;
 
-    @media (max-width: 768px) {
+    @media (max-width: 767px) {
       padding: 14px;
     }
   }
@@ -225,7 +225,7 @@ $bg-light: #f5f5f5;
     overflow: hidden;
     flex: 1;
 
-    @media (max-width: 768px) {
+    @media (max-width: 767px) {
       font-size: 14px;
       margin-bottom: 10px;
       -webkit-line-clamp: 2;
@@ -238,7 +238,7 @@ $bg-light: #f5f5f5;
     font-size: 15px;
     color: $text-gray;
 
-    @media (max-width: 768px) {
+    @media (max-width: 767px) {
       font-size: 11px;
     }
   }
@@ -251,7 +251,7 @@ $bg-light: #f5f5f5;
   cursor: pointer;
   padding: 10px 0;
 
-  @media (max-width: 768px) {
+  @media (max-width: 767px) {
     display: none;
   }
 
@@ -263,7 +263,7 @@ $bg-light: #f5f5f5;
     overflow: hidden;
     position: relative;
 
-    @media (max-width: 768px) {
+    @media (max-width: 767px) {
       height: 2px;
     }
   }
@@ -283,7 +283,7 @@ $bg-light: #f5f5f5;
   justify-content: center;
   padding-top: 40px;
 
-  @media (max-width: 768px) {
+  @media (max-width: 767px) {
     padding-top: 24px;
 
     .view-more a {

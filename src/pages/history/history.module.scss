@@ -364,7 +364,7 @@
   margin-inline: -2rem;
   margin-bottom: 80px;
 
-  @media (max-width: 768px) {
+  @media (max-width: 767px) {
     margin-inline: 0;
     min-height: 170px;
     margin-bottom: 32px;
@@ -378,7 +378,7 @@
   margin-left: -2rem;
   margin-bottom: 80px;
 
-  @media (max-width: 768px) {
+  @media (max-width: 767px) {
     margin-left: -20px;
     min-height: 200px;
     margin-bottom: 56px;
@@ -1057,7 +1057,7 @@
   margin-inline: -2rem;
   padding: 120px 0 80px;
 
-  @media (max-width: 768px) {
+  @media (max-width: 767px) {
     margin-inline: -20px;
     padding-bottom: 40px;
   }

@@ -2,7 +2,7 @@
   position: relative;
   padding: 12px;
 
-  @media (max-width: 768px) {
+  @media (max-width: 767px) {
     padding: 8px;
   }
 
@@ -11,7 +11,7 @@
       .arrow {
         left: 112px;
 
-        @media (max-width: 768px) {
+        @media (max-width: 767px) {
           left: 90px;
         }
       }
@@ -27,7 +27,7 @@
     left: 0;
     top: 0;
 
-    @media (max-width: 768px) {
+    @media (max-width: 767px) {
       width: 28px;
       height: 28px;
     }
@@ -47,7 +47,7 @@
     text-decoration: none;
     position: relative;
 
-    @media (max-width: 768px) {
+    @media (max-width: 767px) {
       font-size: 14px;
       gap: 6px;
     }
@@ -57,7 +57,7 @@
       transition: all 0.5s;
       left: 100px;
 
-      @media (max-width: 768px) {
+      @media (max-width: 767px) {
         left: 80px;
         width: 14px;
         height: 14px;

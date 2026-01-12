@@ -5,7 +5,11 @@
 export type EducationType = 'SEMINAR' | 'TRAINING' | 'LECTURE' | 'VOD';
 export type RecruitmentType = 'FIRST_COME' | 'SELECTION';
 export type TargetMemberType = 'ALL' | 'MEMBER' | 'NON_MEMBER';
-
+export enum MemberType {
+  GENERAL = 'GENERAL',       // 일반회원
+  OTHER = 'OTHER',   // 기타
+  INSURANCE = 'INSURANCE',   // 보험사 직원
+}
 export interface EducationImage {
   id: number;
   url: string;

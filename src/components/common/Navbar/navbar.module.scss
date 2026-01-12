@@ -21,7 +21,7 @@
     justify-content: space-between;
     padding: 24px 0;
 
-    @media (max-width: 768px) {
+    @media (max-width: 767px) {
       width: calc(100% - 48px);
       padding: 16px 0;
     }
@@ -39,7 +39,7 @@
         height: 48px;
         width: auto;
 
-        @media (max-width: 768px) {
+        @media (max-width: 767px) {
           height: 36px;
         }
       }
@@ -67,7 +67,7 @@
       width: 32px;
       height: 32px;
 
-      @media (max-width: 768px) {
+      @media (max-width: 767px) {
         width: 28px;
         height: 28px;
       }

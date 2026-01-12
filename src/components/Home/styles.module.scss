@@ -16,7 +16,7 @@
       padding: none;
       object-fit: cover;
 
-      @media (max-width: 768px) {
+      @media (max-width: 767px) {
         height: 100vh;
         min-height: 500px;
         margin-bottom: 0;
@@ -31,7 +31,7 @@
         padding: 500px 100px 100px;
       }
 
-      @media (max-width: 768px) {
+      @media (max-width: 767px) {
         // padding: 0 20px;
         // top: 50%;
         // transform: translateY(-50%);
@@ -48,7 +48,7 @@
         font-style: normal;
         font-weight: 600;
 
-        @media (max-width: 768px) {
+        @media (max-width: 767px) {
           font-size: 12px;
           margin-bottom: 8px;
           letter-spacing: 1px;
@@ -66,7 +66,7 @@
           font-size: 48px;
         }
 
-        @media (max-width: 768px) {
+        @media (max-width: 767px) {
           font-size: 36px;
           line-height: 1.5;
           letter-spacing: -0.5px;
@@ -83,7 +83,7 @@
     position: relative;
     // padding: 0 24px;
 
-    @media (max-width: 768px) {
+    @media (max-width: 767px) {
       padding: 40px 0px;
     }
 
@@ -97,7 +97,7 @@
         border: 1px solid #d8d8d8;
         margin-bottom: 48px;
 
-        @media (max-width: 768px) {
+        @media (max-width: 767px) {
           height: 32px;
           margin-bottom: 20px;
           margin-top: 80px;
@@ -110,7 +110,7 @@
       display: flex;
       justify-content: flex-end;
 
-      @media (max-width: 768px) {
+      @media (max-width: 767px) {
         justify-content: center;
         margin-bottom: 32px;
         margin-top: 80px;
@@ -136,7 +136,7 @@
       margin-bottom: 113px;
       width: 80%;
 
-      @media (max-width: 768px) {
+      @media (max-width: 767px) {
         font-size: 20px;
         margin-bottom: 0;
         line-height: 1.7;
@@ -153,14 +153,14 @@
       justify-content: space-between;
       align-items: flex-end;
 
-      @media (max-width: 768px) {
+      @media (max-width: 767px) {
         flex-direction: column;
         align-items: flex-start;
         gap: 20px;
       }
 
       .left {
-        @media (max-width: 768px) {
+        @media (max-width: 767px) {
           width: 100%;
         }
 
@@ -180,7 +180,7 @@
             font-size: 72px;
           }
 
-          @media (max-width: 768px) {
+          @media (max-width: 767px) {
             font-size: 64px;
             top: 0;
             margin-bottom: 12px;
@@ -190,7 +190,7 @@
         }
 
         .view-more {
-          @media (max-width: 768px) {
+          @media (max-width: 767px) {
             margin-top: 8px;
 
             a {
@@ -201,7 +201,7 @@
       }
 
       .right {
-        @media (max-width: 768px) {
+        @media (max-width: 767px) {
           width: 100%;
         }
 
@@ -214,7 +214,7 @@
           line-height: 140%;
           letter-spacing: -0.125px;
 
-          @media (max-width: 768px) {
+          @media (max-width: 767px) {
             font-size: 15px;
             line-height: 1.6;
 
@@ -236,7 +236,7 @@
           line-height: 145%;
           letter-spacing: -0.085px;
 
-          @media (max-width: 768px) {
+          @media (max-width: 767px) {
             font-size: 13px;
             margin-top: 10px;
             color: #666;
@@ -251,7 +251,7 @@
     overflow: hidden;
     position: relative;
 
-    @media (max-width: 768px) {
+    @media (max-width: 767px) {
       margin: 40px 0;
     }
 
@@ -261,12 +261,12 @@
       justify-content: space-between;
       overflow: hidden;
 
-      @media (max-width: 768px) {
+      @media (max-width: 767px) {
         flex-direction: column;
       }
 
       .left-img {
-        @media (max-width: 768px) {
+        @media (max-width: 767px) {
           width: 100%;
           padding-right: 20px;
           box-sizing: border-box;
@@ -297,7 +297,7 @@
           font-size: 160px;
         }
 
-        @media (max-width: 768px) {
+        @media (max-width: 767px) {
           font-size: 80px;
           left: 0;
           width: 134%;
@@ -315,7 +315,7 @@
       position: relative;
       top: -100px;
 
-      @media (max-width: 768px) {
+      @media (max-width: 767px) {
         flex-direction: column-reverse;
         top: 0;
         gap: 20px;
@@ -333,7 +333,7 @@
         letter-spacing: -0.125px;
         margin-top: 200px;
 
-        @media (max-width: 768px) {
+        @media (max-width: 767px) {
           font-size: 17px;
           margin-top: 40px;
           line-height: 1.6;
@@ -346,7 +346,7 @@
       }
 
       .right-img {
-        @media (max-width: 768px) {
+        @media (max-width: 767px) {
           // width: 100%;
           // display: flex;
           // justify-content: flex-end;

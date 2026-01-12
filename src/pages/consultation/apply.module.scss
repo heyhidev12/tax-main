@@ -30,7 +30,7 @@
       font-size: 42px;
     }
 
-    @media (max-width: 768px) {
+    @media (max-width: 767px) {
       margin-top: -52px; // ← header balandligi
     }
   }
@@ -188,12 +188,9 @@
   padding: 5px;
 }
 
-.selectOptions {
-  padding: 5px 10px;
-}
 
 .selectOption {
-  padding: 10px 8px;
+  padding: 10px 12px;
   font-family: "Pretendard", sans-serif;
   font-weight: 400;
   font-size: 15px;
@@ -417,7 +414,7 @@
 .submitButton {
   width: 240px;
 
-  @media (max-width: 768px) {
+  @media (max-width: 767px) {
     width: 100%;
   }
 }
@@ -444,7 +441,7 @@
   max-width: 660px;
   position: relative;
 
-  @media (max-width: 768px) {
+  @media (max-width: 767px) {
     max-width: 100%;
   }
 }
@@ -456,7 +453,7 @@
   gap: 24px;
   padding: 64px 0 40px;
 
-  @media (max-width: 768px) {
+  @media (max-width: 767px) {
     padding:40px 24px 24px;
   }
 }
@@ -490,7 +487,7 @@
   color: $gray-90;
   margin: 0;
 
-  @media (max-width: 768px) {
+  @media (max-width: 767px) {
     font-size: 21px;
   }
 }
@@ -503,7 +500,7 @@
   color: $gray-70;
   margin: 0;
 
-   @media (max-width: 768px) {
+   @media (max-width: 767px) {
     br{
       display: none;
     }
@@ -516,7 +513,7 @@
   color: #fff;
   margin-top: 16px;
 
-  @media (max-width: 768px) {
+  @media (max-width: 767px) {
     width: 100%;
   }
 }
@@ -540,7 +537,7 @@
   }
 }
 
-@media (max-width: 768px) {
+@media (max-width: 767px) {
   .pageHeaderSection {
     padding: 64px 20px 32px;
   }

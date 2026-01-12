@@ -12,7 +12,7 @@ $white: #fff;
   overflow: hidden;
   position: relative;
 
-  @media (max-width: 768px) {
+  @media (max-width: 767px) {
     padding: 80px 0 60px;
   }
 
@@ -31,7 +31,7 @@ $white: #fff;
       gap: 40px;
     }
 
-    @media (max-width: 768px) {
+    @media (max-width: 767px) {
       padding: 0 20px;
       margin-bottom: 30px;
       gap: 20px;
@@ -46,7 +46,7 @@ $white: #fff;
     right: 0;
     background-color: $bg-light;
 
-    @media (max-width: 768px) {
+    @media (max-width: 767px) {
       display: none;
     }
   }
@@ -59,7 +59,7 @@ $white: #fff;
       display: flex;
       justify-content: flex-end;
 
-      @media (max-width: 768px) {
+      @media (max-width: 767px) {
         justify-content: flex-start;
         margin-top: 12px;
         display: none;
@@ -95,7 +95,7 @@ $white: #fff;
       font-size: 140px;
     }
 
-    @media (max-width: 768px) {
+    @media (max-width: 767px) {
       font-size: 110px;
       top: -50px;
       left: auto;
@@ -111,7 +111,7 @@ $white: #fff;
     align-items: flex-start;
     // gap: 24px;
 
-    @media (max-width: 768px) {
+    @media (max-width: 767px) {
       flex-direction: row-reverse;
     }
   }
@@ -128,7 +128,7 @@ $white: #fff;
     margin-bottom: 12px;
     margin-top: 16px;
 
-    @media (max-width: 768px) {
+    @media (max-width: 767px) {
       font-size: 15px;
       margin-top: 8px;
       margin-right: 8px;
@@ -142,7 +142,7 @@ $white: #fff;
       background-color: #00a89e;
       border-radius: 50%;
 
-      @media (max-width: 768px) {
+      @media (max-width: 767px) {
         width: 6px;
         height: 6px;
       }
@@ -158,7 +158,7 @@ $white: #fff;
     letter-spacing: -2px;
     margin: 0;
 
-    @media (max-width: 768px) {
+    @media (max-width: 767px) {
       font-size: 56px;
       letter-spacing: -1px;
       line-height: 1.1;
@@ -178,7 +178,7 @@ $white: #fff;
       padding-left: 40px;
     }
 
-    @media (max-width: 768px) {
+    @media (max-width: 767px) {
       padding-left: 20px;
 
       .view-block {
@@ -195,7 +195,7 @@ $white: #fff;
       overflow: visible;
       padding: 10px 0;
 
-      @media (max-width: 768px) {
+      @media (max-width: 767px) {
         padding: 5px 0;
       }
 
@@ -211,7 +211,7 @@ $white: #fff;
     margin-top: 40px;
     padding-left: 0;
 
-    @media (max-width: 768px) {
+    @media (max-width: 767px) {
       margin-top: 24px;
     }
 
@@ -250,7 +250,7 @@ $white: #fff;
         height: 20px;
       }
 
-      @media (max-width: 768px) {
+      @media (max-width: 767px) {
         width: 44px;
         height: 44px;
 
@@ -281,7 +281,7 @@ $white: #fff;
     }
   }
 
-  @media (max-width: 768px) {
+  @media (max-width: 767px) {
     height: 320px;
     width: 240px;
     border-radius: 8px;
@@ -295,7 +295,7 @@ $white: #fff;
     bottom: 0;
     overflow: hidden;
 
-    @media (max-width: 768px) {
+    @media (max-width: 767px) {
       border-radius: 8px;
     }
 
@@ -306,7 +306,7 @@ $white: #fff;
       object-position: center top;
       transition: transform 0.6s ease;
 
-      @media (max-width: 768px) {
+      @media (max-width: 767px) {
         border-radius: 8px;
       }
     }
@@ -326,7 +326,7 @@ $white: #fff;
       );
       pointer-events: none;
 
-      @media (max-width: 768px) {
+      @media (max-width: 767px) {
         border-radius: 8px;
       }
     }
@@ -341,7 +341,7 @@ $white: #fff;
     color: $white;
     z-index: 1;
 
-    @media (max-width: 768px) {
+    @media (max-width: 767px) {
       padding: 16px;
     }
   }
@@ -355,7 +355,7 @@ $white: #fff;
     color: rgba(255, 255, 255, 0.6);
     margin-bottom: 8px;
 
-    @media (max-width: 768px) {
+    @media (max-width: 767px) {
       font-size: 32px;
       margin-bottom: 4px;
     }
@@ -373,7 +373,7 @@ $white: #fff;
     -webkit-box-orient: vertical;
     overflow: hidden;
 
-    @media (max-width: 768px) {
+    @media (max-width: 767px) {
       font-size: 13px;
       margin-bottom: 10px;
       line-height: 1.5;
@@ -386,7 +386,7 @@ $white: #fff;
     gap: 10px;
     font-family: "Pretendard", sans-serif;
 
-    @media (max-width: 768px) {
+    @media (max-width: 767px) {
       gap: 8px;
     }
   }
@@ -397,7 +397,7 @@ $white: #fff;
     color: $white;
     letter-spacing: -0.3px;
 
-    @media (max-width: 768px) {
+    @media (max-width: 767px) {
       font-size: 14px;
     }
   }
@@ -407,7 +407,7 @@ $white: #fff;
     color: rgba(255, 255, 255, 0.4);
     font-weight: 300;
 
-    @media (max-width: 768px) {
+    @media (max-width: 767px) {
       font-size: 10px;
     }
   }
@@ -418,7 +418,7 @@ $white: #fff;
     color: rgba(255, 255, 255, 0.8);
     letter-spacing: -0.2px;
 
-    @media (max-width: 768px) {
+    @media (max-width: 767px) {
       font-size: 12px;
     }
   }
@@ -442,7 +442,7 @@ $white: #fff;
       margin-top: 40px;
     }
 
-    @media (max-width: 768px) {
+    @media (max-width: 767px) {
       display: none;
     }
   }
@@ -455,7 +455,7 @@ $white: #fff;
     overflow: hidden;
     position: relative;
 
-    @media (max-width: 768px) {
+    @media (max-width: 767px) {
       height: 2px;
     }
   }

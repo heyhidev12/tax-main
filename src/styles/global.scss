@@ -24,7 +24,7 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 
-  @media (max-width: 768px) {
+  @media (max-width: 767px) {
     overflow-x: hidden;
   }
 }
@@ -42,7 +42,7 @@ body {
 }
 
 .container {
-  @media (max-width: 768px) {
+  @media (max-width: 767px) {
     padding: 0 20px;
     box-sizing: border-box;
   }
@@ -84,7 +84,7 @@ textarea {
 .swiper-pagination-bullet{
     display: none !important;
 
-    @media (max-width:768px) {
+    @media (max-width:767px) {
       display: inline-block !important;
     }
   }

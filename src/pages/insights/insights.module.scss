@@ -20,7 +20,7 @@
     padding-bottom: 80px;
   }
 
-  @media (max-width: 768px) {
+  @media (max-width: 767px) {
     padding-bottom: 60px;
   }
 }
@@ -37,7 +37,7 @@
     padding: 0 120px;
   }
 
-  @media (max-width: 768px) {
+  @media (max-width: 767px) {
     padding: 0 24px;
   }
 }
@@ -59,7 +59,7 @@
     }
   }
 
-  @media (max-width: 768px) {
+  @media (max-width: 767px) {
     padding-top: 64px;
     padding-bottom: 12px;
 
@@ -76,7 +76,7 @@
     padding: 0 120px;
   }
 
-  @media (max-width: 768px) {
+  @media (max-width: 767px) {
     padding: 0;
   }
 }
@@ -94,7 +94,7 @@
     margin-bottom: 60px;
   }
 
-  @media (max-width: 768px) {
+  @media (max-width: 767px) {
     gap: 8px;
     margin-bottom: 0;
     align-items: center;
@@ -115,7 +115,7 @@
     font-size: 80px;
   }
 
-  @media (max-width: 768px) {
+  @media (max-width: 767px) {
     font-size: 44px;
     line-height: 110%;
     letter-spacing: -2px;
@@ -133,7 +133,7 @@
   margin: 0;
   display: none;
 
-  @media (max-width: 768px) {
+  @media (max-width: 767px) {
     display: block;
     text-align: center;
     margin-bottom: 72px;
@@ -144,7 +144,7 @@
 .mobileTabSection {
   display: none;
 
-  @media (max-width: 768px) {
+  @media (max-width: 767px) {
     display: block;
     margin-bottom: 96px;
   }
@@ -154,7 +154,7 @@
 .mobileSearchSection {
   display: none;
 
-  @media (max-width: 768px) {
+  @media (max-width: 767px) {
     display: block;
     margin-bottom: 48px;
     padding-left: 47.5px;
@@ -180,7 +180,7 @@
 .mobileCategoryTabs {
   display: none;
 
-  @media (max-width: 768px) {
+  @media (max-width: 767px) {
     display: flex;
     gap: 24px;
     margin-bottom: 32px;
@@ -192,7 +192,7 @@
 .mobileCount {
   display: none;
 
-  @media (max-width: 768px) {
+  @media (max-width: 767px) {
     display: flex;
     align-items: center;
     gap: 4px;
@@ -257,7 +257,7 @@
     gap: 40px;
   }
 
-  @media (max-width: 768px) {
+  @media (max-width: 767px) {
     gap: 32px;
   }
 }
@@ -276,7 +276,7 @@
     gap: 40px;
   }
 
-  @media (max-width: 768px) {
+  @media (max-width: 767px) {
     display: none;
   }
 }
@@ -346,7 +346,7 @@
   flex-direction: column;
   gap: 56px;
 
-  @media (max-width: 768px) {
+  @media (max-width: 767px) {
     gap: 24px;
   }
 }
@@ -357,7 +357,7 @@
   justify-content: space-between;
   gap: 24px;
 
-  @media (max-width: 768px) {
+  @media (max-width: 767px) {
     display: none;
   }
 }
@@ -372,7 +372,7 @@
   align-items: center;
   gap: 4px;
 
-  @media (max-width: 768px) {
+  @media (max-width: 767px) {
     font-size: 13px;
   }
 }
@@ -406,7 +406,7 @@
   background-color: #555;
   width: 100%;
 
-  @media (max-width: 768px) {
+  @media (max-width: 767px) {
     display: none;
   }
 }
@@ -422,7 +422,7 @@
     grid-template-columns: repeat(2, 1fr);
   }
 
-  @media (max-width: 768px) {
+  @media (max-width: 767px) {
     display: flex;
     flex-direction: column;
     gap: 32px;
@@ -438,7 +438,7 @@
 .mobileCardList {
   display: none;
 
-  @media (max-width: 768px) {
+  @media (max-width: 767px) {
     display: flex;
     flex-direction: column;
     gap: 24px;
@@ -578,7 +578,7 @@
     grid-template-columns: repeat(2, 1fr);
   }
 
-  @media (max-width: 768px) {
+  @media (max-width: 767px) {
     display: none;
   }
 }
@@ -598,7 +598,7 @@
     box-shadow: 0px 4px 20px 0px rgba(0, 0, 0, 0.16);
   }
 
-  @media (max-width: 768px) {
+  @media (max-width: 767px) {
     width: 213px;
     min-width: 213px;
     flex-shrink: 0;
@@ -757,7 +757,7 @@
   justify-content: center;
   margin-top: 100px;
 
-  @media (max-width: 768px) {
+  @media (max-width: 767px) {
     margin-top: 40px;
   }
 }
@@ -774,7 +774,7 @@
     gap: 60px;
   }
 
-  @media (max-width: 768px) {
+  @media (max-width: 767px) {
     padding-top: 0;
     gap: 0;
   }
@@ -784,7 +784,7 @@
 .mobileLibraryTitleSection {
   display: none;
 
-  @media (max-width: 768px) {
+  @media (max-width: 767px) {
     display: flex;
     flex-direction: column;
     gap: 8px;
@@ -827,7 +827,7 @@
   z-index: 100;
   backdrop-filter: blur(10px);
 
-  @media (max-width: 768px) {
+  @media (max-width: 767px) {
     flex-direction: column;
     gap: 8px;
     padding: 16px;
@@ -876,7 +876,7 @@
     gap: 40px;
   }
 
-  @media (max-width: 768px) {
+  @media (max-width: 767px) {
     display: none;
   }
 }
@@ -895,7 +895,7 @@
     font-size: 80px;
   }
 
-  @media (max-width: 768px) {
+  @media (max-width: 767px) {
     font-size: 60px;
   }
 }
@@ -911,7 +911,7 @@
     gap: 40px;
   }
 
-  @media (max-width: 768px) {
+  @media (max-width: 767px) {
     gap: 32px;
   }
 }
@@ -929,7 +929,7 @@
     gap: 40px;
   }
 
-  @media (max-width: 768px) {
+  @media (max-width: 767px) {
     display: none;
   }
 }
@@ -996,7 +996,7 @@
   justify-content: space-between;
   gap: 24px;
 
-  @media (max-width: 768px) {
+  @media (max-width: 767px) {
     display: none;
   }
 }
@@ -1012,7 +1012,7 @@
     grid-template-columns: repeat(2, 1fr);
   }
 
-  @media (max-width: 768px) {
+  @media (max-width: 767px) {
     display: flex;
     flex-direction: column;
     gap: 24px;
@@ -1172,7 +1172,7 @@
   gap: 80px;
   margin-bottom: 100px;
 
-  @media (max-width: 768px) {
+  @media (max-width: 767px) {
     gap: 32px;
     margin-bottom: 60px;
   }
@@ -1188,7 +1188,7 @@
     opacity: 0.8;
   }
 
-  @media (max-width: 768px) {
+  @media (max-width: 767px) {
     flex-direction: column;
     gap: 24px;
   }
@@ -1210,7 +1210,7 @@
     object-position: center;
   }
 
-  @media (max-width: 768px) {
+  @media (max-width: 767px) {
     width: 100%;
     height: auto;
     aspect-ratio: 361 / 231;
@@ -1303,7 +1303,7 @@
   overflow: hidden;
   margin-bottom: 100px;
 
-  @media (max-width: 768px) {
+  @media (max-width: 767px) {
     margin-bottom: 60px;
   }
 }
@@ -1312,7 +1312,7 @@
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   background: var(--grayscale-80, #2D2D2D);
 
-  @media (max-width: 768px) {
+  @media (max-width: 767px) {
     display: none;
   }
 }
@@ -1330,7 +1330,7 @@
     padding: 20px 12px;
   }
 
-  @media (max-width: 768px) {
+  @media (max-width: 767px) {
     grid-template-columns: 1fr;
     gap: 8px;
     padding: 16px 12px;
@@ -1350,7 +1350,7 @@
   justify-content: center;
   gap: 4px;
 
-  @media (max-width: 768px) {
+  @media (max-width: 767px) {
     text-align: left;
     font-size: 13px;
   }
@@ -1373,7 +1373,7 @@
   display: flex;
   flex-direction: column;
 
-  @media (max-width: 768px) {
+  @media (max-width: 767px) {
     display: none;
   }
 }
@@ -1403,7 +1403,7 @@
     padding: 20px 12px;
   }
 
-  @media (max-width: 768px) {
+  @media (max-width: 767px) {
     display: flex;
     flex-direction: column;
     align-items: flex-start;
@@ -1433,7 +1433,7 @@
     color: #d8d8d8;
     justify-content: center;
 
-    @media (max-width: 768px) {
+    @media (max-width: 767px) {
       font-size: 13px;
       color: #94b9e3;
       font-weight: 600;
@@ -1444,7 +1444,7 @@
   &.titleCell {
     justify-content: flex-start;
 
-    @media (max-width: 768px) {
+    @media (max-width: 767px) {
       white-space: normal;
       text-align: left;
     }
@@ -1454,7 +1454,7 @@
   &:nth-child(5) {
     color: #d8d8d8;
 
-    @media (max-width: 768px) {
+    @media (max-width: 767px) {
       font-size: 13px;
     }
   }
@@ -1463,26 +1463,26 @@
   &:nth-child(6) {
     color: #d8d8d8;
 
-    @media (max-width: 768px) {
+    @media (max-width: 767px) {
       display: none;
     }
   }
 
   // No. 컬럼 (1번째) - 모바일에서 숨김
   &:first-child {
-    @media (max-width: 768px) {
+    @media (max-width: 767px) {
       display: none;
     }
   }
 
   // 작성자 컬럼 (4번째) - 모바일에서 숨김
   &:nth-child(4) {
-    @media (max-width: 768px) {
+    @media (max-width: 767px) {
       display: none;
     }
   }
 
-  @media (max-width: 768px) {
+  @media (max-width: 767px) {
     text-align: left;
     font-size: 13px;
     white-space: normal;
@@ -1515,7 +1515,7 @@
 .mobileListHeader {
   display: none;
 
-  @media (max-width: 768px) {
+  @media (max-width: 767px) {
     display: flex;
     gap: 24px;
     padding: 16px;
@@ -1545,7 +1545,7 @@
 .mobileListBody {
   display: none;
 
-  @media (max-width: 768px) {
+  @media (max-width: 767px) {
     display: flex;
     flex-direction: column;
   }
@@ -1655,7 +1655,7 @@
   z-index: 1000;
   align-items: flex-end;
 
-  @media (max-width: 768px) {
+  @media (max-width: 767px) {
     bottom: 40px;
     right: 20px;
     gap: 12px;
