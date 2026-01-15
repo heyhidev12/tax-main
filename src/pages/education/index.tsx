@@ -277,18 +277,19 @@ const EducationPage: React.FC = () => {
 
   return (
     <div className={styles.page}>
-      <Header variant="transparent" onMenuClick={() => setIsMenuOpen(true)} />
+      <Header variant="white" onMenuClick={() => setIsMenuOpen(true)} />
       <Menu isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
-      
-      <div className={styles.container}>
+      <div className={styles.headerImage}>
+      </div>
+      <div className="container">
         <div className={styles.pageHeaderWrapper}>
           <PageHeader
-            title="교육/세미나"
+            // title="교육/세미나"
             breadcrumbs={[{ label: '교육/세미나' }]}
           />
         </div>
 
-        <div className={styles.tabSection}>
+        {/* <div className={styles.tabSection}>
           <Tab
             items={filteredSubTabItems}
             activeId={activeSubTab}
@@ -299,29 +300,24 @@ const EducationPage: React.FC = () => {
             size="large"
             showActiveDot={true}
           />
-        </div>
+        </div> */}
 
         {activeSubTab === 'education' && (
           <>
             <div className={styles.heroSection}>
-              <div className={styles.heroOverlay} />
-              <p className={styles.heroLabel}>(교육/세미나)</p>
-              <div className={styles.heroTitle}>
-                <h2>EDUCATION</h2>
-                <h2><span className={styles.heroTitleItalic}>&</span> SEMINARS</h2>
-              </div>
-              <div className={styles.heroContent}>
-                <div className={styles.heroDescription}>
-                  <p className={styles.heroDescriptionMain}>
-                    기업의 성장을 돕는 <span className={styles.heroDescriptionItalic}>가장 확실한 방법!</span>
-                  </p>
-                  <p className={styles.heroDescriptionSub}>
-                    세무법인 함께의 <strong>전문가 교육</strong>은
-                    <br className={styles.mobileBreak} />
-                    기업의 <strong>성공적인 내일</strong>을 만듭니다.
-                  </p>
-                </div>
-              </div>
+              
+              <p className={styles.heroSubtitle}>Education & Seminar</p>
+            <div className={styles.heroTitle}>
+              <span>기업의 성장</span>을 돕는 <br /> 가장 확실한 방법!
+            </div>
+            <div className={styles.heroDescriptionText}>
+              <p>
+                <span>세무법인 함께의</span>
+                <span className={styles.boldText}>전문가 교육</span>은 
+             
+                <span className={styles.boldText}>기업의 성공적인 내일</span>을 만듭니다.
+              </p>
+            </div>
             </div>
           </>
         )}
@@ -341,9 +337,6 @@ const EducationPage: React.FC = () => {
                 <div className={styles.newSection}>
                   <div className={styles.sectionHeader}>
                     <div className={styles.sectionTitleWrapper}>
-                      <div className={styles.sectionTitleBg}>
-                        <h3>New</h3>
-                      </div>
                       <h4 className={styles.sectionTitle}>신규 교육</h4>
                     </div>
                     {hasNewEducationData && newEducationList.length > itemsPerPage && (
@@ -353,18 +346,15 @@ const EducationPage: React.FC = () => {
                           onClick={handlePrevEducation}
                           disabled={newEducationIndex === 0}
                         >
-                          <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                            <path d="M12.5 5L7.5 10L12.5 15" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                          </svg>
+                          <img src="/images/common/arrow-icon.svg" alt="" className={styles.navButtonLeft} />
+                          
                         </button>
                         <button
                           className={styles.navButton}
                           onClick={handleNextEducation}
                           disabled={newEducationIndex >= maxIndex}
                         >
-                          <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                            <path d="M7.5 5L12.5 10L7.5 15" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                          </svg>
+                          <img src="/images/common/arrow-icon.svg" alt="" />
                         </button>
                       </div>
                     )}
@@ -412,7 +402,7 @@ const EducationPage: React.FC = () => {
                     </div>
                   ) : (
                     <div className={styles.emptyState}>
-                      <img src="/images/education/empty-icon.svg" alt="Empty" className={styles.emptyIcon} />
+                      <img src="/images/common/empty-icon.svg" alt="Empty" className={styles.emptyIcon} />
                       <p>등록된 세미나/교육이 없습니다</p>
                     </div>
                   )}
@@ -421,9 +411,6 @@ const EducationPage: React.FC = () => {
                 <div className={styles.allSection}>
                   <div className={styles.sectionHeader}>
                     <div className={styles.sectionTitleWrapper}>
-                      <div className={styles.sectionTitleBg}>
-                        <h3>ALL</h3>
-                      </div>
                       <h4 className={styles.sectionTitle}>전체 교육</h4>
                     </div>
                   </div>
@@ -433,35 +420,30 @@ const EducationPage: React.FC = () => {
                         className={`${styles.sidebarTab} ${selectedType === 'ALL' ? styles.sidebarTabActive : ''}`}
                         onClick={() => setSelectedType('ALL')}
                       >
-                        {selectedType === 'ALL' && <span className={styles.sidebarDot} />}
                         <span>전체</span>
                       </div>
                       <div
                         className={`${styles.sidebarTab} ${selectedType === 'VOD' ? styles.sidebarTabActive : ''}`}
                         onClick={() => setSelectedType('VOD')}
                       >
-                        {selectedType === 'VOD' && <span className={styles.sidebarDot} />}
                         <span>VOD</span>
                       </div>
                       <div
                         className={`${styles.sidebarTab} ${selectedType === 'TRAINING' ? styles.sidebarTabActive : ''}`}
                         onClick={() => setSelectedType('TRAINING')}
                       >
-                        {selectedType === 'TRAINING' && <span className={styles.sidebarDot} />}
                         <span>교육</span>
                       </div>
                       <div
                         className={`${styles.sidebarTab} ${selectedType === 'LECTURE' ? styles.sidebarTabActive : ''}`}
                         onClick={() => setSelectedType('LECTURE')}
                       >
-                        {selectedType === 'LECTURE' && <span className={styles.sidebarDot} />}
                         <span>강연</span>
                       </div>
                       <div
                         className={`${styles.sidebarTab} ${selectedType === 'SEMINAR' ? styles.sidebarTabActive : ''}`}
                         onClick={() => setSelectedType('SEMINAR')}
                       >
-                        {selectedType === 'SEMINAR' && <span className={styles.sidebarDot} />}
                         <span>세미나</span>
                       </div>
                     </div>
@@ -512,7 +494,7 @@ const EducationPage: React.FC = () => {
                               );
                             })}
                           </div>
-                          <div className={styles.paginationWrapper}>
+                          {/* <div className={styles.paginationWrapper}>
                             <Pagination
                               currentPage={currentPage}
                               totalPages={totalPages}
@@ -522,11 +504,11 @@ const EducationPage: React.FC = () => {
                               }}
                               visiblePages={4}
                             />
-                          </div>
+                          </div> */}
                         </>
                       ) : (
                         <div className={styles.emptyState}>
-                          <img src="/images/education/empty-icon.svg" alt="Empty" className={styles.emptyIcon} />
+                          <img src="/images/common/empty-icon.svg" alt="Empty" className={styles.emptyIcon} />
                           <p>등록된 세미나/교육이 없습니다</p>
                         </div>
                       )}
@@ -541,18 +523,18 @@ const EducationPage: React.FC = () => {
         {activeSubTab === 'newsletter' && (
           <div className={styles.newsletterSection}>
             <div className={styles.newsletterHero}>
-              <div className={styles.newsletterHeroOverlay} />
+               <p className={styles.newsletterLabel}>NEWSLETTER</p>
+                <h2 className={styles.newsletterTitle}>뉴스레터</h2>
               <div className={styles.newsletterHeroContent}>
                 <div className={styles.newsletterLeft}>
-                  <p className={styles.newsletterLabel}>(뉴스레터)</p>
-                  <h2 className={styles.newsletterTitle}>NEWSLETTER</h2>
-                  <p className={styles.newsletterDescription}>
-                    알면 이익이 되는세무 정보,
-                    <br />
-                    구독하고 빠르게 전달 받으세요
-                  </p>
+                 
+                  <img src="/images/pages/newsletter.png" alt="" />
                 </div>
                 <div className={styles.newsletterRight}>
+                <div className={styles.newsletterRighTitle}>
+                  <p>Newsletter</p>
+                  <h2>알면 이익이 되는 세무 정보, <br /> 구독하고 빠르게 전달 받으세요</h2>
+                  </div>
                   <div className={styles.newsletterForm}>
                     <div className={styles.newsletterFormFields}>
                       <TextField
@@ -613,6 +595,7 @@ const EducationPage: React.FC = () => {
                       fullWidth
                       disabled={!isFormValid || isSubmitting}
                       onClick={handleNewsletterSubmit}
+                      className={styles.newsletterButton}
                     >
                       {isSubmitting ? '구독 중...' : '구독하기'}
                     </Button>
@@ -627,7 +610,7 @@ const EducationPage: React.FC = () => {
       <Footer />
 
       {/* Floating Buttons */}
-      <div className={styles.floatingButtons}>
+      {/* <div className={styles.floatingButtons}>
         <FloatingButton
           variant="consult"
           label="상담 신청하기"
@@ -637,7 +620,7 @@ const EducationPage: React.FC = () => {
           variant="top"
           onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
         />
-      </div>
+      </div> */}
     </div>
   );
 };

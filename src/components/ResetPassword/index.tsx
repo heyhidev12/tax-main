@@ -6,6 +6,7 @@ import { TextField } from '@/components/common/TextField';
 import Button from '@/components/common/Button';
 import { post } from '@/lib/api';
 import { API_ENDPOINTS } from '@/config/api';
+import Footer from '../Footer';
 
 const ResetPassword: React.FC = () => {
   const router = useRouter();
@@ -106,7 +107,7 @@ const ResetPassword: React.FC = () => {
 
   return (
     <div className="auth-page-container">
-      <Header variant="white" onMenuClick={() => setIsMenuOpen(true)} />
+      <Header variant="transparent" onMenuClick={() => setIsMenuOpen(true)} />
       <Menu isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
       <section className="auth-content-section">
         <h1 className="auth-page-title">비밀번호 변경</h1>
@@ -167,6 +168,7 @@ const ResetPassword: React.FC = () => {
           </>
         )}
       </section>
+      <Footer />
     </div>
   );
 };

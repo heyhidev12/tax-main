@@ -23,7 +23,7 @@ const FindUsername: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabType>('sms');
   const [step, setStep] = useState<StepType>('input');
   const [name, setName] = useState('');
-  const [phone, setPhone] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
   const [email, setEmail] = useState('');
   const [verificationCode, setVerificationCode] = useState('');
   const [timeLeft, setTimeLeft] = useState(0);
@@ -47,72 +47,51 @@ const FindUsername: React.FC = () => {
 
   const handleRequestVerification = useCallback(async () => {
     setError('');
+  
+    if (activeTab === 'sms') {
+      if (!name || !phoneNumber) {
+        setError('이름과 휴대폰 번호를 입력해주세요.');
+        return;
+      }
+  
+      const cleanPhone = phoneNumber.replace(/[^0-9]/g, '');
+      if (cleanPhone.length < 10 || cleanPhone.length > 11) {
+        setError('올바른 휴대폰 번호를 입력해주세요.');
+        return;
+      }
+    } else {
+      if (!name || !email) {
+        setError('이름과 이메일을 입력해주세요.');
+        return;
+      }
+  
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        setError('올바른 이메일 형식을 입력해주세요.');
+        return;
+      }
+    }
+  
     setIsLoading(true);
-
     try {
       if (activeTab === 'sms') {
-        if (!name || !phone) {
-          setError('이름과 휴대폰 번호를 입력해주세요.');
-          return;
-        }
-
-        const cleanPhone = phone.replace(/[^0-9]/g, '');
-        if (cleanPhone.length < 10 || cleanPhone.length > 11) {
-          setError('올바른 휴대폰 번호를 입력해주세요.');
-          return;
-        }
-
-        const response = await post(API_ENDPOINTS.AUTH.FIND_ID_PHONE_SEND, {
-          phoneNumber: cleanPhone,
+        await post(API_ENDPOINTS.AUTH.FIND_ID_PHONE_SEND, {
+          phoneNumber: phoneNumber.replace(/[^0-9]/g, ''),
         });
-
-        if (response.error) {
-          if (response.status === 404) {
-            setError('해당 전화번호로 가입된 회원이 없습니다.');
-          } else {
-            setError(response.error || '인증번호 발송에 실패했습니다.');
-          }
-          return;
-        }
-
-        setTimeLeft(300); // 5:00 (5 minutes)
-        setIsTimerActive(true);
-        setStep('verification');
       } else {
-        if (!name || !email) {
-          setError('이름과 이메일을 입력해주세요.');
-          return;
-        }
-
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(email)) {
-          setError('올바른 이메일 형식을 입력해주세요.');
-          return;
-        }
-
-        const response = await post(API_ENDPOINTS.AUTH.FIND_ID_EMAIL_SEND, {
-          email: email,
-        });
-
-        if (response.error) {
-          if (response.status === 404) {
-            setError('해당 이메일로 가입된 회원이 없습니다.');
-          } else {
-            setError(response.error || '인증번호 발송에 실패했습니다.');
-          }
-          return;
-        }
-
-        setTimeLeft(300); // 5:00 (5 minutes)
-        setIsTimerActive(true);
-        setStep('verification');
+        await post(API_ENDPOINTS.AUTH.FIND_ID_EMAIL_SEND, { email });
       }
+  
+      setTimeLeft(300);
+      setIsTimerActive(true);
+      setStep('verification');
     } catch {
       setError('인증번호 발송에 실패했습니다. 다시 시도해주세요.');
     } finally {
       setIsLoading(false);
     }
-  }, [activeTab, name, phone, email]);
+  }, [activeTab, name, phoneNumber, email]);
+  
 
   const handleVerifyCode = useCallback(async (e?: React.FormEvent) => {
     e?.preventDefault();
@@ -128,10 +107,10 @@ const FindUsername: React.FC = () => {
     try {
       let response;
       if (activeTab === 'sms') {
-        const cleanPhone = phone.replace(/[^0-9]/g, '');
+        const cleanPhone = phoneNumber.replace(/[^0-9]/g, '');
         response = await post<{ loginId: string }>(API_ENDPOINTS.AUTH.FIND_ID_PHONE_VERIFY, {
           name: name,
-          phone: cleanPhone,
+          phoneNumber: cleanPhone,
           verificationCode: verificationCode,
         });
       } else {
@@ -165,13 +144,13 @@ const FindUsername: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [verificationCode, activeTab, phone, email, name]);
+  }, [verificationCode, activeTab, phoneNumber, email, name]);
 
   const handleTabChange = (tabId: string) => {
     setActiveTab(tabId as TabType);
     setStep('input');
     setName('');
-    setPhone('');
+    setPhoneNumber('');
     setEmail('');
     setVerificationCode('');
     setError('');
@@ -203,15 +182,15 @@ const FindUsername: React.FC = () => {
                   label="휴대폰 번호"
                   type="tel"
                   placeholder="휴대폰 번호를 입력해주세요"
-                  value={phone}
-                  onChange={setPhone}
+                  value={phoneNumber}
+                  onChange={setPhoneNumber}
                   fullWidth
                 />
                 <Button
                   type="line-white"
                   size="medium"
                   onClick={handleRequestVerification}
-                  disabled={!name || !phone || isLoading}
+                  disabled={!name || !phoneNumber || isLoading}
                 >
                   {isLoading ? '발송 중...' : '인증 요청'}
                 </Button>
@@ -242,7 +221,7 @@ const FindUsername: React.FC = () => {
         <Button
           type="primary"
           size="large"
-          disabled={!name || (activeTab === 'sms' ? !phone : !email) || isLoading}
+          disabled={!name || (activeTab === 'sms' ? !phoneNumber : !email) || isLoading}
           onClick={handleRequestVerification}
         >
           {isLoading ? '확인 중...' : '확인'}
@@ -286,7 +265,7 @@ const FindUsername: React.FC = () => {
                     variant="line"
                     label="휴대폰 번호"
                     type="tel"
-                    value={phone}
+                    value={phoneNumber}
                     readOnly
                     fullWidth
                   />
@@ -341,7 +320,7 @@ const FindUsername: React.FC = () => {
         <Button
           type={verificationCode && isTimerActive && !error ? "primary" : "secondary"}
           size="large"
-          disabled={!verificationCode || !isTimerActive || !!error || isLoading}
+          disabled={!verificationCode || !isTimerActive || isLoading}
           onClick={handleVerifyCode}
         >
           {isLoading ? '확인 중...' : '확인'}
@@ -349,7 +328,6 @@ const FindUsername: React.FC = () => {
       </div>
     </>
   );
-
   const renderResult = () => (
     <>
       <div className="find-username-result-container">

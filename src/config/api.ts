@@ -20,6 +20,7 @@ export const API_ENDPOINTS = {
     CHANGE_PASSWORD: '/auth/change-password',
     VERIFY_PASSWORD: '/auth/verify-password',
     MY_APPLICATIONS: '/auth/me/applications',
+    WITHDRAW: '/auth/me',
     // 휴대폰 인증
     PHONE_SEND: '/auth/phone/send',
     PHONE_VERIFY: '/auth/phone/verify',

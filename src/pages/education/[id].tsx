@@ -1,17 +1,18 @@
-import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/router';
-import dynamic from 'next/dynamic';
-import '@toast-ui/editor/dist/toastui-editor-viewer.css';
-import Header from '@/components/common/Header';
-import Menu from '@/components/Menu';
-import Footer from '@/components/Footer';
-import Icon from '@/components/common/Icon';
-import DatePickerModal from '@/components/education/DatePickerModal';
-import ApplicationModal from '@/components/education/ApplicationModal';
-import { get, del } from '@/lib/api';
-import { API_ENDPOINTS } from '@/config/api';
-import type { EducationDetail, ApplicationStatus } from '@/types/education';
-import styles from './detail.module.scss';
+import React, { useState, useEffect } from "react";
+import { useRouter } from "next/router";
+import dynamic from "next/dynamic";
+import "@toast-ui/editor/dist/toastui-editor-viewer.css";
+import Header from "@/components/common/Header";
+import Menu from "@/components/Menu";
+import Footer from "@/components/Footer";
+import Icon from "@/components/common/Icon";
+import DatePickerModal from "@/components/education/DatePickerModal";
+import ApplicationModal from "@/components/education/ApplicationModal";
+import { get, del } from "@/lib/api";
+import { API_ENDPOINTS } from "@/config/api";
+import type { EducationDetail, ApplicationStatus } from "@/types/education";
+import styles from "./detail.module.scss";
+import { AccessTime, CalendarToday } from "@mui/icons-material";
 
 interface UserProfile {
   id: number;
@@ -21,7 +22,7 @@ interface UserProfile {
 
 // Toast UI Viewer는 클라이언트 사이드에서만 로드
 const Viewer = dynamic(
-  () => import('@toast-ui/react-editor').then((mod) => mod.Viewer),
+  () => import("@toast-ui/react-editor").then((mod) => mod.Viewer),
   { ssr: false }
 );
 
@@ -32,7 +33,7 @@ const EducationDetailPage: React.FC = () => {
   const [education, setEducation] = useState<EducationDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedDate, setSelectedDate] = useState<string>('');
+  const [selectedDate, setSelectedDate] = useState<string>("");
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
   const [isApplicationModalOpen, setIsApplicationModalOpen] = useState(false);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
@@ -55,7 +56,7 @@ const EducationDetailPage: React.FC = () => {
         setUserProfile(response.data);
       }
     } catch (err) {
-      console.error('유저 정보를 불러오는 중 오류:', err);
+      console.error("유저 정보를 불러오는 중 오류:", err);
     }
   };
 
@@ -74,7 +75,7 @@ const EducationDetailPage: React.FC = () => {
         setError(response.error);
       }
     } catch (err) {
-      setError('데이터를 불러오는 중 오류가 발생했습니다.');
+      setError("데이터를 불러오는 중 오류가 발생했습니다.");
     } finally {
       setLoading(false);
     }
@@ -89,77 +90,82 @@ const EducationDetailPage: React.FC = () => {
   };
 
   const formatDate = (dateString: string) => {
-    return dateString.replace(/\./g, '.');
+    return dateString.replace(/\./g, ".");
   };
 
   // 교육 일자 포맷팅 (첫 번째 날짜 ~ 마지막 날짜 형식)
   const formatEducationDates = (dates: string[]) => {
-    if (!dates || dates.length === 0) return '';
-    
+    if (!dates || dates.length === 0) return "";
+
     const formatSingleDate = (dateString: string) => {
       // 날짜 문자열을 Date 객체로 변환 (YYYY.MM.DD 또는 YYYY-MM-DD 형식 지원)
-      const normalizedDate = dateString.replace(/\./g, '-');
+      const normalizedDate = dateString.replace(/\./g, "-");
       const dateObj = new Date(normalizedDate);
-      
+
       // 유효하지 않은 날짜인 경우 원본 반환
       if (isNaN(dateObj.getTime())) {
         return dateString;
       }
-      
-      const weekdays = ['일', '월', '화', '수', '목', '금', '토'];
+
+      const weekdays = ["일", "월", "화", "수", "목", "금", "토"];
       const weekday = weekdays[dateObj.getDay()];
-      
+
       // YY.MM.DD 형식으로 변환
       const year = dateObj.getFullYear().toString().slice(-2);
-      const month = String(dateObj.getMonth() + 1).padStart(2, '0');
-      const day = String(dateObj.getDate()).padStart(2, '0');
-      
+      const month = String(dateObj.getMonth() + 1).padStart(2, "0");
+      const day = String(dateObj.getDate()).padStart(2, "0");
+
       return `${year}.${month}.${day} (${weekday})`;
     };
-    
+
     if (dates.length === 1) {
       return formatSingleDate(dates[0]);
     }
-    
+
     // 첫 번째와 마지막 날짜만 사용
     const firstDate = dates[0];
     const lastDate = dates[dates.length - 1];
-    
-    const firstNormalized = firstDate.replace(/\./g, '-');
-    const lastNormalized = lastDate.replace(/\./g, '-');
+
+    const firstNormalized = firstDate.replace(/\./g, "-");
+    const lastNormalized = lastDate.replace(/\./g, "-");
     const firstDateObj = new Date(firstNormalized);
     const lastDateObj = new Date(lastNormalized);
-    
+
     // 유효하지 않은 날짜인 경우 원본 반환
     if (isNaN(firstDateObj.getTime()) || isNaN(lastDateObj.getTime())) {
       return `${firstDate} ~ ${lastDate}`;
     }
-    
-    const weekdays = ['일', '월', '화', '수', '목', '금', '토'];
+
+    const weekdays = ["일", "월", "화", "수", "목", "금", "토"];
     const firstWeekday = weekdays[firstDateObj.getDay()];
     const lastWeekday = weekdays[lastDateObj.getDay()];
-    
+
     const firstYear = firstDateObj.getFullYear().toString().slice(-2);
-    const firstMonth = String(firstDateObj.getMonth() + 1).padStart(2, '0');
-    const firstDay = String(firstDateObj.getDate()).padStart(2, '0');
-    
+    const firstMonth = String(firstDateObj.getMonth() + 1).padStart(2, "0");
+    const firstDay = String(firstDateObj.getDate()).padStart(2, "0");
+
     const lastYear = lastDateObj.getFullYear().toString().slice(-2);
-    const lastMonth = String(lastDateObj.getMonth() + 1).padStart(2, '0');
-    const lastDay = String(lastDateObj.getDate()).padStart(2, '0');
-    
+    const lastMonth = String(lastDateObj.getMonth() + 1).padStart(2, "0");
+    const lastDay = String(lastDateObj.getDate()).padStart(2, "0");
+
     // 같은 연도면 두 번째 날짜에서 연도 생략
     const firstFormatted = `${firstYear}.${firstMonth}.${firstDay} (${firstWeekday})`;
-    const lastFormatted = firstYear === lastYear 
-      ? `${lastMonth}.${lastDay} (${lastWeekday})`
-      : `${lastYear}.${lastMonth}.${lastDay} (${lastWeekday})`;
-    
+    const lastFormatted =
+      firstYear === lastYear
+        ? `${lastMonth}.${lastDay} (${lastWeekday})`
+        : `${lastYear}.${lastMonth}.${lastDay} (${lastWeekday})`;
+
     return `${firstFormatted} ~ ${lastFormatted}`;
   };
 
   if (loading) {
     return (
       <div className={styles.page}>
-        <Header variant="transparent" onMenuClick={() => setIsMenuOpen(true)} />
+        <Header
+          variant="transparent"
+          onMenuClick={() => setIsMenuOpen(true)}
+          isFixed={true}
+        />
         <Menu isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
         <div className={styles.container}>
           <div className={styles.loading}>로딩 중...</div>
@@ -175,7 +181,9 @@ const EducationDetailPage: React.FC = () => {
         <Header variant="transparent" onMenuClick={() => setIsMenuOpen(true)} />
         <Menu isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
         <div className={styles.container}>
-          <div className={styles.error}>{error || '교육 정보를 찾을 수 없습니다.'}</div>
+          <div className={styles.error}>
+            {error || "교육 정보를 찾을 수 없습니다."}
+          </div>
         </div>
         <Footer />
       </div>
@@ -196,18 +204,25 @@ const EducationDetailPage: React.FC = () => {
 
   // applications 배열에서 현재 사용자의 가장 최근 신청 찾기 (모달과 동일한 로직)
   const getUserApplication = () => {
-    if (!userProfile || !education.applications || education.applications.length === 0) {
+    if (
+      !userProfile ||
+      !education.applications ||
+      education.applications.length === 0
+    ) {
       return null;
     }
     // 현재 유저의 모든 신청 찾기
     const userApps = education.applications.filter(
-      (app: any) => app.userId === userProfile.id || app.name === userProfile.name
+      (app: any) =>
+        app.userId === userProfile.id || app.name === userProfile.name
     );
     if (userApps.length === 0) return null;
     // 가장 최근 신청 반환 (id가 큰 것 또는 appliedAt이 최신인 것)
     return userApps.sort((a: any, b: any) => {
       if (a.appliedAt && b.appliedAt) {
-        return new Date(b.appliedAt).getTime() - new Date(a.appliedAt).getTime();
+        return (
+          new Date(b.appliedAt).getTime() - new Date(a.appliedAt).getTime()
+        );
       }
       return (b.id || 0) - (a.id || 0);
     })[0];
@@ -219,24 +234,24 @@ const EducationDetailPage: React.FC = () => {
   // 버튼 상태 결정 (모달과 동일한 로직)
   const getButtonState = () => {
     if (isRecruitmentClosed) {
-      return 'recruitment_closed';
+      return "recruitment_closed";
     }
     if (hasApplication) {
-      const status = (userApplication?.status || '').toUpperCase();
+      const status = (userApplication?.status || "").toUpperCase();
       // 취소/거절된 경우 다시 신청 가능
-      if (status === 'CANCELLED' || status === 'REJECTED') {
-        return 'can_apply';
+      if (status === "CANCELLED" || status === "REJECTED") {
+        return "can_apply";
       }
-      if (status === 'COMPLETED') {
-        return 'completed';
+      if (status === "COMPLETED") {
+        return "completed";
       }
-      if (status === 'APPROVED' || status === 'CONFIRMED') {
-        return 'approved';
+      if (status === "APPROVED" || status === "CONFIRMED") {
+        return "approved";
       }
       // WAITING, PENDING 등은 모두 승인 대기중
-      return 'pending';
+      return "pending";
     }
-    return 'can_apply';
+    return "can_apply";
   };
 
   const buttonState = getButtonState();
@@ -245,7 +260,7 @@ const EducationDetailPage: React.FC = () => {
   const handleCancelApplication = async () => {
     if (!userApplication?.id) return;
 
-    const confirmed = window.confirm('신청을 취소하시겠습니까?');
+    const confirmed = window.confirm("신청을 취소하시겠습니까?");
     if (!confirmed) return;
 
     try {
@@ -256,22 +271,22 @@ const EducationDetailPage: React.FC = () => {
 
       if (response.error) {
         // API 미지원 시 조용히 처리
-        console.error('신청 취소 실패:', response.error);
-        alert('신청 취소 기능이 현재 지원되지 않습니다.');
+        console.error("신청 취소 실패:", response.error);
+        alert("신청 취소 기능이 현재 지원되지 않습니다.");
         return;
       }
 
-      alert('신청이 취소되었습니다.');
+      alert("신청이 취소되었습니다.");
       fetchEducationDetail(); // 데이터 새로고침
     } catch (err) {
-      console.error('신청 취소 중 오류:', err);
-      alert('신청 취소 기능이 현재 지원되지 않습니다.');
+      console.error("신청 취소 중 오류:", err);
+      alert("신청 취소 기능이 현재 지원되지 않습니다.");
     }
   };
 
   // 버튼 렌더링 함수 (모달과 동일한 로직)
   const renderActionButton = () => {
-    if (buttonState === 'recruitment_closed') {
+    if (buttonState === "recruitment_closed") {
       return (
         <button className={styles.closedButton} disabled>
           모집 종료
@@ -279,7 +294,7 @@ const EducationDetailPage: React.FC = () => {
       );
     }
 
-    if (buttonState === 'completed') {
+    if (buttonState === "completed") {
       return (
         <button className={styles.completedButton} disabled>
           수강 완료
@@ -287,7 +302,7 @@ const EducationDetailPage: React.FC = () => {
       );
     }
 
-    if (buttonState === 'approved') {
+    if (buttonState === "approved") {
       return (
         <button className={styles.pendingButton} disabled>
           승인 완료
@@ -295,13 +310,16 @@ const EducationDetailPage: React.FC = () => {
       );
     }
 
-    if (buttonState === 'pending') {
+    if (buttonState === "pending") {
       return (
         <>
           <button className={styles.pendingButton} disabled>
             승인 대기중
           </button>
-          <button className={styles.cancelLink} onClick={handleCancelApplication}>
+          <button
+            className={styles.cancelLink}
+            onClick={handleCancelApplication}
+          >
             신청 취소
           </button>
         </>
@@ -321,15 +339,36 @@ const EducationDetailPage: React.FC = () => {
 
   return (
     <div className={styles.page}>
-      <Header variant="transparent" onMenuClick={() => setIsMenuOpen(true)} />
+      <Header
+        variant="transparent"
+        onMenuClick={() => setIsMenuOpen(true)}
+        isFixed={true}
+      />
       <Menu isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
-      
-      <div className={styles.container}>
+
+      <div className="container">
+         <div className={styles.contentHeader}>
+            <div className={styles.labels}>
+              {daysLeft > 0 ? (
+                <span className={styles.labelRed}>신청마감 D-{daysLeft}</span>
+              ) : (
+                <span className={styles.labelGray}>신청마감</span>
+              )}
+              <span className={styles.labelWhite}>{education.typeLabel}</span>
+            </div>
+            <h1 className={styles.contentTitle}>{education.name}</h1>
+          </div>
         <div className={styles.content}>
-          {/* 이미지 섹션 */}
+         
           <div className={styles.imageSection}>
             <div className={styles.imageWrapper}>
-              <img src={education.image?.url || '/images/education/default-thumbnail.png'} alt={education.name} />
+              <img
+                src={
+                  education.image?.url ||
+                  "/images/education/default-thumbnail.png"
+                }
+                alt={education.name}
+              />
             </div>
           </div>
 
@@ -343,9 +382,7 @@ const EducationDetailPage: React.FC = () => {
                       신청마감 D-{daysLeft}
                     </span>
                   ) : (
-                    <span className={styles.labelGray}>
-                      신청마감
-                    </span>
+                    <span className={styles.labelGray}>신청마감</span>
                   )}
                   <span className={styles.labelWhite}>
                     {education.typeLabel}
@@ -376,26 +413,14 @@ const EducationDetailPage: React.FC = () => {
                   <p className={styles.infoValue}>{education.target}</p>
                 </div>
               </div>
+              <div className={styles.divider} />
 
               <div className={styles.educationDetails}>
+                
                 <div className={styles.detailItem}>
                   <div className={styles.detailLabel}>
-                    <img 
-                      src="/images/education/icons/graduation 1.svg" 
-                      alt="교육 주제" 
-                      className={styles.detailIconImage}
-                    />
-                    <span className={styles.detailIcon}>교육 주제</span>
-                  </div>
-                  <p className={styles.detailValue}>{education.name}</p>
-                </div>
-                <div className={styles.detailItem}>
-                  <div className={styles.detailLabel}>
-                    <img 
-                      src="/images/education/icons/calendar-clock.svg" 
-                      alt="교육 일자" 
-                      className={styles.detailIconImage}
-                    />
+                   
+                    <CalendarToday/>
                     <span className={styles.detailIcon}>교육 일자</span>
                   </div>
                   <p className={styles.detailValue}>
@@ -404,22 +429,18 @@ const EducationDetailPage: React.FC = () => {
                 </div>
                 <div className={styles.detailItem}>
                   <div className={styles.detailLabel}>
-                    <img 
-                      src="/images/education/icons/icon_16.svg" 
-                      alt="교육 시간" 
-                      className={styles.detailIconImage}
-                    />
+                    <AccessTime/>
                     <span className={styles.detailIcon}>교육 시간</span>
                   </div>
                   <p className={styles.detailValue}>
-                    {education.educationTimeSlots.join(', ')}
+                    {education.educationTimeSlots.join(", ")}
                   </p>
                 </div>
                 <div className={styles.detailItem}>
                   <div className={styles.detailLabel}>
-                    <img 
-                      src="/images/education/icons/marker.svg" 
-                      alt="교육 장소" 
+                    <img
+                      src="/images/common/map-icon.svg"
+                      alt="교육 장소"
                       className={styles.detailIconImage}
                     />
                     <span className={styles.detailIcon}>교육 장소</span>
@@ -436,16 +457,10 @@ const EducationDetailPage: React.FC = () => {
 
               <div className={styles.dateSelector}>
                 <div className={styles.dateInput}>
-                  <img 
-                    src="/images/education/icons/Group 1321315006.svg" 
-                    alt="날짜 선택" 
-                    className={styles.dateIcon}
-                  />
-                  <p>
-                    {selectedDate || '참여 날짜 선택'}
-                  </p>
+                  <CalendarToday/>
+                  <p>{selectedDate || "참여 날짜 선택"}</p>
                 </div>
-                <button 
+                <button
                   className={styles.dateButton}
                   onClick={() => setIsDatePickerOpen(true)}
                 >
@@ -473,9 +488,7 @@ const EducationDetailPage: React.FC = () => {
       </div>
 
       {/* 모바일 하단 고정 버튼 */}
-      <div className={styles.stickyButtonWrapper}>
-        {renderActionButton()}
-      </div>
+      <div className={styles.stickyButtonWrapper}>{renderActionButton()}</div>
 
       <Footer />
 
@@ -503,4 +516,3 @@ const EducationDetailPage: React.FC = () => {
 };
 
 export default EducationDetailPage;
-

@@ -3,11 +3,9 @@ import { useRouter } from "next/router";
 import Header from "@/components/common/Header";
 import Menu from "@/components/Menu";
 import Footer from "@/components/Footer";
-import PageHeader from "@/components/common/PageHeader";
 import DateRangePickerModal from "@/components/common/DateRangePickerModal";
 import { TextField } from "@/components/common/TextField";
-import Pagination from "@/components/common/Pagination";
-import { get, post, patch } from "@/lib/api";
+import { get, post, patch, del } from "@/lib/api";
 import { API_ENDPOINTS } from "@/config/api";
 import styles from "./my.module.scss";
 import { MemberType } from "@/types/education";
@@ -106,6 +104,17 @@ const MyPage: React.FC = () => {
     });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Newsletter subscription status
+  const [newsletterSubscribed, setNewsletterSubscribed] = useState<boolean>(false);
+  const [isUnsubscribing, setIsUnsubscribing] = useState(false);
+
+  // Withdrawal (탈퇴) related state
+  const [showWithdrawConfirm, setShowWithdrawConfirm] = useState(false);
+  const [showWithdrawPassword, setShowWithdrawPassword] = useState(false);
+  const [withdrawPassword, setWithdrawPassword] = useState("");
+  const [withdrawPasswordError, setWithdrawPasswordError] = useState("");
+  const [isWithdrawing, setIsWithdrawing] = useState(false);
 
   // Training/Seminar applications
   const [trainingApplications, setTrainingApplications] = useState<
@@ -280,8 +289,131 @@ const MyPage: React.FC = () => {
     }
   };
 
+  // Fetch newsletter subscription status
+  const fetchNewsletterStatus = async () => {
+    try {
+      const response = await get<{
+        email?: string;
+        isSubscribed: boolean;
+        subscriptionLabel?: string;
+        isExposed?: boolean;
+      }>(API_ENDPOINTS.NEWSLETTER.ME);
+
+      if (response.error) {
+        // If error, default to not subscribed
+        setNewsletterSubscribed(false);
+      } else if (response.data) {
+        // Use isSubscribed as the single source of truth
+        const isSubscribed = response.data.isSubscribed === true;
+        setNewsletterSubscribed(isSubscribed);
+      } else {
+        setNewsletterSubscribed(false);
+      }
+    } catch (err) {
+      // On error, default to not subscribed
+      setNewsletterSubscribed(false);
+    } finally {
+    }
+  };
+
+  // Handle newsletter unsubscribe
+  const handleNewsletterUnsubscribe = async () => {
+    // Show confirm dialog
+    const confirmed = window.confirm("뉴스레터 구독을 해제하시겠습니까?");
+    if (!confirmed) {
+      return;
+    }
+
+    setIsUnsubscribing(true);
+    try {
+      const response = await post(API_ENDPOINTS.NEWSLETTER.ME_UNSUBSCRIBE);
+
+      if (response.error) {
+        alert(response.error || "구독 해제에 실패했습니다.");
+        return;
+      }
+
+      // On success: Update UI state immediately
+      setNewsletterSubscribed(false);
+      alert("뉴스레터 구독이 해제되었습니다.");
+    } catch (err) {
+      alert("구독 해제 중 오류가 발생했습니다.");
+    } finally {
+      setIsUnsubscribing(false);
+    }
+  };
+
+  // Handle withdrawal (탈퇴하기) - Step 1: Show confirmation
+  const handleWithdrawClick = () => {
+    setShowWithdrawConfirm(true);
+  };
+
+  // Handle withdrawal confirmation - Step 2: Show password input
+  const handleWithdrawConfirm = () => {
+    setShowWithdrawConfirm(false);
+    setShowWithdrawPassword(true);
+    setWithdrawPassword("");
+    setWithdrawPasswordError("");
+  };
+
+  // Handle withdrawal cancel
+  const handleWithdrawCancel = () => {
+    setShowWithdrawConfirm(false);
+    setShowWithdrawPassword(false);
+    setWithdrawPassword("");
+    setWithdrawPasswordError("");
+  };
+
+  // Handle withdrawal - Step 3: API call
+  const handleWithdrawSubmit = async () => {
+    if (!withdrawPassword) {
+      setWithdrawPasswordError("비밀번호를 입력해주세요.");
+      return;
+    }
+
+    setIsWithdrawing(true);
+    setWithdrawPasswordError("");
+
+    try {
+      // Call DELETE /auth/me with password in body
+      const response = await del<{ success?: boolean }>(
+        API_ENDPOINTS.AUTH.WITHDRAW,
+        {
+          body: { password: withdrawPassword },
+        }
+      );
+
+      if (response.error) {
+        // Check if password is incorrect
+        if (response.status === 400 || response.status === 401) {
+          setWithdrawPasswordError("비밀번호가 일치하지 않습니다.");
+        } else {
+          setWithdrawPasswordError(response.error || "탈퇴 처리 중 오류가 발생했습니다.");
+        }
+        return;
+      }
+
+      // On success: Clear auth tokens, reset state, redirect to login
+      localStorage.removeItem("accessToken");
+      localStorage.removeItem("refreshToken");
+      localStorage.removeItem("autoLogin");
+      localStorage.removeItem("user");
+
+      // Show success message
+      alert("탈퇴가 완료되었습니다.");
+
+      // Redirect to login
+      router.push("/login");
+    } catch (err) {
+      setWithdrawPasswordError("탈퇴 처리 중 오류가 발생했습니다.");
+    } finally {
+      setIsWithdrawing(false);
+    }
+  };
+
   useEffect(() => {
     fetchUserProfile();
+    fetchNewsletterStatus(); // Fetch newsletter status on page load
   }, []);
 
   // API 응답을 UI 형식으로 변환하는 함수
@@ -608,7 +740,7 @@ const MyPage: React.FC = () => {
     setIsVerifying(true);
     setPasswordVerifyError("");
 
-    // 임시 비밀번호 1234로 우회 (API 점검중)
+    // 비밀번호 확인 성공 후 회원정보 수정 화면 표시
     const proceedWithVerification = () => {
       setIsPasswordVerified(true);
       setShowPasswordVerify(false);
@@ -644,26 +776,19 @@ const MyPage: React.FC = () => {
     };
 
     try {
-      // 로그인 API를 사용하여 비밀번호 확인
-      const response = await post(API_ENDPOINTS.AUTH.LOGIN, {
-        loginId: displayProfile.loginId,
+      // Use /auth/verify-password API (Authorization header is automatically added by post function)
+      const response = await post(API_ENDPOINTS.AUTH.VERIFY_PASSWORD, {
         password: passwordVerify,
       });
 
       if (response.error) {
-        if (response.status === 500) {
-          setPasswordVerifyError(
-            "서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요."
-          );
-        } else if (response.status === 401) {
-          setPasswordVerifyError("비밀번호가 일치하지 않습니다.");
-        } else {
-          setPasswordVerifyError(response.error);
-        }
+        // On failure: Show error message
+        setPasswordVerifyError("비밀번호가 일치하지 않습니다.");
         return;
       }
 
-      // 비밀번호 확인 성공 - 회원정보 수정 화면 표시
+      // On success: Allow access to the member info edit page
+      // Do NOT refresh or reissue tokens
       proceedWithVerification();
     } catch (err) {
       setPasswordVerifyError("비밀번호 확인 중 오류가 발생했습니다.");
@@ -812,30 +937,43 @@ const MyPage: React.FC = () => {
   // 휴대폰 번호 변경 핸들러
   const handleRequestPhoneVerification = async () => {
     setPhoneChangeError("");
-
-    // 휴대폰 번호 유효성 검사 (하이픈 있거나 없거나 둘 다 허용)
-    const phoneRegex = /^010-?\d{4}-?\d{4}$/;
-    const phoneNumberOnly = phoneChangeForm.phoneNumber.replace(/\D/g, "");
+    setVerificationError("");
 
     if (!phoneChangeForm.phoneNumber) {
       setPhoneChangeError("휴대폰 번호를 입력해주세요.");
       return;
     }
 
-    // 숫자만으로 11자리인지 확인
-    if (phoneNumberOnly.length !== 11 || !phoneNumberOnly.startsWith("010")) {
+    // Strip non-numeric characters from phoneNumber before sending
+    const phoneNumberOnly = phoneChangeForm.phoneNumber.replace(/\D/g, "");
+
+    // 숫자만으로 10자리 또는 11자리인지 확인
+    if (phoneNumberOnly.length < 10 || phoneNumberOnly.length > 11) {
       setPhoneChangeError("올바른 휴대폰번호 양식을 입력해주세요.");
       return;
     }
 
     setIsRequestingVerification(true);
+    try {
+      const response = await post(API_ENDPOINTS.AUTH.PHONE_SEND, {
+        phone: phoneNumberOnly,
+      });
 
-    // API 호출 임시 비활성화 - 바로 타이머 시작
-    setIsVerificationRequested(true);
-    setTimeLeft(300); // 5분
-    setIsTimerActive(true);
-    setPhoneChangeError("");
-    setIsRequestingVerification(false);
+      if (response.error) {
+        setPhoneChangeError(response.error || "인증번호 발송에 실패했습니다. 다시 시도해주세요.");
+        return;
+      }
+
+      // On send success: Start/reset 5-minute timer and move to verification step
+      setIsVerificationRequested(true);
+      setTimeLeft(300); // 5 minutes = 300 seconds
+      setIsTimerActive(true);
+      setVerificationCode(""); // Clear previous code
+    } catch (err) {
+      setPhoneChangeError("인증번호 발송에 실패했습니다. 다시 시도해주세요.");
+    } finally {
+      setIsRequestingVerification(false);
+    }
   };
 
   const handleVerifyPhoneCode = async () => {
@@ -846,13 +984,38 @@ const MyPage: React.FC = () => {
       return;
     }
 
-    // API 호출 임시 비활성화 - 인증번호 1234로 검증 (서버에서 4자리 요구)
-    if (verificationCode === "1234") {
+    if (!phoneChangeForm.phoneNumber) {
+      setVerificationError("휴대폰 번호를 먼저 입력해주세요.");
+      return;
+    }
+
+    setIsVerifyingCode(true);
+    try {
+      // Strip non-numeric characters from phone number before sending
+      const phoneNumberOnly = phoneChangeForm.phoneNumber.replace(/\D/g, "");
+
+      const response = await post(API_ENDPOINTS.AUTH.PHONE_VERIFY, {
+        phone: phoneNumberOnly,
+        code: verificationCode,
+      });
+
+      if (response.error) {
+        if (response.status === 400) {
+          setVerificationError("인증번호가 올바르지 않거나 만료되었습니다.");
+        } else {
+          setVerificationError(response.error || "인증에 실패했습니다.");
+        }
+        return;
+      }
+
+      // On verify success: Mark phone as verified and allow change to proceed
       setIsCodeVerified(true);
       setIsTimerActive(false);
       setVerificationError("");
-    } else {
-      setVerificationError("인증번호가 올바르지 않습니다.");
+    } catch (err) {
+      setVerificationError("인증에 실패했습니다. 다시 시도해주세요.");
+    } finally {
+      setIsVerifyingCode(false);
     }
   };
 
@@ -1173,15 +1336,31 @@ const MyPage: React.FC = () => {
                       </div>
                       <div className={styles.mobileNewsletterRow}>
                         <p className={styles.mobileFormLabel}>뉴스레터 구독</p>
-                        <div className={styles.mobileNewsletterBadge}>
+                        <div
+                          className={`${styles.mobileNewsletterBadge} ${
+                            newsletterSubscribed
+                              ? styles.mobileNewsletterBadgeSubscribed
+                              : ""
+                          }`}
+                        >
                           <p>
-                            {displayProfile.newsletterSubscribed
-                              ? "구독 중"
-                              : "미구독"}
+                            {newsletterSubscribed ? "구독중" : "구독안함"}
                           </p>
                         </div>
+                        {newsletterSubscribed && (
+                          <button
+                            className={styles.mobileNewsletterUnsubscribeButton}
+                            onClick={handleNewsletterUnsubscribe}
+                            disabled={isUnsubscribing}
+                          >
+                            {isUnsubscribing ? "처리 중..." : "구독해제"}
+                          </button>
+                        )}
                       </div>
-                      <button className={styles.mobileWithdrawButton}>
+                      <button
+                        className={styles.mobileWithdrawButton}
+                        onClick={handleWithdrawClick}
+                      >
                         탈퇴하기
                       </button>
                       <div className={styles.mobileFormFooterDivider} />
@@ -1657,6 +1836,7 @@ const MyPage: React.FC = () => {
                             value={verificationCode}
                             onChange={setVerificationCode}
                             fullWidth
+                            className={styles.mobileVerificationInput}
                           />
                           {timeLeft > 0 && (
                             <span className={styles.mobileVerificationTimer}>
@@ -1672,7 +1852,7 @@ const MyPage: React.FC = () => {
                             onClick={handleVerifyPhoneCode}
                             disabled={!verificationCode || isVerifyingCode}
                           >
-                            인증 확인
+                            {isVerifyingCode ? "확인 중..." : "인증 확인"}
                           </button>
                         </div>
                       </div>
@@ -1808,7 +1988,7 @@ const MyPage: React.FC = () => {
                       </div>
                       <button 
                         className={styles.mobileSearchButton}
-                        onClick={() => handleSearch("consultation")}
+                        onClick={() => handleSearch("seminar")}
                       >
                         <svg
                           xmlns="http://www.w3.org/2000/svg"
@@ -1837,7 +2017,7 @@ const MyPage: React.FC = () => {
                     <p className={styles.mobileResultsCount}>
                       총{" "}
                       <span className={styles.mobileCountHighlight}>
-                        {consultationTotal}
+                        {trainingTotal}
                       </span>
                       건
                     </p>
@@ -2311,15 +2491,31 @@ const MyPage: React.FC = () => {
                           </div>
                           <div className={styles.newsletterRow}>
                             <p className={styles.formLabel}>뉴스레터 구독</p>
-                            <div className={styles.newsletterBadge}>
+                            <div
+                              className={`${styles.newsletterBadge} ${
+                                newsletterSubscribed
+                                  ? styles.newsletterBadgeSubscribed
+                                  : ""
+                              }`}
+                            >
                               <p>
-                                {displayProfile.newsletterSubscribed
-                                  ? "구독"
-                                  : "미구독"}
+                                {newsletterSubscribed ? "구독중" : "구독안함"}
                               </p>
                             </div>
+                            {newsletterSubscribed && (
+                              <button
+                                className={styles.newsletterUnsubscribeButton}
+                                onClick={handleNewsletterUnsubscribe}
+                                disabled={isUnsubscribing}
+                              >
+                                {isUnsubscribing ? "처리 중..." : "구독해제"}
+                              </button>
+                            )}
                           </div>
-                          <button className={styles.withdrawButton}>
+                          <button
+                            className={styles.withdrawButton}
+                            onClick={handleWithdrawClick}
+                          >
                             탈퇴하기
                           </button>
                           <div className={styles.formDivider} />
@@ -3446,6 +3642,108 @@ const MyPage: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* 탈퇴 확인 모달 */}
+      {showWithdrawConfirm && (
+        <div
+          className={styles.modalOverlay}
+          onClick={handleWithdrawCancel}
+        >
+          <div
+            className={styles.modalContent}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className={styles.modalHeader}>
+              <button
+                className={styles.modalClose}
+                onClick={handleWithdrawCancel}
+              >
+                ✕
+              </button>
+            </div>
+            <div className={styles.modalBody}>
+
+              <p className={styles.withdrawConfirmMessage}>
+                정말로 탈퇴하시겠습니까?
+                <br />
+                탈퇴 시 계정은 복구할 수 없습니다.
+              </p>
+            </div>
+            <div className={styles.modalFooter}>
+              <button
+                className={styles.modalCancelButton}
+                onClick={handleWithdrawCancel}
+              >
+                취소
+              </button>
+              <button
+                className={styles.modalConfirmButton}
+                onClick={handleWithdrawConfirm}
+              >
+                확인
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 탈퇴 비밀번호 입력 모달 */}
+      {showWithdrawPassword && (
+        <div
+          className={styles.modalOverlay}
+          onClick={handleWithdrawCancel}
+        >
+          <div
+            className={styles.modalContent}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className={styles.modalHeader}>
+              <button
+                className={styles.modalClose}
+                onClick={handleWithdrawCancel}
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className={styles.modalBody}>
+
+              <div className={styles.withdrawPasswordField}>
+                <TextField
+                  variant="line"
+                  label="비밀번호 입력"
+                  required
+                  type="password"
+                  placeholder="비밀번호를 입력해주세요"
+                  value={withdrawPassword}
+                  onChange={setWithdrawPassword}
+                  error={!!withdrawPasswordError}
+                  errorMessage={withdrawPasswordError}
+                  disabled={isWithdrawing}
+                  fullWidth
+                  showPasswordToggle
+                />
+              </div>
+            </div>
+            <div className={styles.modalFooter}>
+              <button
+                className={styles.modalCancelButton}
+                onClick={handleWithdrawCancel}
+                disabled={isWithdrawing}
+              >
+                취소
+              </button>
+              <button
+                className={styles.modalConfirmButton}
+                onClick={handleWithdrawSubmit}
+                disabled={!withdrawPassword || isWithdrawing}
+              >
+                {isWithdrawing ? "처리 중..." : "확인"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <Footer />
 

@@ -135,7 +135,7 @@ const DatePickerModal: React.FC<DatePickerModalProps> = ({
       <div className={styles.overlay} onClick={onClose} />
       <div className={styles.modal}>
         <div className={styles.header}>
-          <div className={styles.headerSpacer} />
+          <div className={styles.headerSpacer} >날짜 선택</div>
           <button className={styles.closeButton} onClick={onClose}>
             <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
               <path

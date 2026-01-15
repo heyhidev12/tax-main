@@ -100,8 +100,14 @@ export default function ToggleMenu({
         router.push(`/history?tab=${tab}`);
       }
     } else if (rootId === "insight") {
-      if (subItem === "칼럼") {
-        router.push("/insights?tab=column");
+      // Use subItemIds if available (from API data)
+      const insightItem = effectiveMenuItems.find(mi => mi.id === "insight");
+      if (insightItem && insightItem.subItemIds && insightItem.subItemIds.length > index) {
+        const categoryId = insightItem.subItemIds[index];
+        router.push(`/insights?categoryId=${categoryId}`);
+      } else {
+        // Fallback for standalone use without API data
+        router.push("/insights");
       }
     }
   };

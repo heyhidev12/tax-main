@@ -1,9 +1,9 @@
-@import '../../styles/variables';
+@import "../../styles/variables";
 
 .page {
   min-height: 100vh;
-  background-color: #151515;
-  color: white;
+  color: #151515;
+  background-color: white;
   display: flex;
   flex-direction: column;
 
@@ -13,29 +13,29 @@
   }
 }
 
-.container {
-  flex: 1;
-  padding: 0 240px;
-  max-width: 1920px;
-  margin: 0 auto;
-  width: 100%;
-  box-sizing: border-box;
+// .container {
+//   flex: 1;
+//   padding: 0 240px;
+//   max-width: 1920px;
+//   margin: 0 auto;
+//   width: 100%;
+//   box-sizing: border-box;
 
-  @media (max-width: $breakpoint-desktop) {
-    padding: 0 120px;
-  }
+//   @media (max-width: $breakpoint-desktop) {
+//     padding: 0 120px;
+//   }
 
-  @media (max-width: $breakpoint-tablet) {
-    padding: 0 24px;
-  }
-}
+//   @media (max-width: $breakpoint-tablet) {
+//     padding: 0 24px;
+//   }
+// }
 
 .content {
   padding: 80px 0;
   display: grid;
   grid-template-columns: 1fr 464px;
   grid-template-rows: auto auto;
-  gap: 24px;
+  gap: 48px;
   width: 100%;
 
   @media (max-width: $breakpoint-desktop) {
@@ -51,15 +51,15 @@
   }
 }
 
-.mainSection {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 88px;
+.contentHeader {
+  margin-top: 64px;
+  padding-bottom: 32px;
+  border-bottom: 2px solid $gray-90;
+}
 
-  @media (max-width: $breakpoint-tablet) {
-    gap: 48px;
-  }
+.contentTitle {
+  color: $gray-90;
+  font-size: 40px;
 }
 
 .imageSection {
@@ -79,7 +79,6 @@
 .imageWrapper {
   width: 100%;
   aspect-ratio: 400 / 300;
-  border-radius: 12px;
   overflow: hidden;
 
   @media (max-width: $breakpoint-tablet) {
@@ -105,7 +104,7 @@
 }
 
 .bodyContent {
-  color: var(--grayscale-30, #d8d8d8);
+  color: $gray-90;
   font-family: Pretendard;
   font-size: 17px;
   font-style: normal;
@@ -119,7 +118,7 @@
 
   // Toast UI Viewer 스타일 오버라이드
   :global(.toastui-editor-contents) {
-    color: var(--grayscale-30, #d8d8d8);
+    color: $gray-90;
     font-family: Pretendard;
     font-size: 17px;
     font-style: normal;
@@ -132,8 +131,13 @@
     }
 
     // 모든 텍스트 요소에 기본 스타일 적용
-    p, span, div, li, td, th {
-      color: var(--grayscale-30, #d8d8d8);
+    p,
+    span,
+    div,
+    li,
+    td,
+    th {
+      color: $gray-90;
       font-family: Pretendard;
       font-size: 17px;
       font-style: normal;
@@ -166,16 +170,21 @@
 
     strong {
       font-weight: $font-weight-semibold;
-      color: white;
+      color: $gray-90;
     }
 
-    h1, h2, h3, h4, h5, h6 {
-      color: white;
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6 {
+      color: $gray-90;
       font-family: $font-pretendard;
     }
 
     a {
-      color: #94b9e3;
+      color: $primary-50;
     }
 
     code {
@@ -188,14 +197,15 @@
     }
 
     blockquote {
-      border-left: 4px solid #94b9e3;
+      border-left: 4px solid $primary-50;
       color: #d8d8d8;
     }
 
     table {
       border-color: rgba(255, 255, 255, 0.2);
-      
-      th, td {
+
+      th,
+      td {
         border-color: rgba(255, 255, 255, 0.2);
       }
     }
@@ -239,10 +249,9 @@
 }
 
 .sidebarCard {
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid #2d2d2d;
-  border-radius: 12px;
-  padding: 32px 28px;
+  border: 1px solid var(--grayscale-20, #e4e4e4);
+  background: var(--grayscale-0, #fff);
+  padding: 24px;
   display: flex;
   flex-direction: column;
   gap: 28px;
@@ -273,7 +282,7 @@
 }
 
 .labelRed {
-  background: rgba(255, 255, 255, 0.1);
+  background: $gray-10;
   padding: 8px;
   border-radius: 4px;
   font-family: $font-pretendard;
@@ -290,7 +299,7 @@
 }
 
 .labelWhite {
-  background: rgba(255, 255, 255, 0.1);
+  background: $gray-10;
   padding: 8px;
   border-radius: 4px;
   font-family: $font-pretendard;
@@ -298,7 +307,24 @@
   font-size: 15px;
   line-height: 1.5;
   letter-spacing: -0.075px;
-  color: #f8f8fc;
+  color: $gray-90;
+
+  @media (max-width: $breakpoint-tablet) {
+    padding: 6px 8px;
+    font-size: 13px;
+  }
+}
+
+.labelGray {
+  background: $gray-50;
+  padding: 8px;
+  border-radius: 4px;
+  font-family: $font-pretendard;
+  font-weight: $font-weight-semibold;
+  font-size: 15px;
+  line-height: 1.5;
+  letter-spacing: -0.075px;
+  color: $gray-10;
 
   @media (max-width: $breakpoint-tablet) {
     padding: 6px 8px;
@@ -312,7 +338,7 @@
   font-size: 25px;
   line-height: 1.5;
   letter-spacing: -0.125px;
-  color: white;
+  color: $gray-90;
   margin: 0;
 
   @media (max-width: $breakpoint-tablet) {
@@ -322,7 +348,7 @@
 
 .divider {
   height: 1px;
-  background: #555;
+  background: $gray-30;
   width: 100%;
 }
 
@@ -340,7 +366,7 @@
   padding-left: 12px;
 
   &::before {
-    content: '';
+    content: "";
     position: absolute;
     left: 0;
     top: 50%;
@@ -348,7 +374,7 @@
     width: 4px;
     height: 4px;
     border-radius: 50%;
-    background-color: #fb7058;
+    background-color: $primary-50;
   }
 }
 
@@ -366,7 +392,7 @@
   font-size: 15px;
   line-height: 1.5;
   letter-spacing: -0.075px;
-  color: white;
+  color: $gray-50;
 }
 
 .infoValue {
@@ -375,14 +401,13 @@
   font-weight: $font-weight-regular;
   font-size: 15px;
   line-height: 1.5;
-  color: #f0f0f0;
+  color: $gray-90;
   margin: 0;
 }
 
 .educationDetails {
   background: rgba(255, 255, 255, 0.05);
   border-radius: 8px;
-  padding: 20px;
   display: flex;
   flex-direction: column;
   gap: 20px;
@@ -408,6 +433,14 @@
   flex-shrink: 0;
   min-width: 100px;
 
+  svg{
+    width: 16px;
+    height: 16px;
+    path{
+      fill: $primary-50;
+    }
+  }
+
   @media (max-width: $breakpoint-tablet) {
     min-width: 80px;
   }
@@ -425,7 +458,7 @@
   font-size: 15px;
   line-height: 1.5;
   letter-spacing: -0.075px;
-  color: white;
+  color: $gray-90;
   white-space: nowrap;
 }
 
@@ -434,22 +467,22 @@
   font-weight: $font-weight-regular;
   font-size: 15px;
   line-height: 1.5;
-  color: #d8d8d8;
+  color: $gray-90;
   margin: 0;
   flex: 1;
 }
 
 .otherInfo {
-  background: rgba(0, 120, 255, 0.1);
+  background: $primary-5;
   border-radius: 8px;
-  padding: 24px;
+  padding: 24px 16px;
 
   p {
     font-family: $font-pretendard;
     font-weight: $font-weight-regular;
     font-size: 15px;
     line-height: 1.5;
-    color: #d8d8d8;
+    color: $gray-90;
     margin: 0;
   }
 }
@@ -458,8 +491,8 @@
   display: flex;
   gap: 24px;
   align-items: center;
-  border-bottom: 1px solid #555;
-  padding-bottom: 20px;
+  padding: 12px 16px;
+  background: $gray-5;
 
   @media (max-width: $breakpoint-tablet) {
     flex-direction: row;
@@ -496,6 +529,13 @@
       font-size: 13px;
     }
   }
+      svg{
+    width: 16px;
+    height: 16px;
+      path{
+        fill: $gray-70
+      }
+  }
 }
 
 .dateIcon {
@@ -510,11 +550,10 @@
 }
 
 .dateButton {
-  border: 1px solid white;
-  border-radius: 100px;
-  padding: 12px 16px;
-  background: transparent;
-  color: white;
+  border: 1px solid $primary-50;
+  padding: 0px 16px;
+  background: #fff;
+  color: $primary-50;
   font-family: $font-pretendard;
   font-weight: $font-weight-medium;
   font-size: 17px;
@@ -523,6 +562,7 @@
   cursor: pointer;
   transition: all 0.2s ease;
   white-space: nowrap;
+  height: 40px;
 
   @media (max-width: $breakpoint-tablet) {
     padding: 8px 12px;
@@ -552,7 +592,7 @@
     font-size: 32px;
     line-height: 1.5;
     letter-spacing: -0.16px;
-    color: white;
+    color: $gray-90;
     margin: 0;
 
     @media (max-width: $breakpoint-tablet) {
@@ -564,10 +604,9 @@
 .applyButton {
   width: 100%;
   height: 56px;
-  background: white;
+  background: $primary-50;
   border: none;
-  border-radius: 100px;
-  color: black;
+  color: #fff;
   font-family: $font-pretendard;
   font-weight: $font-weight-medium;
   font-size: 17px;
@@ -577,7 +616,7 @@
   transition: all 0.2s ease;
 
   &:hover {
-    background: rgba(255, 255, 255, 0.9);
+    background: $primary-40;
   }
 
   &:disabled {
@@ -590,10 +629,9 @@
 .pendingButton {
   width: 100%;
   height: 56px;
-  background: #555555;
+  background: $gray-40;
   border: none;
-  border-radius: 100px;
-  color: white;
+  color: #fff;
   font-family: $font-pretendard;
   font-weight: $font-weight-medium;
   font-size: 17px;
@@ -607,10 +645,9 @@
 .closedButton {
   width: 100%;
   height: 56px;
-  background: #555555;
+  background: $gray-40;
   border: none;
-  border-radius: 100px;
-  color: white;
+  color: #fff;
   font-family: $font-pretendard;
   font-weight: $font-weight-medium;
   font-size: 17px;
@@ -624,10 +661,9 @@
 .completedButton {
   width: 100%;
   height: 56px;
-  background: #555555;
+  background: $gray-40;
   border: none;
-  border-radius: 100px;
-  color: white;
+  color: #fff;
   font-family: $font-pretendard;
   font-weight: $font-weight-medium;
   font-size: 17px;
@@ -657,24 +693,6 @@
 
   &:hover {
     opacity: 0.8;
-  }
-}
-
-// 신청마감 라벨 (회색)
-.labelGray {
-  background: rgba(255, 255, 255, 0.1);
-  padding: 8px;
-  border-radius: 4px;
-  font-family: $font-pretendard;
-  font-weight: $font-weight-semibold;
-  font-size: 15px;
-  line-height: 1.5;
-  letter-spacing: -0.075px;
-  color: #949494;
-
-  @media (max-width: $breakpoint-tablet) {
-    padding: 6px 8px;
-    font-size: 13px;
   }
 }
 
@@ -714,4 +732,3 @@
   line-height: 1.5;
   color: #d8d8d8;
 }
-

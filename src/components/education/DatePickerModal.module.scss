@@ -4,7 +4,7 @@
   position: fixed;
   inset: 0;
   background: rgba(0, 0, 0, 0.8);
-  z-index: 9998;
+  z-index: 9999;
 
   @media (max-width: $breakpoint-tablet) {
     display: none;
@@ -17,8 +17,7 @@
   left: 50%;
   transform: translate(-50%, -50%);
   width: 375px;
-  background: #151515;
-  border-radius: 20px;
+  background: #fff;
   box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
   z-index: 9999;
   display: flex;
@@ -45,8 +44,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 12px 20px;
-  backdrop-filter: blur(5px);
-  background: rgba(21, 21, 21, 0.01);
+  border-bottom: 1px solid $gray-10;
 
   @media (max-width: $breakpoint-tablet) {
     justify-content: flex-end;
@@ -54,8 +52,9 @@
 }
 
 .headerSpacer {
-  width: 109.778px;
-  height: 38px;
+  width: 57%;
+  text-align: right;
+  font-size: 17px;
 
   @media (max-width: $breakpoint-tablet) {
     display: none;
@@ -79,8 +78,12 @@
   }
 
   svg {
-    width: 20px;
-    height: 20px;
+    width: 28px;
+    height: 28px;
+
+    path{
+      stroke:$gray-90;
+    }
   }
 }
 
@@ -136,10 +139,11 @@
   font-size: 19px;
   line-height: 1.5;
   letter-spacing: -0.095px;
-  color: white;
+  color: $gray-90;
   margin: 0;
   text-align: center;
 }
+
 
 .weekDays {
   display: flex;
@@ -195,7 +199,7 @@
   font-weight: $font-weight-regular;
   font-size: 15px;
   line-height: 1.5;
-  color: #8e8e8e;
+  color: $gray-90;
   cursor: pointer;
   padding: 0;
   transition: all 0.2s ease;
@@ -209,8 +213,8 @@
   &.available {
     cursor: pointer;
     opacity: 1;
-    background: rgba(0, 119, 255, 0.2);
-    color: white;
+    background: $primary-10;
+    color: $gray-90;
     font-weight: $font-weight-semibold;
     letter-spacing: -0.075px;
 
@@ -219,22 +223,17 @@
     }
 
     &.selected {
-      background: white;
-      color: #003675;
+      background: $primary-50;
+      color: #fff;
     }
   }
 
-  &.selected {
-    background: white;
-    color: #003675;
-    font-weight: $font-weight-semibold;
-    letter-spacing: -0.075px;
-  }
+  
 }
 
 .footer {
   padding: 12px 16px;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-top: 1px solid $gray-10;
 
   @media (max-width: $breakpoint-tablet) {
     position: fixed;
@@ -243,7 +242,6 @@
     right: 0;
     padding: 12px 20px;
     padding-bottom: calc(12px + env(safe-area-inset-bottom));
-    background: #151515;
     border-top: none;
   }
 }
@@ -251,10 +249,9 @@
 .confirmButton {
   width: 100%;
   height: 56px;
-  background: white;
+  background: $primary-50;
   border: none;
-  border-radius: 100px;
-  color: black;
+  color: #fff;
   font-family: $font-pretendard;
   font-weight: $font-weight-medium;
   font-size: 17px;
@@ -264,7 +261,7 @@
   transition: all 0.2s ease;
 
   &:hover {
-    background: rgba(255, 255, 255, 0.9);
+    background: $primary-40;
   }
 }
 

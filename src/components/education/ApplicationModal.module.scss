@@ -1,4 +1,4 @@
-@import '../../styles/variables';
+@import "../../styles/variables";
 
 .overlay {
   position: fixed;
@@ -19,9 +19,7 @@
   width: 1194px;
   max-width: 90vw;
   max-height: 90vh;
-  background: #151515;
-  border: 1px solid #555;
-  border-radius: 24px;
+  background: #fff;
   z-index: 9999;
   display: flex;
   flex-direction: column;
@@ -47,7 +45,7 @@
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  padding: 0 40px;
+  padding: 32px;
 
   @media (max-width: $breakpoint-tablet) {
     height: 56px;
@@ -66,7 +64,6 @@
     font-weight: $font-weight-bold;
     line-height: 145%;
     letter-spacing: -0.256px;
-    color: #fff;
     margin: 0;
   }
 }
@@ -93,15 +90,18 @@
   }
 
   svg {
-    width: 20px;
-    height: 20px;
+    width: 40px;
+    height: 40px;
+    path {
+      stroke: $gray-80;
+    }
   }
 }
 
 .content {
   flex: 1;
   overflow-y: auto;
-  padding: 0 40px 40px;
+  padding: 0 80px 80px;
 
   @media (max-width: $breakpoint-tablet) {
     padding: 0 20px 120px;
@@ -109,20 +109,15 @@
 }
 
 .mainContent {
-  display: flex;
-  align-items: stretch;
-
   @media (max-width: $breakpoint-tablet) {
     flex-direction: column;
   }
 }
 
 .formSection {
-  flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 80px;
-  padding: 8px 40px 48px 0;
+  gap: 40px;
 
   @media (max-width: $breakpoint-tablet) {
     gap: 32px;
@@ -137,21 +132,35 @@
   font-size: 40px;
   line-height: 1.5;
   letter-spacing: -0.2px;
-  color: white;
-  margin: 0;
+  color: $gray-90;
+  padding-bottom: 40px;
+  border-bottom: 2px solid #151515;
 
   @media (max-width: $breakpoint-tablet) {
     display: none;
   }
 }
 
+.formTitle {
+  font-family: $font-pretendard;
+  font-weight: $font-weight-semibold;
+  font-size: 25px;
+  line-height: 1.5;
+  letter-spacing: -0.2px;
+  color: $gray-90;
+}
+
 .formFields {
   display: flex;
   flex-direction: column;
-  gap: 56px;
+  gap: 40px;
+  border-radius: 8px;
+  border: 1px solid var(--grayscale-20, #e4e4e4);
+  background: var(--grayscale-0, #fff);
+  padding: 48px 80px;
 
   @media (max-width: $breakpoint-tablet) {
-    gap: 56px;
+    // gap: 56px;
   }
 }
 
@@ -170,7 +179,7 @@
   font-size: 15px;
   line-height: 1.5;
   letter-spacing: -0.075px;
-  color: white;
+  color: $gray-90;
 
   @media (max-width: $breakpoint-tablet) {
     font-size: 15px;
@@ -190,11 +199,13 @@
   display: flex;
   gap: 24px;
   align-items: center;
+  border-radius: 8px;
+  background: var(--grayscale-5, #f8f8f8);
+  padding: 12px 16px;
 }
 
 .dateInput {
   flex: 1;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   padding: 20px 0;
   display: flex;
   align-items: center;
@@ -206,7 +217,7 @@
     font-size: 17px;
     line-height: 1.5;
     letter-spacing: -0.085px;
-    color: #f0f0f0;
+    color: $gray-90;
     margin: 0;
 
     @media (max-width: $breakpoint-tablet) {
@@ -217,11 +228,10 @@
 }
 
 .dateSelectButton {
-  border: 1px solid white;
-  border-radius: 100px;
+  border: 1px solid $primary-50;
   padding: 12px 16px;
-  background: transparent;
-  color: white;
+  background: #fff;
+  color: $primary-50;
   font-family: $font-pretendard;
   font-weight: $font-weight-medium;
   font-size: 17px;
@@ -255,8 +265,8 @@
 }
 
 .timeOption {
-  background: rgba(255, 255, 255, 0.05);
   border-radius: 8px;
+  background: var(--grayscale-5, #f8f8f8);
   padding: 16px;
   display: flex;
   gap: 8px;
@@ -271,7 +281,7 @@
     font-size: 15px;
     line-height: 1.5;
     letter-spacing: -0.075px;
-    color: #f0f0f0;
+    color: $gray-90;
 
     @media (max-width: $breakpoint-tablet) {
       font-size: 15px;
@@ -284,7 +294,7 @@
 }
 
 .timeOptionSelected {
-  background: rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.6);
 }
 
 .timeRadio {
@@ -300,35 +310,38 @@
 }
 
 .timeRadioSelected {
-  border-color: #94b9e3;
+  border-color: $primary-50;
 }
 
 .timeRadioDot {
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: #94b9e3;
+  background: $primary-50;
 }
 
 .participantInput {
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   padding: 20px 0;
   display: flex;
   gap: 20px;
   align-items: center;
+  justify-content: flex-start;
 
   input {
-    flex: 1;
-    background: transparent;
     border: none;
     font-family: $font-pretendard;
     font-weight: $font-weight-regular;
     font-size: 15px;
     line-height: 1.5;
-    color: #f0f0f0;
-    text-align: right;
+    color: $gray-90;
     outline: none;
-
+    width: 80px;
+    height: 48px;
+    padding: 0px 16px;
+    align-items: center;
+    gap: 10px;
+    background: $gray-5;
+    border-radius: 8px;
     &::-webkit-inner-spin-button,
     &::-webkit-outer-spin-button {
       -webkit-appearance: none;
@@ -342,22 +355,22 @@
     font-size: 15px;
     line-height: 1.5;
     letter-spacing: -0.075px;
-    color: #f0f0f0;
+    color: $gray-90;
   }
 }
 
 .requestTextarea {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 8px;
-  padding: 20px;
+background: var(--grayscale-5, #F8F8F8);
+  padding: 20px 16px;
   width: 100%;
+  border: none;
   height: 148px;
   font-family: $font-pretendard;
   font-weight: $font-weight-regular;
   font-size: 15px;
   line-height: 1.5;
-  color: #f0f0f0;
+  color: $gray-90;
   resize: none;
   outline: none;
 
@@ -384,20 +397,23 @@
   font-size: 15px;
   line-height: 1.5;
   letter-spacing: -0.075px;
-  color: #f0f0f0;
+  color: $gray-90;
 }
 
 .agreementContent {
-  background: #2d2d2d;
+  
   border-radius: 8px;
-  padding: 20px;
+  padding: 32px;
   height: 231px;
   overflow-y: auto;
-  font-family: 'SUITE', sans-serif;
+  scrollbar-width: 4px;
+  scrollbar-color: $gray-30;
+  font-family: "SUITE", sans-serif;
   font-weight: $font-weight-regular;
   font-size: 15px;
   line-height: 1.6;
-  color: #d8d8d8;
+  color: $gray-70;
+  background: var(--grayscale-5, #F8F8F8);
 
   p {
     margin: 0 0 8px 0;
@@ -410,7 +426,7 @@
   strong {
     font-family: $font-pretendard;
     font-weight: $font-weight-bold;
-    color: #f0f0f0;
+    color: $gray-90;
   }
 }
 
@@ -424,7 +440,7 @@
     font-weight: $font-weight-regular;
     font-size: 15px;
     line-height: 1.5;
-    color: #d8d8d8;
+    color: $gray-80;
   }
 }
 
@@ -443,7 +459,7 @@
   transition: all 0.2s ease;
 
   &:hover {
-    border-color: #94b9e3;
+    border-color: $primary-50;
   }
 
   svg {
@@ -453,17 +469,17 @@
 }
 
 .checkboxChecked {
-  background: #94b9e3;
-  border-color: #94b9e3;
+  background: $primary-50;
+  border-color: $primary-50;
 }
 
 .applyButton {
   width: 100%;
   height: 56px;
-  background: white;
+  background: $primary-50;
   border: none;
   border-radius: 100px;
-  color: black;
+  color: #fff;
   font-family: $font-pretendard;
   font-weight: $font-weight-medium;
   font-size: 17px;
@@ -524,13 +540,11 @@
 }
 
 .summarySection {
-  width: 400px;
+  width: 100%;
   flex-shrink: 0;
   display: flex;
-  flex-direction: column;
-  gap: 24px;
-  padding-top: 8px;
-  padding-left: 0;
+  gap: 32px;
+  padding: 48px 0;
 
   @media (max-width: $breakpoint-tablet) {
     width: 100%;
@@ -546,24 +560,9 @@
   }
 }
 
-.summaryHeader {
-  display: contents;
-
-  @media (max-width: $breakpoint-tablet) {
-    display: flex;
-    flex-direction: row;
-    gap: 12px;
-    padding: 0;
-    background: transparent;
-    border-radius: 0;
-    align-items: flex-start;
-  }
-}
-
 .summaryImage {
-  width: 100%;
+  width: 270px;
   aspect-ratio: 400 / 300;
-  border-radius: 12px;
   overflow: hidden;
 
   img {
@@ -584,20 +583,10 @@
 .summaryContent {
   display: flex;
   flex-direction: column;
-  gap: 28px;
-  padding: 40px 0;
+  gap: 16px;
 
   @media (max-width: $breakpoint-tablet) {
     display: contents;
-  }
-}
-
-.summaryTitleWrapper {
-  @media (max-width: $breakpoint-tablet) {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-start;
   }
 }
 
@@ -607,7 +596,7 @@
   font-size: 21px;
   line-height: 1.5;
   letter-spacing: -0.105px;
-  color: white;
+  color: $gray-90;
   margin: 0;
 
   @media (max-width: $breakpoint-tablet) {
@@ -617,24 +606,30 @@
 }
 
 .summaryDetails {
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 8px;
-  padding: 20px;
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 16px;
+  width: calc(100% - 302px);
 
   @media (max-width: $breakpoint-tablet) {
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 8px;
-    padding: 16px;
     gap: 12px;
   }
 }
 
+.summaryDetailItems {
+  width: 100%;
+  display: flex;
+  padding: 20px 12px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+  align-self: stretch;
+  background: $gray-5;
+}
+
 .summaryDetailItem {
   display: flex;
-  gap: 20px;
+  gap: 24px;
   align-items: center;
 
   @media (max-width: $breakpoint-tablet) {
@@ -660,9 +655,23 @@
   font-size: 15px;
   line-height: 1.5;
   letter-spacing: -0.075px;
-  color: white;
+  color: $gray-90;
   white-space: nowrap;
   min-width: 80px;
+  position: relative;
+  padding-left: 12px;
+
+  &::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 4px;
+    height: 4px;
+    background-color: $primary-50;
+    border-radius: 50%;
+  }
 
   @media (max-width: $breakpoint-tablet) {
     font-size: 13px;
@@ -676,7 +685,7 @@
   font-weight: $font-weight-regular;
   font-size: 15px;
   line-height: 1.5;
-  color: #d8d8d8;
+  color: $gray-50;
   margin: 0;
 
   @media (max-width: $breakpoint-tablet) {
@@ -707,4 +716,3 @@
     display: none;
   }
 }
-

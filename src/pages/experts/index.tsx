@@ -242,16 +242,13 @@ const ExpertsPage: React.FC = () => {
         <div className={styles.headerImage}></div>
 
         <div className="container">
-          {/* Page Header */}
           <div className={styles.pageHeaderSection}>
             <PageHeader
-              // title="전문가 소개"
               breadcrumbs={[{ label: "전문가 소개" }]}
               size={isMobile ? "mobile" : "web"}
             />
           </div>
 
-          {/* Hero Section */}
           <div className={styles.heroSection}>
             <p className={styles.heroSubtitle}>Team of Experts</p>
             <div className={styles.heroTitle}>

@@ -1,48 +1,60 @@
-@import '../../styles/variables';
+@import "../../styles/variables";
 
 .page {
   min-height: 100vh;
-  background-color: #151515;
-  color: white;
+  color: #151515;
+  background-color: white;
   display: flex;
   flex-direction: column;
 
-  @media (max-width: 767px) {
-    padding-top: 56px;
+  .headerImage {
+    position: relative;
+    z-index: 1;
+    margin-top: -92px; // ← header balandligi
+    padding-top: 20%;
+    background-image: url("../../../public/images/pages/education.png");
+    background-size: cover;
+    background-position: center;
+    min-height: 220px;
+    max-height: 400px;
+    width: 100%;
+    @media (max-width: 767px) {
+      margin-top: -52px; // ← header balandligi
+    }
   }
 }
 
-.container {
-  flex: 1;
-  padding: 0 240px;
-  max-width: 1920px;
-  margin: 0 auto;
-  width: 100%;
-  box-sizing: border-box;
+// .container {
+//   flex: 1;
+//   padding: 0 240px;
+//   max-width: 1920px;
+//   margin: 0 auto;
+//   width: 100%;
+//   box-sizing: border-box;
 
-  @media (max-width: $breakpoint-desktop) {
-    padding: 0 120px;
-  }
+//   @media (max-width: $breakpoint-desktop) {
+//     padding: 0 120px;
+//   }
 
-  @media (max-width: $breakpoint-tablet) {
-    padding: 0 24px;
-  }
-}
+//   @media (max-width: $breakpoint-tablet) {
+//     padding: 0 24px;
+//   }
+// }
 
-.pageHeaderWrapper {
-  padding-top: 136px;
-  padding-bottom: 24px;
+// .pageHeaderWrapper {
+//   padding-top: 136px;
+//   padding-bottom: 24px;
 
-  @media (max-width: $breakpoint-desktop) {
-    padding-top: 80px;
-    padding-bottom: 16px;
-  }
+//   @media (max-width: $breakpoint-desktop) {
+//     padding-top: 80px;
+//     padding-bottom: 16px;
+//   }
 
-  @media (max-width: $breakpoint-tablet) {
-    padding-top: 64px;
-    padding-bottom: 12px;
-  }
-}
+//   @media (max-width: $breakpoint-tablet) {
+//     padding-top: 64px;
+//     padding-bottom: 12px;
+//   }
+// }
 
 .tabSection {
   margin-top: 8px;
@@ -56,204 +68,72 @@
 
 .heroSection {
   position: relative;
-  width: 100vw;
-  margin-left: calc(-50vw + 50%);
-  margin-right: calc(-50vw + 50%);
-  height: 549px;
-  overflow: hidden;
-  margin-top: 64px;
-
-  @media (max-width: $breakpoint-desktop) {
-    height: 400px;
-  }
-
-  @media (max-width: $breakpoint-tablet) {
-    height: 420px;
-    margin-top: 40px;
-  }
-
-  &::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background-image: url('/images/education/hero/hero-bg.jpg');
-    background-size: cover;
-    background-position: center;
-    z-index: 0;
-  }
-}
-
-.heroOverlay {
-  position: absolute;
-  inset: 0;
-  background-color: rgba(0, 0, 0, 0.6);
-  z-index: 1;
-  pointer-events: none;
-}
-
-.heroContent {
-  position: absolute;
-  bottom: -30px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 2;
+  padding: 140px 0 100px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 48px;
-  text-align: center;
-  max-width: 1440px;
-  width: 100%;
-  padding: 0 240px 80px;
-  box-sizing: border-box;
+  justify-content: center;
+  overflow: visible;
 
   @media (max-width: $breakpoint-desktop) {
-    gap: 40px;
-    padding: 0 120px 60px;
-    bottom: -25px;
+    padding: 100px 0px 100px;
   }
 
   @media (max-width: $breakpoint-tablet) {
-    gap: 16px;
-    padding: 0 20px 30px;
-    bottom: auto;
-    top: 260px;
+    padding: 80px 0px 40px;
   }
 }
 
-.heroLabel {
+.heroSubtitle {
   font-family: $font-pretendard;
-  font-weight: $font-weight-semibold;
-  font-size: 21px;
-  line-height: 1.5;
-  letter-spacing: -0.105px;
-  color: white;
-  margin: 0;
-  position: absolute;
-  top: 120px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 3;
-  pointer-events: none;
+  font-weight: 600;
+  font-size: 20px;
+  line-height: 150%;
+  letter-spacing: -0.075px;
+  color: $primary-70;
   text-align: center;
-
-  @media (max-width: $breakpoint-desktop) {
-    top: 100px;
-  }
-
   @media (max-width: $breakpoint-tablet) {
     font-size: 15px;
-    font-weight: $font-weight-semibold;
-    top: 60px;
   }
 }
 
 .heroTitle {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 31px;
-  font-family: 'Montserrat', sans-serif;
-  font-weight: 300;
-  font-size: 120px;
-  line-height: 1.5;
-  letter-spacing: -3px;
-  color: white;
-  mix-blend-mode: difference;
-  position: absolute;
-  top: calc(50% - 50px);
-  left: 50%;
-  transform: translate(-50%, -50%);
-  z-index: 3;
-  pointer-events: none;
-
-  @media (max-width: $breakpoint-desktop) {
-    font-size: 80px;
-    gap: 24px;
-    top: calc(50% - 40px);
-  }
-
-  @media (max-width: $breakpoint-tablet) {
-    flex-direction: column;
-    font-size: 44px;
-    font-weight: 300;
-    gap: 0;
-    top: 100px;
-    transform: translateX(-50%);
-    line-height: 110%;
-    letter-spacing: -3px;
-  }
-
-  h2 {
-    margin: 0;
-    font-family: inherit;
-    font-weight: inherit;
-    font-size: inherit;
-    line-height: inherit;
-    letter-spacing: inherit;
-    color: inherit;
-    white-space: nowrap;
-  }
-}
-
-.heroTitleItalic {
-  font-style: italic;
-}
-
-.heroDescription {
-  display: flex;
-  flex-direction: column;
-  gap: 48px;
-  align-items: center;
-
-  @media (max-width: $breakpoint-tablet) {
-    gap: 16px;
-  }
-}
-
-.heroDescriptionMain {
   font-family: $font-pretendard;
-  font-weight: $font-weight-semibold;
-  font-size: 40px;
-  line-height: 1.5;
-  letter-spacing: -0.2px;
-  color: white;
-  margin: 0;
+  font-weight: 600;
+  font-size: 68px;
+  color: $gray-90;
   text-align: center;
-
-  @media (max-width: $breakpoint-desktop) {
-    font-size: 32px;
+  span {
+    color: $primary-50;
   }
-
   @media (max-width: $breakpoint-tablet) {
-    font-size: 21px;
-    line-height: 150%;
-    letter-spacing: -0.105px;
+    font-size: 28px;
+    margin-top: 32px;
   }
 }
 
-.heroDescriptionItalic {
-  font-style: normal;
-}
-
-.heroDescriptionSub {
+.heroDescriptionText {
   font-family: $font-pretendard;
-  font-weight: $font-weight-regular;
+  font-weight: 400;
   font-size: 17px;
   line-height: 1.5;
   letter-spacing: -0.085px;
-  color: white;
-  margin: 0;
+  color: $gray-70;
+  margin-top: -15px;
   text-align: center;
+  margin-top: 56px;
 
   @media (max-width: $breakpoint-tablet) {
-    font-size: 13px;
-    line-height: 150%;
-    letter-spacing: -0.065px;
+    margin-top: 40px;
   }
 
-  strong {
-    font-weight: $font-weight-semibold;
+  p {
+    margin: 0;
+    font-size: 17px;
+
+    @media (max-width: $breakpoint-tablet) {
+      font-size: 13px;
+    }
   }
 }
 
@@ -295,45 +175,10 @@
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
-  margin-bottom: 64px;
+  margin-bottom: 40px;
 
   @media (max-width: $breakpoint-tablet) {
     margin-bottom: 40px;
-  }
-}
-
-.sectionTitleWrapper {
-  display: flex;
-  flex-direction: column;
-  gap: 48px;
-
-  @media (max-width: $breakpoint-tablet) {
-    gap: 8px;
-  }
-}
-
-.sectionTitleBg {
-  opacity: 0.2;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-
-  h3 {
-    font-family: 'Montserrat', sans-serif;
-    font-weight: 300;
-    font-size: 120px;
-    line-height: 1.5;
-    letter-spacing: -3px;
-    color: white;
-    margin: 0;
-
-    @media (max-width: $breakpoint-desktop) {
-      font-size: 80px;
-    }
-
-    @media (max-width: $breakpoint-tablet) {
-      font-size: 48px;
-    }
   }
 }
 
@@ -343,7 +188,7 @@
   font-size: 32px;
   line-height: 1.5;
   letter-spacing: -0.16px;
-  color: #bfd8f3;
+  color: $gray-90;
   margin: 0;
 
   @media (max-width: $breakpoint-desktop) {
@@ -368,8 +213,7 @@
 .navButton {
   width: 48px;
   height: 48px;
-  border: 1px solid white;
-  border-radius: 100px;
+  border: 1px solid $primary-50;
   background: transparent;
   display: flex;
   align-items: center;
@@ -390,10 +234,8 @@
     width: 40px;
     height: 40px;
   }
-
-  svg {
-    width: 20px;
-    height: 20px;
+  &Left {
+    transform: rotate(180deg);
   }
 }
 
@@ -427,36 +269,27 @@
   opacity: 0.5;
 }
 
-.allContent {
-  display: flex;
-  gap: 24px;
-  width: 100%;
-  max-width: 1440px;
+// .allContent {
+//   display: flex;
+//   gap: 24px;
+//   width: 100%;
+//   max-width: 1440px;
 
-  @media (max-width: $breakpoint-desktop) {
-    flex-direction: column;
-  }
-}
+//   @media (max-width: $breakpoint-desktop) {
+//     flex-direction: column;
+//   }
+// }
 
 .sidebar {
   display: flex;
-  flex-direction: column;
-  gap: 12px;
-  width: 342px;
-  padding-right: 64px;
+  width: 100%;
   flex-shrink: 0;
-
-  @media (max-width: $breakpoint-desktop) {
-    width: 100%;
-    padding-right: 0;
-    flex-direction: row;
-    overflow-x: auto;
-    padding-bottom: 16px;
-  }
+  border-bottom: 1px solid var(--grayscale-10, #f0f0f0);
+  background: #fff;
+  margin-bottom: 64px;
+  gap: 20px;
 
   @media (max-width: $breakpoint-tablet) {
-    gap: 16px;
-    padding-bottom: 0;
     margin-bottom: 24px;
     flex-wrap: wrap;
   }
@@ -466,14 +299,13 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 18px 0;
-  border-bottom: 1px solid white;
+  // padding: 18px 0;
   font-family: $font-pretendard;
   font-weight: $font-weight-semibold;
   font-size: 21px;
   line-height: 1.5;
   letter-spacing: -0.105px;
-  color: #8e8e8e;
+  color: $gray-70;
   cursor: pointer;
   transition: color 0.2s ease;
 
@@ -495,26 +327,14 @@
   }
 
   &:hover {
-    color: white;
+    color: $gray-80;
   }
 }
 
 .sidebarTabActive {
-  color: white !important;
+  color: $gray-90 !important;
   font-weight: $font-weight-semibold !important;
-}
-
-.sidebarDot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background-color: #d11f00;
-  flex-shrink: 0;
-
-  @media (max-width: $breakpoint-tablet) {
-    width: 4px;
-    height: 4px;
-  }
+  border-bottom: 2px solid var(--Primary-50, #00a89e);
 }
 
 .mainContent {
@@ -533,6 +353,9 @@
 
   // 전체 교육 섹션의 그리드는 2열 유지 (가로 스크롤 X)
   .educationGrid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 64px 24px;
+
     @media (max-width: $breakpoint-tablet) {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
@@ -546,6 +369,13 @@
   }
 
   .educationCard {
+    border: none;
+    box-shadow: none;
+    padding: 0;
+    &:hover {
+      box-shadow: none;
+      transform: none;
+    }
     @media (max-width: $breakpoint-tablet) {
       width: 100%;
       min-width: unset;
@@ -592,12 +422,13 @@
 }
 
 .educationCard {
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid #2d2d2d;
   border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 2px 20px 0 rgba(0, 0, 0, 0.15);
   overflow: hidden;
   cursor: pointer;
   transition: all 0.2s ease;
+  padding: 12px 12px 32px;
 
   &:hover {
     transform: translateY(-4px);
@@ -624,6 +455,7 @@
     width: 100%;
     height: 100%;
     object-fit: cover;
+    border-radius: 8px;
   }
 
   @media (max-width: $breakpoint-tablet) {
@@ -632,13 +464,12 @@
 }
 
 .cardContent {
-  padding: 12px 8px 40px;
+  padding-top: 20px;
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 12px;
 
   @media (max-width: $breakpoint-tablet) {
-    padding: 12px 12px 24px;
     gap: 12px;
     position: relative;
     flex: 1;
@@ -652,8 +483,8 @@
 }
 
 .labelRed {
-  background: rgba(255, 255, 255, 0.1);
-  padding: 8px;
+  padding: 4px 8px;
+  background: var(--grayscale-10, #f0f0f0);
   border-radius: 4px;
   font-family: $font-pretendard;
   font-weight: $font-weight-semibold;
@@ -669,15 +500,15 @@
 }
 
 .labelWhite {
-  background: rgba(255, 255, 255, 0.1);
-  padding: 8px;
+  background: var(--grayscale-10, #f0f0f0);
+  padding: 4px 8px;
   border-radius: 4px;
   font-family: $font-pretendard;
   font-weight: $font-weight-semibold;
   font-size: 15px;
   line-height: 1.5;
   letter-spacing: -0.075px;
-  color: #f8f8fc;
+  color: $gray-90;
 
   @media (max-width: $breakpoint-tablet) {
     padding: 4px 6px;
@@ -686,15 +517,15 @@
 }
 
 .labelGray {
-  background: #555;
-  padding: 8px;
+  background: $gray-50;
+  padding: 4px 8px;
   border-radius: 4px;
   font-family: $font-pretendard;
   font-weight: $font-weight-semibold;
   font-size: 15px;
   line-height: 1.5;
   letter-spacing: -0.075px;
-  color: #f0f0f0;
+  color: $gray-5;
 
   @media (max-width: $breakpoint-tablet) {
     padding: 4px 6px;
@@ -708,7 +539,7 @@
   font-size: 21px;
   line-height: 1.5;
   letter-spacing: -0.105px;
-  color: white;
+  color: $gray-90;
   margin: 0;
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -741,7 +572,7 @@
   font-size: 15px;
   line-height: 1.5;
   letter-spacing: -0.075px;
-  color: #d8d8d8;
+  color: $gray-70;
   margin: 0;
 
   @media (max-width: $breakpoint-tablet) {
@@ -776,16 +607,12 @@
   font-size: 13px;
   line-height: 1.5;
   letter-spacing: -0.065px;
-  color: #d8d8d8;
+  color: $gray-70;
   margin: 0;
 
   @media (max-width: $breakpoint-tablet) {
     font-size: 11px;
   }
-}
-
-.sidebarTabActive {
-  color: white !important;
 }
 
 .educationList {
@@ -794,166 +621,125 @@
   gap: 24px;
 }
 
-.educationListItem {
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid #2d2d2d;
-  border-radius: 12px;
-  padding: 24px;
-  display: flex;
-  gap: 24px;
-  cursor: pointer;
-  transition: all 0.2s ease;
+// .educationListItem {
+//   background: rgba(255, 255, 255, 0.04);
+//   border: 1px solid #2d2d2d;
+//   border-radius: 12px;
+//   padding: 24px;
+//   display: flex;
+//   gap: 24px;
+//   cursor: pointer;
+//   transition: all 0.2s ease;
 
-  &:hover {
-    border-color: rgba(255, 255, 255, 0.2);
-    background: rgba(255, 255, 255, 0.06);
-  }
+//   &:hover {
+//     border-color: rgba(255, 255, 255, 0.2);
+//     background: rgba(255, 255, 255, 0.06);
+//   }
 
-  @media (max-width: $breakpoint-tablet) {
-    flex-direction: column;
-  }
-}
+//   @media (max-width: $breakpoint-tablet) {
+//     flex-direction: column;
+//   }
+// }
 
-.listItemImage {
-  width: 200px;
-  height: 150px;
-  flex-shrink: 0;
-  border-radius: 8px;
-  overflow: hidden;
+// .listItemImage {
+//   width: 200px;
+//   height: 150px;
+//   flex-shrink: 0;
+//   border-radius: 8px;
+//   overflow: hidden;
 
-  @media (max-width: $breakpoint-tablet) {
-    width: 100%;
-    height: 200px;
-  }
+//   @media (max-width: $breakpoint-tablet) {
+//     width: 100%;
+//     height: 200px;
+//   }
 
-  img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-  }
-}
+//   img {
+//     width: 100%;
+//     height: 100%;
+//     object-fit: cover;
+//   }
+// }
 
-.listItemContent {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
+// .listItemContent {
+//   flex: 1;
+//   display: flex;
+//   flex-direction: column;
+//   gap: 16px;
+// }
 
-.listItemLabels {
-  display: flex;
-  gap: 4px;
-  flex-wrap: wrap;
-}
+// .listItemLabels {
+//   display: flex;
+//   gap: 4px;
+//   flex-wrap: wrap;
+// }
 
-.listItemTitle {
-  font-family: $font-pretendard;
-  font-weight: $font-weight-semibold;
-  font-size: 25px;
-  line-height: 1.5;
-  letter-spacing: -0.125px;
-  color: white;
-  margin: 0;
-}
+// .listItemTitle {
+//   font-family: $font-pretendard;
+//   font-weight: $font-weight-semibold;
+//   font-size: 25px;
+//   line-height: 1.5;
+//   letter-spacing: -0.125px;
+//   color: white;
+//   margin: 0;
+// }
 
-.listItemInfo {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
+// .listItemInfo {
+//   display: flex;
+//   flex-direction: column;
+//   gap: 8px;
+// }
 
-.listItemLocation,
-.listItemDate {
-  font-family: $font-pretendard;
-  font-weight: $font-weight-regular;
-  font-size: 15px;
-  line-height: 1.5;
-  color: #d8d8d8;
-  margin: 0;
-}
+// .listItemLocation,
+// .listItemDate {
+//   font-family: $font-pretendard;
+//   font-weight: $font-weight-regular;
+//   font-size: 15px;
+//   line-height: 1.5;
+//   color: #d8d8d8;
+//   margin: 0;
+// }
 
 // Newsletter Section
 .newsletterSection {
   width: 100%;
-  padding: 48px 0 240px;
+  padding: 80px 0 160px;
 }
 
-.newsletterHero {
-  position: relative;
-  width: 100%;
-  min-height: 600px;
-  padding: 100px 120px 88px;
-  overflow: hidden;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 24px;
-  background: #000;
+// .newsletterHero {
+//   width: 100%;
 
-  @media (max-width: $breakpoint-desktop) {
-    min-height: 500px;
-    padding: 80px 60px;
-  }
+//   &::after {
+//     content: "";
+//     position: absolute;
+//     inset: 0;
+//     background: linear-gradient(
+//         180deg,
+//         rgba(0, 78, 179, 0) 21.635%,
+//         rgba(0, 78, 179, 0.5) 100%
+//       ),
+//       linear-gradient(
+//         90deg,
+//         rgba(33, 33, 33, 0.9) 0%,
+//         rgba(33, 33, 33, 0.9) 100%
+//       );
+//     z-index: 1;
+//     border-radius: 24px;
 
-  @media (max-width: $breakpoint-tablet) {
-    min-height: 400px;
-    padding: 60px 24px;
-    border-radius: 16px;
-  }
-
-  &::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background-image: url('/images/education/hero/newspaper.jpg');
-    background-size: cover;
-    background-position: center;
-    z-index: 0;
-    border-radius: 24px;
-
-    @media (max-width: $breakpoint-tablet) {
-      border-radius: 16px;
-    }
-  }
-
-  &::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(
-      180deg,
-      rgba(0, 78, 179, 0) 21.635%,
-      rgba(0, 78, 179, 0.5) 100%
-    ),
-    linear-gradient(90deg, rgba(33, 33, 33, 0.9) 0%, rgba(33, 33, 33, 0.9) 100%);
-    z-index: 1;
-    border-radius: 24px;
-
-    @media (max-width: $breakpoint-tablet) {
-      border-radius: 16px;
-    }
-  }
-}
-
-.newsletterHeroOverlay {
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  border-radius: 24px;
-
-  @media (max-width: $breakpoint-tablet) {
-    border-radius: 16px;
-  }
-}
+//     @media (max-width: $breakpoint-tablet) {
+//       border-radius: 16px;
+//     }
+//   }
+// }
 
 .newsletterHeroContent {
   position: relative;
   z-index: 2;
   display: flex;
-  gap: 120px;
-  align-items: flex-start;
-  max-width: 1440px;
-  width: 100%;
+  align-items: center;
+  background: var(--Primary-5, #f3f9f9);
+
+  box-shadow: 0 4px 20px 0 rgba(0, 0, 0, 0.1);
+  margin-top: 80px;
 
   @media (max-width: $breakpoint-desktop) {
     gap: 80px;
@@ -968,59 +754,52 @@
 .newsletterLeft {
   flex: 1;
   display: flex;
-  flex-direction: column;
-  gap: 64px;
-  align-items: flex-start;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: 64px;
 
-  @media (max-width: $breakpoint-desktop) {
-    gap: 40px;
-    width: 100%;
-  }
+  // @media (max-width: $breakpoint-desktop) {
+  //   gap: 40px;
+  //   width: 100%;
+  // }
 
-  @media (max-width: $breakpoint-tablet) {
-    gap: 32px;
-  }
+  // @media (max-width: $breakpoint-tablet) {
+  //   gap: 32px;
+  // }
 }
 
 .newsletterLabel {
   font-family: $font-pretendard;
   font-weight: $font-weight-semibold;
-  font-size: 15px;
-  line-height: 150%;
-  letter-spacing: -0.075px;
-  color: white;
+  font-size: 19px;
+  line-height: 1.5;
+  letter-spacing: -0.105px;
   margin: 0;
-}
-
-.newsletterTitle {
-  font-family: $font-montserrat;
-  font-weight: 300;
-  font-size: 66px;
-  line-height: 110%;
-  letter-spacing: -3px;
-  color: white;
-  margin: 0;
-  mix-blend-mode: difference;
-  text-align: left;
-
-  @media (max-width: $breakpoint-tablet) {
-    font-size: 44px;
-    letter-spacing: -2px;
-  }
-}
-
-.newsletterDescription {
-  font-family: $font-pretendard;
-  font-weight: $font-weight-semibold;
-  font-size: 17px;
-  line-height: 150%;
-  letter-spacing: -0.085px;
-  color: white;
-  margin: 0;
+  color: $primary-50;
 
   @media (max-width: $breakpoint-tablet) {
     font-size: 15px;
-    letter-spacing: -0.075px;
+  }
+}
+
+.newsletterTitle {
+  margin: 24px 0 0 0;
+  font-family: $font-pretendard;
+  font-weight: 600;
+  font-size: 66px;
+  line-height: 1.1;
+  letter-spacing: -2px;
+  color: $gray-90;
+
+  @media (max-width: $breakpoint-desktop) {
+    font-size: 48px;
+    letter-spacing: -1.8px;
+  }
+
+  @media (max-width: $breakpoint-tablet) {
+    font-size: 28px;
+    letter-spacing: -1.5px;
   }
 }
 
@@ -1029,7 +808,8 @@
   display: flex;
   flex-direction: column;
   gap: 80px;
-  padding-top: 56px;
+  padding: 64px;
+  background: #fff;
 
   @media (max-width: $breakpoint-desktop) {
     gap: 60px;
@@ -1039,6 +819,20 @@
 
   @media (max-width: $breakpoint-tablet) {
     gap: 40px;
+  }
+}
+
+.newsletterRighTitle {
+  h2 {
+    font-size: 34px;
+    color: $gray-90;
+    margin-top: 40px;
+    font-weight: 400;
+  }
+
+  p {
+    color: $primary-70;
+    font-size: 20px;
   }
 }
 
@@ -1100,7 +894,6 @@
   display: flex;
   flex-direction: column;
   gap: 16px;
-  padding: 0 16px;
 }
 
 .newsletterCheckboxRow {
@@ -1124,7 +917,7 @@
   border: none;
   padding: 0;
   @include pretendard-15-regular;
-  color: #94b9e3;
+  color: #00a89e;
   text-decoration: underline;
   cursor: pointer;
   flex-shrink: 0;
@@ -1133,6 +926,17 @@
 
   &:hover {
     opacity: 0.8;
+  }
+}
+
+.newsletterButton {
+  margin-top: 48px;
+  border: 1px solid var(--Primary-0, #fff);
+  background: #00a89e;
+  color: #fff;
+  &:disabled {
+    background: var(--grayscale-40, #c6c6c6);
+    color: #fff;
   }
 }
 
@@ -1146,11 +950,10 @@
   gap: 20px;
   z-index: 1000;
   align-items: flex-end;
-  
+
   @media (max-width: $breakpoint-tablet) {
     bottom: 40px;
     right: 20px;
     gap: 12px;
   }
 }
-

@@ -215,6 +215,10 @@ const Signup: React.FC = () => {
   }, [userId]);
 
   const handleRequestVerification = useCallback(async () => {
+    setError("");
+    setPhoneError("");
+    setVerificationCodeError("");
+
     if (!carrier || !phone) {
       setPhoneError("휴대폰번호를 입력해주세요");
       return;
@@ -227,29 +231,72 @@ const Signup: React.FC = () => {
       return;
     }
 
-    setPhoneError("");
+    setIsLoading(true);
+    try {
+      const response = await post(API_ENDPOINTS.AUTH.PHONE_SEND, {
+        phone: cleanPhone,
+      });
 
-    // API 호출 임시 비활성화 - 바로 타이머 시작
-    setTimeLeft(300);
-    setIsTimerActive(true);
-    setError("");
+      if (response.error) {
+        setPhoneError(response.error || "인증번호 발송에 실패했습니다. 다시 시도해주세요.");
+        return;
+      }
+
+      // On success: Start/reset 5-minute timer and move to verification step
+      setTimeLeft(300); // 5 minutes = 300 seconds
+      setIsTimerActive(true);
+      setVerificationCode(""); // Clear previous code
+    } catch (err) {
+      setPhoneError("인증번호 발송에 실패했습니다. 다시 시도해주세요.");
+    } finally {
+      setIsLoading(false);
+    }
   }, [phone, carrier]);
 
+  
   const handleVerifyCode = useCallback(async () => {
+    setError("");
+    setVerificationCodeError("");
+
     if (!verificationCode) {
       setVerificationCodeError("인증번호를 입력해주세요.");
       return;
     }
 
-    // API 호출 임시 비활성화 - 인증번호 1234로 검증 (서버에서 4자리 요구)
-    if (verificationCode === "1234") {
+    if (!phone) {
+      setVerificationCodeError("휴대폰 번호를 먼저 입력해주세요.");
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      // Strip non-numeric characters from phone number
+      const cleanPhone = phone.replace(/[^0-9]/g, "");
+
+      const response = await post(API_ENDPOINTS.AUTH.PHONE_VERIFY, {
+        phone: cleanPhone,
+        code: verificationCode,
+      });
+
+      if (response.error) {
+        if (response.status === 400) {
+          setVerificationCodeError("인증번호가 올바르지 않거나 만료되었습니다.");
+        } else {
+          setVerificationCodeError(response.error || "인증에 실패했습니다.");
+        }
+        return;
+      }
+
+      // On verify success: Mark phone as verified and allow signup to proceed
       setIsPhoneVerified(true);
       setIsTimerActive(false);
       setVerificationCodeError("");
-    } else {
-      setVerificationCodeError("인증번호가 일치하지 않습니다.");
+    } catch (err) {
+      setVerificationCodeError("인증에 실패했습니다. 다시 시도해주세요.");
+    } finally {
+      setIsLoading(false);
     }
-  }, [verificationCode]);
+  }, [verificationCode, phone]);
 
   const handleDomainSelect = (value: string) => {
     setSelectedDomainOption(value);
@@ -790,7 +837,7 @@ const Signup: React.FC = () => {
                 />
                 <Button
                   type="line-white"
-                  // size="medium"
+                  size="medium"
                   disabled={!carrier || !phone || isPhoneVerified || isLoading}
                   onClick={handleRequestVerification}
                   className="signup-request-verification-button"
@@ -837,6 +884,18 @@ const Signup: React.FC = () => {
                   {isLoading ? "확인 중..." : "확인"}
                 </Button>
               </div>
+              {/* <div className="signup-phone-input-group" style={{ marginTop: "8px" }}>
+                <div style={{ flex: 1 }}></div>
+                <Button
+                  type="line-white"
+                  size="medium"
+                  disabled={!isTimerActive || isLoading}
+                  onClick={handleRequestVerification}
+                  className="signup-request-verification-button"
+                >
+                  {isLoading ? "발송 중..." : "인증번호 재요청"}
+                </Button>
+              </div> */}
               {verificationCodeError && (
                 <p className="auth-error-message">
                   <Icon type="error" size={16} />

@@ -38,6 +38,20 @@ interface HierarchicalData {
   minorCategories: unknown[];
 }
 
+interface InsightCategory {
+  id: number;
+  name: string;
+  isExposed?: boolean;
+  displayOrder?: number;
+}
+
+interface InsightHierarchicalItem {
+  category: InsightCategory;
+  subcategories?: unknown[];
+}
+
+type InsightHierarchicalData = InsightHierarchicalItem[];
+
 const Menu: React.FC<MenuProps> = ({ isOpen, onClose }) => {
   const router = useRouter();
   const [selectedItem, setSelectedItem] = useState<string>('services');
@@ -55,6 +69,9 @@ const Menu: React.FC<MenuProps> = ({ isOpen, onClose }) => {
 
   // Business Area categories from API
   const [businessAreaCategories, setBusinessAreaCategories] = useState<MajorCategory[]>([]);
+
+  // Insights categories from API
+  const [insightCategories, setInsightCategories] = useState<InsightCategory[]>([]);
 
   // 연혁 노출 여부 및 자료실 목록에 따라 메뉴 아이템 동적 생성
   const menuItems: MenuItemConfig[] = MENU_ITEMS.map(item => {
@@ -78,11 +95,14 @@ const Menu: React.FC<MenuProps> = ({ isOpen, onClose }) => {
       };
     }
     if (item.id === 'insight') {
-      // 자료실 목록을 동적으로 구성
-      const exposedDataRooms = dataRooms.filter(dr => dr.isExposed);
+      // Insights categories from API - use category.name as label
+      const exposedCategories = insightCategories
+        .filter(cat => cat.isExposed !== false) // API already returns only exposed, but filter for safety
+        .sort((a, b) => (a.displayOrder ?? 0) - (b.displayOrder ?? 0));
       return {
         ...item,
-        subItems: ['칼럼', ...exposedDataRooms.map(dr => dr.name)]
+        subItems: exposedCategories.map(cat => cat.name),
+        subItemIds: exposedCategories.map(cat => cat.id),
       };
     }
     return item;
@@ -106,7 +126,28 @@ const Menu: React.FC<MenuProps> = ({ isOpen, onClose }) => {
         setSelectedSubItem(null);
       } else if (pathname === '/insights' || pathname.startsWith('/insights/')) {
         setSelectedItem('insight');
-        setSelectedSubItem(null);
+        // Insights 서브메뉴 선택 - API 데이터 기반으로 동적 매칭
+        const categoryId = query.categoryId as string;
+        const tab = query.tab as string;
+        const insightMenuItem = menuItems.find(item => item.id === 'insight');
+        if (insightMenuItem && insightMenuItem.subItemIds) {
+          // Try to match by categoryId first, then by tab (for backward compatibility)
+          let subItemIndex = -1;
+          if (categoryId) {
+            subItemIndex = insightMenuItem.subItemIds.findIndex(id => String(id) === categoryId);
+          } else if (tab === 'column') {
+            // Legacy support: 'column' tab - try to find category with name matching '칼럼' or first category
+            const columnIndex = insightMenuItem.subItems.findIndex(name => name === '칼럼' || name.toLowerCase().includes('column'));
+            subItemIndex = columnIndex !== -1 ? columnIndex : 0; // Default to first category if 'column' tab
+          }
+          if (subItemIndex !== -1) {
+            setSelectedSubItem(subItemIndex);
+          } else {
+            setSelectedSubItem(null);
+          }
+        } else {
+          setSelectedSubItem(null);
+        }
       } else if (pathname === '/history' || pathname.startsWith('/history')) {
         setSelectedItem('about');
         // 함께소개 서브메뉴 선택 - 연혁 노출 여부에 따라 동적으로 인덱스 계산
@@ -151,7 +192,7 @@ const Menu: React.FC<MenuProps> = ({ isOpen, onClose }) => {
         setSelectedSubItem(null);
       }
     }
-  }, [isOpen, router.pathname, router.query, historyExposed, businessAreaCategories, dataRooms]);
+  }, [isOpen, router.pathname, router.query, historyExposed, businessAreaCategories, dataRooms, insightCategories]);
 
   useEffect(() => {
     if (isOpen && !hasBeenOpened) {
@@ -267,6 +308,32 @@ const Menu: React.FC<MenuProps> = ({ isOpen, onClose }) => {
     }
   }, [isOpen]);
 
+  // 메뉴가 열릴 때 Insights categories 확인
+  useEffect(() => {
+    if (isOpen) {
+      const fetchInsightCategories = async () => {
+        try {
+          const response = await get<InsightHierarchicalData>(
+            `${API_ENDPOINTS.INSIGHTS}/hierarchical`
+          );
+          if (response.data && Array.isArray(response.data)) {
+            // Extract categories from hierarchical data - use category.name as label
+            const categories = response.data
+              .map(item => item.category)
+              .filter(cat => cat.isExposed !== false) // API already returns only exposed, but filter for safety
+              .sort((a, b) => (a.displayOrder ?? 0) - (b.displayOrder ?? 0));
+            setInsightCategories(categories);
+          } else {
+            setInsightCategories([]);
+          }
+        } catch {
+          setInsightCategories([]);
+        }
+      };
+      fetchInsightCategories();
+    }
+  }, [isOpen]);
+
   const handleClose = () => {
     setIsClosing(true);
     setTimeout(() => {
@@ -349,14 +416,15 @@ const Menu: React.FC<MenuProps> = ({ isOpen, onClose }) => {
         setTimeout(() => router.push(`/history?tab=${tab}`), 500);
       }
     } else if (selectedItem === 'insight') {
-      // 인사이트 서브메뉴
-      if (subItem === '칼럼') {
-        setTimeout(() => router.push('/insights?tab=column'), 500);
-      } else {
-        // 자료실 항목 - dataRooms에서 해당 이름의 자료실 찾기
-        const dataRoom = dataRooms.find(dr => dr.name === subItem);
-        if (dataRoom) {
-          setTimeout(() => router.push(`/insights?tab=library&dataRoom=${dataRoom.id}`), 500);
+      // 인사이트 서브메뉴 - API 데이터 기반으로 동적 라우팅
+      const insightMenuItem = menuItems.find(item => item.id === 'insight');
+      if (insightMenuItem && insightMenuItem.subItemIds) {
+        const categoryIndex = insightMenuItem.subItems.findIndex(name => name === subItem);
+        if (categoryIndex !== -1 && insightMenuItem.subItemIds[categoryIndex]) {
+          const categoryId = insightMenuItem.subItemIds[categoryIndex];
+          // Navigate to insights page with category ID
+          // Use categoryId query parameter for dynamic category routing
+          setTimeout(() => router.push(`/insights?categoryId=${categoryId}`), 500);
         }
       }
     }
