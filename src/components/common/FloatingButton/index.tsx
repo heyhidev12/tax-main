@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import styles from "./styles.module.scss";
 
 export type FloatingButtonVariant = "consult" | "top" | "top-mobile";
@@ -9,6 +9,7 @@ export interface FloatingButtonProps {
   onClick?: () => void;
   label?: string;
 }
+
 
 
 
@@ -51,9 +52,21 @@ const FloatingButton: React.FC<FloatingButtonProps> = ({
   onClick,
   label = "상담 신청하기",
 }) => {
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+
+    checkMobile(); // first run
+    window.addEventListener("resize", checkMobile);
+
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
   // Consult button with label and icon
   if (variant === "consult") {
-    if (window.innerWidth < 768) {
+    if (isMobile) {
       return(
       <button
         className={` ${styles.floatingButtonConsultMobile}`}

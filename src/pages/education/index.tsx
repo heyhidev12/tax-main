@@ -1,15 +1,19 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/router';
 import Header from '@/components/common/Header';
 import Menu from '@/components/Menu';
 import Footer from '@/components/Footer';
 import PageHeader from '@/components/common/PageHeader';
 import FloatingButton from '@/components/common/FloatingButton';
-import Tab from '@/components/common/Tab';
 import { TextField } from '@/components/common/TextField';
 import Checkbox from '@/components/common/Checkbox';
 import Button from '@/components/common/Button';
 import Pagination from '@/components/common/Pagination';
+import { Swiper, SwiperSlide } from 'swiper/react';
+import { Navigation } from 'swiper/modules';
+import type { Swiper as SwiperType } from 'swiper';
+import 'swiper/css';
+import 'swiper/css/navigation';
 import { get, post } from '@/lib/api';
 import { API_ENDPOINTS } from '@/config/api';
 import type { EducationItem, EducationListResponse, EducationType } from '@/types/education';
@@ -30,6 +34,16 @@ const EducationPage: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [newEducationIndex, setNewEducationIndex] = useState(0);
+  
+  // Search state for New Education section
+  const [newEducationSearchQuery, setNewEducationSearchQuery] = useState('');
+  
+  // Swiper refs and state
+  const newEducationSwiperRef = useRef<SwiperType | null>(null);
+  const [newEducationButtonsDisabled, setNewEducationButtonsDisabled] = useState({
+    prev: true,
+    next: false,
+  });
   
   // Newsletter form state
   const [newsletterName, setNewsletterName] = useState('');
@@ -245,20 +259,43 @@ const EducationPage: React.FC = () => {
     }
   };
 
-  // 신규 교육 캐러셀 로직 (newEducationList 사용)
-  const itemsPerPage = 3;
-  const maxIndex = Math.max(0, Math.ceil(newEducationList.length / itemsPerPage) - 1);
-  const startIndex = newEducationIndex * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const newEducations = newEducationList.slice(startIndex, endIndex);
-  const hasNewEducationData = newEducationList.length > 0;
-  
-  const handlePrevEducation = () => {
-    setNewEducationIndex((prev) => Math.max(0, prev - 1));
+  // Filter new education list based on search query
+  const filteredNewEducationList = newEducationList.filter((item) => {
+    if (!newEducationSearchQuery.trim()) {
+      return true;
+    }
+    const query = newEducationSearchQuery.toLowerCase();
+    return (
+      item.name.toLowerCase().includes(query) ||
+      item.location?.toLowerCase().includes(query) ||
+      item.typeLabel?.toLowerCase().includes(query)
+    );
+  });
+
+  // Update button states helper for new education swiper
+  const updateNewEducationButtons = useCallback(() => {
+    if (newEducationSwiperRef.current) {
+      setNewEducationButtonsDisabled({
+        prev: newEducationSwiperRef.current.isBeginning,
+        next: newEducationSwiperRef.current.isEnd,
+      });
+    }
+  }, []);
+
+  // Reset swiper to first slide when search query changes
+  useEffect(() => {
+    if (newEducationSwiperRef.current) {
+      newEducationSwiperRef.current.slideTo(0);
+      updateNewEducationButtons();
+    }
+  }, [newEducationSearchQuery, updateNewEducationButtons]);
+
+  const handleNewEducationPrev = () => {
+    newEducationSwiperRef.current?.slidePrev();
   };
-  
-  const handleNextEducation = () => {
-    setNewEducationIndex((prev) => Math.min(maxIndex, prev + 1));
+
+  const handleNewEducationNext = () => {
+    newEducationSwiperRef.current?.slideNext();
   };
 
   // 날짜 포맷팅
@@ -277,10 +314,9 @@ const EducationPage: React.FC = () => {
 
   return (
     <div className={styles.page}>
-      <Header variant="white" onMenuClick={() => setIsMenuOpen(true)} />
+      <Header variant="white" onMenuClick={() => setIsMenuOpen(true)} isFixed={true} />
       <Menu isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
-      <div className={styles.headerImage}>
-      </div>
+      <div className={styles.headerImage}/>
       <div className="container">
         <div className={styles.pageHeaderWrapper}>
           <PageHeader
@@ -313,7 +349,7 @@ const EducationPage: React.FC = () => {
             <div className={styles.heroDescriptionText}>
               <p>
                 <span>세무법인 함께의</span>
-                <span className={styles.boldText}>전문가 교육</span>은 
+                <span className={styles.boldText}>전문가 교육</span>은 <br />
              
                 <span className={styles.boldText}>기업의 성공적인 내일</span>을 만듭니다.
               </p>
@@ -335,70 +371,139 @@ const EducationPage: React.FC = () => {
             ) : (
               <>
                 <div className={styles.newSection}>
+                  <div className={styles.searchInputWrapper}>
+                        <input
+                          type="text"
+                          placeholder="검색어를 입력해보세요"
+                          value={newEducationSearchQuery}
+                          onChange={(e) => setNewEducationSearchQuery(e.target.value)}
+                          className={styles.newEducationSearchInput}
+                        />
+                        <svg
+                          width="20"
+                          height="20"
+                          viewBox="0 0 20 20"
+                          fill="none"
+                          className={styles.searchIcon}
+                        >
+                          <path
+                            d="M9 17C13.4183 17 17 13.4183 17 9C17 4.58172 13.4183 1 9 1C4.58172 1 1 4.58172 1 9C1 13.4183 4.58172 17 9 17Z"
+                            stroke="#717171"
+                            strokeWidth="1.5"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                          <path
+                            d="M19 19L14.65 14.65"
+                            stroke="#717171"
+                            strokeWidth="1.5"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                        </svg>
+                      </div>
                   <div className={styles.sectionHeader}>
+                    
                     <div className={styles.sectionTitleWrapper}>
                       <h4 className={styles.sectionTitle}>신규 교육</h4>
                     </div>
-                    {hasNewEducationData && newEducationList.length > itemsPerPage && (
-                      <div className={styles.sectionNav}>
-                        <button
-                          className={styles.navButton}
-                          onClick={handlePrevEducation}
-                          disabled={newEducationIndex === 0}
-                        >
-                          <img src="/images/common/arrow-icon.svg" alt="" className={styles.navButtonLeft} />
-                          
-                        </button>
-                        <button
-                          className={styles.navButton}
-                          onClick={handleNextEducation}
-                          disabled={newEducationIndex >= maxIndex}
-                        >
-                          <img src="/images/common/arrow-icon.svg" alt="" />
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                  {newEducationList.length > 0 ? (
-                    <div className={styles.educationGrid}>
-                      {newEducationList.map((item) => {
-                        const daysLeft = getDaysUntilDeadline(item.recruitmentEndDate);
-                        return (
-                          <div
-                            key={item.id}
-                            className={styles.educationCard}
-                            onClick={() => router.push(`/education/${item.id}`)}
+                    <div className={styles.sectionHeaderRight}>
+                      
+                      {filteredNewEducationList.length > 0 && (
+                        <div className={styles.sectionNav}>
+                          <button
+                            className={styles.navButton}
+                            onClick={handleNewEducationPrev}
+                            id="new-education-prev-btn"
+                            disabled={newEducationButtonsDisabled.prev}
                           >
-                            <div className={styles.cardImage}>
-                              <img src={item.image?.url || '/images/education/default-thumbnail.png'} alt={item.name} />
-                            </div>
-                            <div className={styles.cardContent}>
-                              <div className={styles.cardLabels}>
-                                {daysLeft > 0 && (
-                                  <span className={styles.labelRed}>
-                                    신청마감 D-{daysLeft}
-                                  </span>
-                                )}
-                                <span className={styles.labelWhite}>
-                                  {item.typeLabel}
-                                </span>
-                              </div>
-                              <h3 className={styles.cardTitle}>{item.name}</h3>
-                              <div className={styles.cardInfo}>
-                                <p className={styles.cardLocation}>{item.location}</p>
-                                <div className={styles.cardDateWrapper}>
-                                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className={styles.cardDateIcon}>
-                                    <path d="M3 2V4M13 2V4M2 6H14M3 2H13C13.5523 2 14 2.44772 14 3V13C14 13.5523 13.5523 14 13 14H3C2.44772 14 2 13.5523 2 13V3C2 2.44772 2.44772 2 3 2Z" stroke="#d8d8d8" strokeWidth="1" strokeLinecap="round"/>
-                                  </svg>
-                                  <p className={styles.cardDate}>
-                                    {item.educationDates[0]} {item.educationTimeSlots[0]}
-                                  </p>
+                            <img src="/images/common/arrow-icon.svg" alt="" className={styles.navButtonLeft} />
+                          </button>
+                          <button
+                            className={styles.navButton}
+                            onClick={handleNewEducationNext}
+                            id="new-education-next-btn"
+                            disabled={newEducationButtonsDisabled.next}
+                          >
+                            <img src="/images/common/arrow-icon.svg" alt="" />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  {filteredNewEducationList.length > 0 ? (
+                    <div className={styles.newEducationSwiperWrapper}>
+                      <Swiper
+                        modules={[Navigation]}
+                        grabCursor={true}
+                        allowTouchMove={true}
+                        navigation={{
+                          prevEl: "#new-education-prev-btn",
+                          nextEl: "#new-education-next-btn",
+                        }}
+                        breakpoints={{
+                          0: {
+                            slidesPerView: 1.3,
+                            spaceBetween: 16,
+                          },
+                          576: {
+                            slidesPerView: 2,
+                            spaceBetween: 18,
+                          },
+                          768: {
+                            slidesPerView: 3,
+                            spaceBetween: 24,
+                          },
+                        }}
+                        onSwiper={(swiper) => {
+                          newEducationSwiperRef.current = swiper;
+                          updateNewEducationButtons();
+                        }}
+                        onSlideChange={() => {
+                          updateNewEducationButtons();
+                        }}
+                        className={styles.newEducationSwiper}
+                      >
+                        {filteredNewEducationList.map((item) => {
+                          const daysLeft = getDaysUntilDeadline(item.recruitmentEndDate);
+                          return (
+                            <SwiperSlide key={item.id}>
+                              <div
+                                className={styles.educationCard}
+                                onClick={() => router.push(`/education/${item.id}`)}
+                              >
+                                <div className={styles.cardImage}>
+                                  <img src={item.image?.url || '/images/education/default-thumbnail.png'} alt={item.name} />
+                                </div>
+                                <div className={styles.cardContent}>
+                                  <div className={styles.cardLabels}>
+                                    {daysLeft > 0 && (
+                                      <span className={styles.labelRed}>
+                                        신청마감 D-{daysLeft}
+                                      </span>
+                                    )}
+                                    <span className={styles.labelWhite}>
+                                      {item.typeLabel}
+                                    </span>
+                                  </div>
+                                  <h3 className={styles.cardTitle}>{item.name}</h3>
+                                  <div className={styles.cardInfo}>
+                                    <p className={styles.cardLocation}>{item.location}</p>
+                                    <div className={styles.cardDateWrapper}>
+                                      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className={styles.cardDateIcon}>
+                                        <path d="M3 2V4M13 2V4M2 6H14M3 2H13C13.5523 2 14 2.44772 14 3V13C14 13.5523 13.5523 14 13 14H3C2.44772 14 2 13.5523 2 13V3C2 2.44772 2.44772 2 3 2Z" stroke="#d8d8d8" strokeWidth="1" strokeLinecap="round"/>
+                                      </svg>
+                                      <p className={styles.cardDate}>
+                                        {item.educationDates[0]} {item.educationTimeSlots[0]}
+                                      </p>
+                                    </div>
+                                  </div>
                                 </div>
                               </div>
-                            </div>
-                          </div>
-                        );
-                      })}
+                            </SwiperSlide>
+                          );
+                        })}
+                      </Swiper>
                     </div>
                   ) : (
                     <div className={styles.emptyState}>
@@ -494,7 +599,7 @@ const EducationPage: React.FC = () => {
                               );
                             })}
                           </div>
-                          {/* <div className={styles.paginationWrapper}>
+                          <div className={styles.paginationWrapper}>
                             <Pagination
                               currentPage={currentPage}
                               totalPages={totalPages}
@@ -504,7 +609,7 @@ const EducationPage: React.FC = () => {
                               }}
                               visiblePages={4}
                             />
-                          </div> */}
+                          </div>
                         </>
                       ) : (
                         <div className={styles.emptyState}>
@@ -610,7 +715,7 @@ const EducationPage: React.FC = () => {
       <Footer />
 
       {/* Floating Buttons */}
-      {/* <div className={styles.floatingButtons}>
+      <div className={styles.floatingButtons}>
         <FloatingButton
           variant="consult"
           label="상담 신청하기"
@@ -620,7 +725,7 @@ const EducationPage: React.FC = () => {
           variant="top"
           onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
         />
-      </div> */}
+      </div>
     </div>
   );
 };

@@ -18,11 +18,11 @@
   width: 40px;
   height: 40px;
   padding: 8px 2px;
-  border-radius: 100px;
   border: none;
   background: transparent;
   cursor: pointer;
   transition: all $transition-fast;
+  font-size: 19px;
 
   &:disabled {
     cursor: not-allowed;
@@ -53,12 +53,12 @@
 }
 
 .paginationButtonActive {
-  background-color: $white;
-  color: $black;
+  background-color: $primary-50;
+  color: $white;
   font-weight: $font-weight-semibold;
 
   &:hover {
-    background-color: $white;
+    background-color: $primary-40;
     color: $black;
   }
 }

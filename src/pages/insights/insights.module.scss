@@ -1,14 +1,30 @@
-@import '../../styles/variables';
+@import "../../styles/variables";
 
 .insightsPage {
   min-height: 100vh;
-  background-color: #151515;
-  color: white;
+  color: #151515;
+  background-color: white;
   display: flex;
   flex-direction: column;
+}
 
+.headerImage {
+  position: relative;
+  z-index: 1;
+  margin-top: -92px; // ← header balandligi
+  padding-top: 20%;
+  background-image: url("../../../public/images/pages/insights.png");
+  background-size: cover;
+  background-position: center;
+  min-height: 220px;
+  max-height: 400px;
+  width: 100%;
   @media (max-width: 767px) {
-    padding-top: 56px;
+    margin-top: -52px; // ← header balandligi
+  }
+  &News{
+  background-image: url("../../../public/images/pages/education.png");
+
   }
 }
 
@@ -21,59 +37,16 @@
   }
 
   @media (max-width: 767px) {
-    padding-bottom: 60px;
+    padding-bottom: 64px;
   }
 }
 
-.container {
-  flex: 1;
-  padding: 0 240px;
-  max-width: 1920px;
-  margin: 0 auto;
-  width: 100%;
-  box-sizing: border-box;
-
-  @media (max-width: 1440px) {
-    padding: 0 120px;
-  }
-
-  @media (max-width: 767px) {
-    padding: 0 24px;
-  }
-}
-
-.pageHeaderWrapper {
-  padding-top: 136px;
-  padding-bottom: 24px;
-
-  :global(.page-header--web) {
-    gap: 32px;
-  }
-
-  @media (max-width: 1440px) {
-    padding-top: 80px;
-    padding-bottom: 16px;
-
-    :global(.page-header--web) {
-      gap: 24px;
-    }
-  }
-
-  @media (max-width: 767px) {
-    padding-top: 64px;
-    padding-bottom: 12px;
-
-    :global(.page-header--web) {
-      gap: 20px;
-    }
-  }
-}
 
 .mainContent {
-  padding: 0;
+  padding: 80px 0;
 
   @media (max-width: 1440px) {
-    padding: 0 120px;
+    // padding: 0 120px;
   }
 
   @media (max-width: 767px) {
@@ -84,7 +57,7 @@
 .columnTitleSection {
   display: flex;
   flex-direction: column;
-  gap: 64px;
+  gap: 40px;
   margin-bottom: 80px;
   align-items: flex-start;
   justify-content: flex-start;
@@ -95,60 +68,40 @@
   }
 
   @media (max-width: 767px) {
-    gap: 8px;
-    margin-bottom: 0;
-    align-items: center;
+    gap: 24px;
+   margin: 56px 0;
   }
 }
 
 .columnTitle {
-  font-family: 'Montserrat', sans-serif;
-  font-size: 120px;
-  font-weight: 300;
+  font-family: "Pretendart", sans-serif;
+  font-size: 66px;
+  font-weight: 600;
   line-height: 1.1;
   letter-spacing: -3px;
-  color: white;
+  color: $gray-90;
   margin: 0;
   text-align: left;
 
   @media (max-width: 1440px) {
-    font-size: 80px;
+    font-size: 56px;
   }
 
   @media (max-width: 767px) {
-    font-size: 44px;
-    line-height: 110%;
-    letter-spacing: -2px;
-    text-align: center;
+    font-size: 40px;
   }
 }
 
 .columnSubtitle {
-  font-family: 'Pretendard', sans-serif;
+  font-family: "Pretendard", sans-serif;
   font-weight: 600;
   font-size: 15px;
   line-height: 1.5;
   letter-spacing: -0.075px;
-  color: #bfd8f3;
+  color: $primary-50;
   margin: 0;
-  display: none;
-
-  @media (max-width: 767px) {
-    display: block;
-    text-align: center;
-    margin-bottom: 72px;
-  }
 }
 
-// 모바일 탭 섹션 (칼럼/자료실 전환)
-.mobileTabSection {
-  display: none;
-
-  @media (max-width: 767px) {
-    display: block;
-    margin-bottom: 96px;
-  }
-}
 
 // 모바일 검색 섹션
 .mobileSearchSection {
@@ -156,198 +109,112 @@
 
   @media (max-width: 767px) {
     display: block;
-    margin-bottom: 48px;
-    padding-left: 47.5px;
-    padding-right: 47.5px;
+  width: 100%;
+  flex-shrink: 0;
 
-    :global(.searchfield) {
-      border-bottom: 1px solid #555;
-      padding: 12px 0;
-    }
+  :global(.searchfield) {
+    padding: 12px 16px;
+    border: none;
+    background: $gray-5;
+    border-radius: 8px;
 
-    :global(.searchfield__input) {
-      color: #f0f0f0;
-      font-size: 15px;
-    }
-
-    :global(.searchfield__display-text--placeholder) {
-      color: #717171;
+    svg {
+      path {
+        stroke: #151515;
+      }
     }
   }
-}
 
-// 모바일 카테고리 탭
-.mobileCategoryTabs {
-  display: none;
+  :global(.searchfield__input) {
+    color: $gray-90;
+    font-size: 15px;
+  }
 
-  @media (max-width: 767px) {
-    display: flex;
-    gap: 24px;
-    margin-bottom: 32px;
-    border-bottom: 1px solid #555;
+  :global(.searchfield__display-text--placeholder) {
+    color: $gray-40;
   }
 }
-
-// 모바일 게시물 수
-.mobileCount {
-  display: none;
-
-  @media (max-width: 767px) {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    font-family: 'Pretendard', sans-serif;
-    font-weight: 400;
-    font-size: 13px;
-    line-height: 1.5;
-    color: #8e8e8e;
-    margin-bottom: 24px;
-  }
-}
-
-.mobileCountNumber {
-  font-weight: 600;
-  color: #94b9e3;
-}
-
-.mobileCategoryTab {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 0 0 16px 0;
-  background: transparent;
-  border: none;
-  border-bottom: 2px solid transparent;
-  margin-bottom: -1px;
-  font-family: 'Pretendard', sans-serif;
-  font-weight: 400;
-  font-size: 15px;
-  line-height: 1.5;
-  letter-spacing: -0.075px;
-  color: #8e8e8e;
-  cursor: pointer;
-  transition: all 0.2s ease;
-
-  &:hover {
-    color: #d8d8d8;
-  }
-}
-
-.mobileCategoryTabActive {
-  color: white;
-  font-weight: 600;
-  border-bottom-color: white;
-}
-
-.mobileCategoryDot {
-  width: 4px;
-  height: 4px;
-  background-color: #d11f00;
-  border-radius: 50%;
 }
 
 .columnContent {
   display: flex;
-  gap: 88px;
+  flex-direction: column;
+  gap: 40px;
   position: relative;
   align-items: flex-start;
 
-  @media (max-width: 1440px) {
-    flex-direction: column;
-    gap: 40px;
-  }
-
   @media (max-width: 767px) {
     gap: 32px;
+    margin-top: 40px;
   }
 }
 
 // Sidebar (카테고리 필터)
-.sidebar {
-  width: 278px;
-  flex-shrink: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 80px;
-  padding-top: 0;
-
-  @media (max-width: 1440px) {
-    width: 100%;
-    gap: 40px;
-  }
-
-  @media (max-width: 767px) {
-    display: none;
-  }
-}
-
-.sidebarTitle {
-  font-family: 'Pretendard', sans-serif;
-  font-weight: 600;
-  font-size: 32px;
-  line-height: 1.5;
-  letter-spacing: -0.16px;
-  color: #bfd8f3;
-  margin: 0;
-}
 
 .categoryNav {
   display: flex;
-  flex-direction: column;
+  align-items: center;
   gap: 12px;
 }
 
 .categoryItem {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 0px;
   padding: 18px 0;
-  background: none;
-  border: none;
-  border-bottom: 1px solid transparent;
   cursor: pointer;
-  font-family: 'Pretendard', sans-serif;
+  font-family: "Pretendard", sans-serif;
   font-weight: 600;
-  font-size: 21px;
+  font-size: 25px;
   line-height: 1.5;
   letter-spacing: -0.105px;
-  color: #8e8e8e;
+  color: $gray-50;
   transition: color 0.2s;
-
-  &:hover {
-    color: #d8d8d8;
-  }
+  position: relative;
+  padding-left: 24px;
 
   span {
     display: flex;
     align-items: center;
   }
+   @media (max-width: 767px) {
+    font-size: 17px;
+    padding-left: 12px;
+  }
 }
 
 .categoryItemActive {
-  border-bottom-color: white;
-  color: white;
+  color: $gray-90;
 }
 
 .activeDot {
-  width: 6px;
-  height: 6px;
-  background-color: #d11f00;
+  width: 40px;
+  height: 40px;
+  background: linear-gradient(180deg, #6bcdc7 0%, rgba(107, 205, 199, 0) 100%);
   border-radius: 50%;
   display: inline-block;
   flex-shrink: 0;
+  position: absolute;
+  left: 0;
+  top: 8px;
+
+   @media (max-width: 767px) {
+    width: 22px;
+    height: 22px;
+    top: 10px;
+  }
 }
 
 // Main Section
 .mainSection {
-  flex: 1;
+  width: 100%;
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 56px;
+  gap: 20px;
 
   @media (max-width: 767px) {
-    gap: 24px;
+    // gap: 24px;
   }
 }
 
@@ -358,12 +225,11 @@
   gap: 24px;
 
   @media (max-width: 767px) {
-    display: none;
   }
 }
 
 .count {
-  font-family: 'Pretendard', sans-serif;
+  font-family: "Pretendard", sans-serif;
   font-weight: 400;
   font-size: 15px;
   line-height: 1.5;
@@ -373,13 +239,12 @@
   gap: 4px;
 
   @media (max-width: 767px) {
-    font-size: 13px;
   }
 }
 
 .countNumber {
   font-weight: 600;
-  color: #94b9e3;
+  color: $primary-50;
 }
 
 .searchWrapper {
@@ -387,27 +252,39 @@
   flex-shrink: 0;
 
   :global(.searchfield) {
-    border-bottom: 1px solid #555;
-    padding: 12px 0;
+    padding: 12px 16px;
+    border: none;
+    background: $gray-5;
+    border-radius: 8px;
+
+    svg {
+      path {
+        stroke: #151515;
+      }
+    }
   }
 
   :global(.searchfield__input) {
-    color: #f0f0f0;
+    color: $gray-90;
     font-size: 15px;
   }
 
   :global(.searchfield__display-text--placeholder) {
-    color: #717171;
+    color: $gray-40;
+  }
+  @media (max-width: 767px) {
+    display: none;
   }
 }
 
 .divider {
-  height: 1px;
-  background-color: #555;
+  height: 2px;
+  background-color: $gray-90;
   width: 100%;
+  margin-bottom: 36px;
 
   @media (max-width: 767px) {
-    display: none;
+    margin-bottom: 12px;
   }
 }
 
@@ -430,184 +307,61 @@
   }
 }
 
-.featuredCard {
-  // 메인 노출 카드 스타일 (현재는 일반 카드와 동일)
-}
-
-// 모바일 카드 컨테이너 (세로형 리스트 - 데스크톱과 동일한 카드)
-.mobileCardList {
-  display: none;
-
-  @media (max-width: 767px) {
-    display: flex;
-    flex-direction: column;
-    gap: 24px;
-    margin-bottom: 60px;
-  }
-}
-
-.mobileCard {
-  display: flex;
-  gap: 16px;
-  cursor: pointer;
-  align-items: flex-start;
-
-  &:hover {
-    opacity: 0.8;
-  }
-}
-
-.mobileCardImage {
-  width: 90px;
-  height: 90px;
-  flex-shrink: 0;
-  border-radius: 8px;
-  overflow: hidden;
-  background-color: #cdcdcd;
-
-  img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-  }
-}
-
-.mobileCardContent {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  min-width: 0;
-}
-
-.mobileCardCategory {
-  font-family: 'Pretendard', sans-serif;
-  font-weight: 600;
-  font-size: 13px;
-  line-height: 1.5;
-  letter-spacing: -0.065px;
-  color: #94b9e3;
-  margin: 0;
-}
-
-.mobileCardTitle {
-  font-family: 'Pretendard', sans-serif;
-  font-weight: 600;
-  font-size: 15px;
-  line-height: 1.5;
-  letter-spacing: -0.075px;
-  color: white;
-  margin: 0;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.mobileCardDescription {
-  font-family: 'Pretendard', sans-serif;
-  font-weight: 400;
-  font-size: 13px;
-  line-height: 1.5;
-  letter-spacing: -0.065px;
-  color: #8e8e8e;
-  margin: 0;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.mobileCardMeta {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-top: auto;
-}
-
-.mobileCardAuthor {
-  font-family: 'Pretendard', sans-serif;
-  font-weight: 600;
-  font-size: 13px;
-  line-height: 1.5;
-  letter-spacing: -0.065px;
-  color: #d8d8d8;
-}
-
-.mobileCardDate {
-  font-family: 'Pretendard', sans-serif;
-  font-weight: 400;
-  font-size: 13px;
-  line-height: 1.5;
-  color: #d8d8d8;
-}
-
-.mobileCardDot {
-  width: 2px;
-  height: 2px;
-  background-color: #d8d8d8;
-  border-radius: 50%;
-  flex-shrink: 0;
-}
-
-.mobileCardDownload {
-  width: 24px;
-  height: 24px;
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  align-self: center;
-
-  svg {
-    width: 20px;
-    height: 20px;
-  }
-}
-
 // 데스크톱에서 그리드 표시, 모바일에서 숨김
 .desktopGrid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 24px;
+    gap: 80px 32px;
+
   margin-bottom: 100px;
 
-  @media (max-width: 1440px) {
+  @media (max-width: 1024px) {
     grid-template-columns: repeat(2, 1fr);
   }
 
   @media (max-width: 767px) {
-    display: none;
+     grid-template-columns: repeat(1, 1fr);
+    // display: none;
+    gap: 48px;
+    margin-bottom: 40px;
+  }
+
+  :global(.card__category){
+    color: $primary-50;
+  }
+
+  :global(.card__description){
+    color: $gray-50;
+  }
+  :global(.card__author), :global(.card__date){
+    color: $gray-50;
+  }
+  :global(.card__meta){
+    padding-top: 20px;
+  }
+
+  :global(.card__image-wrapper){
+    border-radius: 0;
   }
 }
 
 .insightCard {
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 12px;
   overflow: hidden;
   cursor: pointer;
   transition: transform 0.2s, box-shadow 0.2s;
   display: flex;
   flex-direction: column;
-  box-shadow: 0px 2px 10px 0px rgba(0, 0, 0, 0.08);
-
+  background: #fff;
+  box-shadow: 0 2px 10px 0 rgba(0, 0, 0, 0.08);
+  border-radius: 0;
   &:hover {
     transform: translateY(-4px);
     box-shadow: 0px 4px 20px 0px rgba(0, 0, 0, 0.16);
   }
-
-  @media (max-width: 767px) {
-    width: 213px;
-    min-width: 213px;
-    flex-shrink: 0;
-  }
 }
 
-.insightCardFeatured {
-  // 메인 노출 카드 스타일 (현재는 일반 카드와 동일)
-}
+
+
 
 .cardImage {
   width: 100%;
@@ -646,21 +400,21 @@
 }
 
 .cardCategory {
-  font-family: 'Pretendard', sans-serif;
+  font-family: "Pretendard", sans-serif;
   font-weight: 600;
   font-size: 15px;
   line-height: 1.5;
   letter-spacing: -0.075px;
-  color: #94b9e3;
+  color: $primary-50;
 }
 
 .cardTitle {
-  font-family: 'Pretendard', sans-serif;
+  font-family: "Pretendard", sans-serif;
   font-weight: 600;
   font-size: 21px;
   line-height: 1.5;
   letter-spacing: -0.105px;
-  color: white;
+  color: $gray-90;
   margin: 0;
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -671,7 +425,7 @@
 }
 
 .cardDescription {
-  font-family: 'Pretendard', sans-serif;
+  font-family: "Pretendard", sans-serif;
   font-weight: 400;
   font-size: 15px;
   line-height: 1.5;
@@ -693,7 +447,7 @@
 }
 
 .cardAuthor {
-  font-family: 'Pretendard', sans-serif;
+  font-family: "Pretendard", sans-serif;
   font-weight: 600;
   font-size: 15px;
   line-height: 1.5;
@@ -710,7 +464,7 @@
 }
 
 .cardDate {
-  font-family: 'Pretendard', sans-serif;
+  font-family: "Pretendard", sans-serif;
   font-weight: 400;
   font-size: 15px;
   line-height: 1.5;
@@ -743,7 +497,7 @@
 
 .error p,
 .empty p {
-  font-family: 'Pretendard', sans-serif;
+  font-family: "Pretendard", sans-serif;
   font-weight: 400;
   font-size: 15px;
   line-height: 1.5;
@@ -795,22 +549,22 @@
 }
 
 .mobileLibraryTitle {
-  font-family: 'Montserrat', sans-serif;
+  font-family: "Montserrat", sans-serif;
   font-size: 44px;
   font-weight: 300;
   line-height: 110%;
   letter-spacing: -2px;
-  color: white;
+  color: $gray-90;
   margin: 0;
 }
 
 .mobileLibrarySubtitle {
-  font-family: 'Pretendard', sans-serif;
+  font-family: "Pretendard", sans-serif;
   font-weight: 600;
   font-size: 15px;
   line-height: 1.5;
   letter-spacing: -0.075px;
-  color: #bfd8f3;
+  color: $primary-50;
   margin: 0;
 }
 
@@ -840,7 +594,7 @@
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 4px;
   color: #8e8e8e;
-  font-family: 'Pretendard', sans-serif;
+  font-family: "Pretendard", sans-serif;
   font-weight: 600;
   font-size: 15px;
   line-height: 1.5;
@@ -882,12 +636,12 @@
 }
 
 .libraryTitle {
-  font-family: 'Montserrat', sans-serif;
+  font-family: "Montserrat", sans-serif;
   font-size: 120px;
   font-weight: 300;
   line-height: 1.5;
   letter-spacing: -3px;
-  color: white;
+  color: $gray-90;
   margin: 0;
   text-align: left;
 
@@ -935,12 +689,12 @@
 }
 
 .librarySidebarTitle {
-  font-family: 'Pretendard', sans-serif;
+  font-family: "Pretendard", sans-serif;
   font-weight: 600;
   font-size: 32px;
   line-height: 1.5;
   letter-spacing: -0.16px;
-  color: #bfd8f3;
+  color: $primary-50;
   margin: 0;
 }
 
@@ -959,7 +713,7 @@
   border: none;
   border-bottom: 1px solid transparent;
   cursor: pointer;
-  font-family: 'Pretendard', sans-serif;
+  font-family: "Pretendard", sans-serif;
   font-weight: 600;
   font-size: 21px;
   line-height: 1.5;
@@ -979,7 +733,7 @@
 
 .libraryCategoryItemActive {
   border-bottom-color: white;
-  color: white;
+  color: $gray-90;
 }
 
 .libraryMainSection {
@@ -1085,7 +839,7 @@
 }
 
 .libraryCardCategory {
-  font-family: 'Pretendard', sans-serif;
+  font-family: "Pretendard", sans-serif;
   font-weight: 600;
   font-size: 15px;
   line-height: 1.5;
@@ -1094,12 +848,12 @@
 }
 
 .libraryCardTitle {
-  font-family: 'Pretendard', sans-serif;
+  font-family: "Pretendard", sans-serif;
   font-weight: 600;
   font-size: 21px;
   line-height: 1.5;
   letter-spacing: -0.105px;
-  color: white;
+  color: $gray-90;
   margin: 0;
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -1111,12 +865,12 @@
 
 // Archives B: 제목 1줄만 표시
 .libraryCardTitleSingle {
-  font-family: 'Pretendard', sans-serif;
+  font-family: "Pretendard", sans-serif;
   font-weight: 600;
   font-size: 21px;
   line-height: 1.5;
   letter-spacing: -0.105px;
-  color: white;
+  color: $gray-90;
   margin: 0;
   display: -webkit-box;
   -webkit-line-clamp: 1;
@@ -1127,7 +881,7 @@
 
 // Archives B: 본문 2줄 표시
 .libraryCardDescription {
-  font-family: 'Pretendard', sans-serif;
+  font-family: "Pretendard", sans-serif;
   font-weight: 400;
   font-size: 15px;
   line-height: 1.5;
@@ -1149,7 +903,7 @@
 }
 
 .libraryCardAuthor {
-  font-family: 'Pretendard', sans-serif;
+  font-family: "Pretendard", sans-serif;
   font-weight: 600;
   font-size: 15px;
   line-height: 1.5;
@@ -1158,7 +912,7 @@
 }
 
 .libraryCardDate {
-  font-family: 'Pretendard', sans-serif;
+  font-family: "Pretendard", sans-serif;
   font-weight: 400;
   font-size: 15px;
   line-height: 1.5;
@@ -1233,7 +987,7 @@
 }
 
 .librarySnippetCategory {
-  font-family: 'Pretendard', sans-serif;
+  font-family: "Pretendard", sans-serif;
   font-weight: 600;
   font-size: 15px;
   line-height: 1.5;
@@ -1242,7 +996,7 @@
 }
 
 .librarySnippetTitle {
-  font-family: 'Pretendard', sans-serif;
+  font-family: "Pretendard", sans-serif;
   font-weight: 600;
   font-size: 21px;
   line-height: 1.5;
@@ -1255,7 +1009,7 @@
 }
 
 .librarySnippetDescription {
-  font-family: 'Pretendard', sans-serif;
+  font-family: "Pretendard", sans-serif;
   font-weight: 400;
   font-size: 15px;
   line-height: 1.5;
@@ -1277,7 +1031,7 @@
 }
 
 .librarySnippetAuthor {
-  font-family: 'Pretendard', sans-serif;
+  font-family: "Pretendard", sans-serif;
   font-weight: 600;
   font-size: 15px;
   line-height: 1.5;
@@ -1286,7 +1040,7 @@
 }
 
 .librarySnippetDate {
-  font-family: 'Pretendard', sans-serif;
+  font-family: "Pretendard", sans-serif;
   font-weight: 400;
   font-size: 13px;
   line-height: 1.5;
@@ -1310,7 +1064,7 @@
 
 .libraryListHeader {
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  background: var(--grayscale-80, #2D2D2D);
+  background: var(--grayscale-80, #2d2d2d);
 
   @media (max-width: 767px) {
     display: none;
@@ -1338,7 +1092,7 @@
 }
 
 .libraryListHeaderCell {
-  font-family: 'Pretendard', sans-serif;
+  font-family: "Pretendard", sans-serif;
   font-weight: 600;
   font-size: 15px;
   line-height: 1.5;
@@ -1414,7 +1168,7 @@
 }
 
 .libraryListCell {
-  font-family: 'Pretendard', sans-serif;
+  font-family: "Pretendard", sans-serif;
   font-weight: 400;
   font-size: 15px;
   line-height: 1.5;
@@ -1490,7 +1244,7 @@
 }
 
 .libraryListTitle {
-  font-family: 'Pretendard', sans-serif;
+  font-family: "Pretendard", sans-serif;
   font-weight: 500;
   font-size: 15px;
   line-height: 1.5;
@@ -1519,13 +1273,13 @@
     display: flex;
     gap: 24px;
     padding: 16px;
-    background: var(--grayscale-80, #2D2D2D);
+    background: var(--grayscale-80, #2d2d2d);
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   }
 }
 
 .mobileListHeaderCell {
-  font-family: 'Pretendard', sans-serif;
+  font-family: "Pretendard", sans-serif;
   font-weight: 600;
   font-size: 13px;
   line-height: 1.5;
@@ -1572,7 +1326,7 @@
 }
 
 .mobileListCategory {
-  font-family: 'Pretendard', sans-serif;
+  font-family: "Pretendard", sans-serif;
   font-weight: 600;
   font-size: 13px;
   line-height: 1.5;
@@ -1581,7 +1335,7 @@
 }
 
 .mobileListDate {
-  font-family: 'Pretendard', sans-serif;
+  font-family: "Pretendard", sans-serif;
   font-weight: 400;
   font-size: 13px;
   line-height: 1.5;
@@ -1589,7 +1343,7 @@
 }
 
 .mobileListTitle {
-  font-family: 'Pretendard', sans-serif;
+  font-family: "Pretendard", sans-serif;
   font-weight: 500;
   font-size: 15px;
   line-height: 1.5;
@@ -1606,7 +1360,7 @@
 }
 
 .mobileListAuthor {
-  font-family: 'Pretendard', sans-serif;
+  font-family: "Pretendard", sans-serif;
   font-weight: 400;
   font-size: 13px;
   line-height: 1.5;
@@ -1621,7 +1375,7 @@
 }
 
 .mobileListNo {
-  font-family: 'Pretendard', sans-serif;
+  font-family: "Pretendard", sans-serif;
   font-weight: 400;
   font-size: 13px;
   line-height: 1.5;
@@ -1629,7 +1383,7 @@
 }
 
 .mobileListViews {
-  font-family: 'Pretendard', sans-serif;
+  font-family: "Pretendard", sans-serif;
   font-weight: 400;
   font-size: 13px;
   line-height: 1.5;
@@ -1662,4 +1416,239 @@
   }
 }
 
+
+
+// Newslettter
+
+ Newsletter Section
+.newsletterSection {
+  width: 100%;
+  padding: 80px 0 160px;
+
+  @media (max-width: $breakpoint-tablet) {
+    padding: 56px 0 80px;
+  }
+}
+
+
+.newsletterHeroContent {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  background: var(--Primary-5, #f3f9f9);
+
+  box-shadow: 0 4px 20px 0 rgba(0, 0, 0, 0.1);
+  margin-top: 80px;
+
+  @media (max-width: $breakpoint-desktop) {
+    gap: 80px;
+    flex-direction: column;
+  }
+
+  @media (max-width: $breakpoint-tablet) {
+    gap: 56px;
+  }
+}
+
+.newsletterLeft {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: 64px;
+
+  // @media (max-width: $breakpoint-desktop) {
+  //   gap: 40px;
+  //   width: 100%;
+  // }
+
+  @media (max-width: $breakpoint-tablet) {
+    padding: 32px;
+  }
+}
+
+.newsletterLabel {
+  font-family: $font-pretendard;
+  font-weight: $font-weight-semibold;
+  font-size: 19px;
+  line-height: 1.5;
+  letter-spacing: -0.105px;
+  margin: 0;
+  color: $primary-50;
+
+  @media (max-width: $breakpoint-tablet) {
+    font-size: 15px;
+  }
+}
+
+.newsletterTitle {
+  margin: 24px 0 0 0;
+  font-family: $font-pretendard;
+  font-weight: 600;
+  font-size: 66px;
+  line-height: 1.1;
+  letter-spacing: -2px;
+  color: $gray-90;
+
+  @media (max-width: $breakpoint-desktop) {
+    font-size: 48px;
+    letter-spacing: -1.8px;
+  }
+
+  @media (max-width: $breakpoint-tablet) {
+    font-size: 28px;
+    letter-spacing: -1.5px;
+  }
+}
+
+.newsletterRight {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 80px;
+  padding: 64px;
+  background: #fff;
+
+  @media (max-width: $breakpoint-desktop) {
+    gap: 60px;
+    width: 100%;
+  }
+
+  @media (max-width: $breakpoint-tablet) {
+    gap: 40px;
+    padding: 32px 16px;
+  }
+}
+
+.newsletterRighTitle {
+  h2 {
+    font-size: 34px;
+    color: $gray-90;
+    margin-top: 40px;
+    font-weight: 400;
+  }
+
+  p {
+    color: $primary-70;
+    font-size: 20px;
+  }
+   @media (max-width: $breakpoint-tablet) {
+    h2{
+      font-size: 20px;
+      margin-top: 24px;
+    }
+    p{
+      font-size: 15px;
+    }
+  }
+}
+
+.newsletterForm {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  width: 100%;
+}
+
+.newsletterFormFields {
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+}
+
+.newsletterTextField {
+  :global(.textfield__label) {
+    color: $gray-80;
+  }
+
+  :global(.textfield__required) {
+    color: #f35064;
+  }
+
+  :global(.textfield__input) {
+    color: #f0f0f0;
+    border-bottom-color: #555;
+
+    &::placeholder {
+      color: #717171;
+    }
+
+    &:focus {
+      border-bottom-color: #94b9e3;
+    }
+  }
+
+  :global(.textfield__display-text) {
+    color: #f0f0f0;
+  }
+
+  :global(.textfield__display-text--placeholder) {
+    color: #717171;
+  }
+
+  :global(.textfield__error-message) {
+    color: #f35064;
+  }
+
+  :global(.textfield--error) {
+    .textfield__container {
+      border-bottom-color: #f35064;
+    }
+  }
+}
+
+.newsletterCheckboxes {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.newsletterCheckboxRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+
+  :global(.checkbox) {
+    flex: 1;
+    min-width: 0;
+  }
+
+  :global(.checkbox__label) {
+    color: $gray-80;
+  }
+}
+
+.newsletterLink {
+  background: none;
+  border: none;
+  padding: 0;
+  @include pretendard-15-regular;
+  color: #00a89e;
+  text-decoration: underline;
+  cursor: pointer;
+  flex-shrink: 0;
+  width: 30px;
+  text-align: right;
+
+  &:hover {
+    opacity: 0.8;
+  }
+}
+
+.newsletterButton {
+  margin-top: 48px;
+  border: 1px solid var(--Primary-0, #fff);
+  background: #00a89e;
+  color: #fff;
+  &:disabled {
+    background: var(--grayscale-40, #c6c6c6);
+    color: #fff;
+  }
+   @media (max-width: $breakpoint-tablet) {
+    margin-top: 24px;
+  }
+}
 

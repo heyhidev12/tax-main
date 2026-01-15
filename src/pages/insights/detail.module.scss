@@ -1,49 +1,28 @@
-@import '../../styles/variables';
+@import "../../styles/variables";
 
 .page {
   min-height: 100vh;
-  background-color: #151515;
-  color: white;
+  color: #151515;
+  background-color: white;
   display: flex;
   flex-direction: column;
-
-  @media (max-width: 767px) {
-    padding-top: 56px;
-  }
-}
-
-.container {
-  flex: 1;
-  padding: 0 400px;
-  max-width: 1920px;
-  margin: 0 auto;
-  width: 100%;
-  box-sizing: border-box;
-
-  @media (max-width: $breakpoint-desktop) {
-    padding: 0 240px;
-  }
-
-  @media (max-width: $breakpoint-tablet) {
-    padding: 0 24px;
-  }
 }
 
 .content {
-  padding: 80px 0 160px;
+  padding: 80px 0 220px;
   display: flex;
   flex-direction: column;
-  gap: 120px;
+  gap: 72px;
   width: 100%;
 
   @media (max-width: $breakpoint-desktop) {
     padding: 60px 0 120px;
-    gap: 80px;
+    gap: 60px;
   }
 
   @media (max-width: $breakpoint-tablet) {
-    padding: 100px 0 0;
-    gap: 64px;
+    padding: 44px 0 0;
+    gap: 56px;
   }
 }
 
@@ -73,7 +52,7 @@
   min-height: 50vh;
   gap: 24px;
   font-size: 18px;
-  color: white;
+  color: black;
 }
 
 // Header Section
@@ -93,18 +72,18 @@
 .titleWrapper {
   display: flex;
   flex-direction: column;
-  gap: 24px;
-  align-items: center;
+  gap: 20px;
+  align-items: flex-start;
   width: 100%;
 }
 
 .category {
   font-family: $font-pretendard;
   font-weight: $font-weight-semibold;
-  font-size: 19px;
+  font-size: 15px;
   line-height: 1.5;
   letter-spacing: -0.095px;
-  color: #94b9e3;
+  color: $primary-50;
 
   @media (max-width: $breakpoint-tablet) {
     font-size: 15px;
@@ -118,7 +97,7 @@
   font-size: 40px;
   line-height: 1.5;
   letter-spacing: -0.2px;
-  color: #f0f0f0;
+  color: $gray-80;
   margin: 0;
   text-align: center;
   max-width: 1120px;
@@ -131,7 +110,7 @@
     -webkit-box-orient: vertical;
     overflow: hidden;
     text-overflow: ellipsis;
-    max-height: 64px;
+    max-height: 72px;
   }
 }
 
@@ -140,27 +119,27 @@
   align-items: center;
   justify-content: space-between;
   width: 100%;
-  padding: 24px 24px;
+  padding: 12px;
   position: relative;
 
   &::before {
-    content: '';
+    content: "";
     position: absolute;
     top: 0;
     left: 0;
     right: 0;
     height: 1px;
-    background-color: rgba(255, 255, 255, 0.5);
+    background-color: $gray-90;
   }
 
   &::after {
-    content: '';
+    content: "";
     position: absolute;
     bottom: 0;
     left: 0;
     right: 0;
     height: 1px;
-    background-color: rgba(255, 255, 255, 0.2);
+    background-color: $gray-20;
   }
 
   @media (max-width: $breakpoint-tablet) {
@@ -174,19 +153,6 @@
   display: flex;
   align-items: center;
   gap: 16px;
-  
-  // 구분선이 하나만 보이도록 명확히 설정
-  .divider {
-    width: 1px;
-    height: 12px;
-    background-color: #8e8e8e;
-    flex-shrink: 0;
-    display: inline-block;
-    margin: 0;
-    padding: 0;
-    border: none;
-    line-height: 1;
-  }
 }
 
 .author {
@@ -195,7 +161,7 @@
   font-size: 15px;
   line-height: 1.5;
   letter-spacing: -0.075px;
-  color: #d8d8d8;
+  color: $gray-70;
 
   @media (max-width: $breakpoint-tablet) {
     font-weight: $font-weight-regular;
@@ -215,7 +181,7 @@
 .iconDivider {
   width: 1px;
   height: 20px;
-  background-color: rgba(255, 255, 255, 0.3);
+  background-color: $gray-20;
   flex-shrink: 0;
 }
 
@@ -223,16 +189,16 @@
   cursor: pointer;
   transition: opacity 0.2s;
   flex-shrink: 0;
-  
+
   &:hover {
     opacity: 0.8;
   }
-  
+
   &:first-of-type {
     width: 20px;
     height: 20px;
   }
-  
+
   &:last-of-type {
     width: 24px;
     height: 24px;
@@ -250,7 +216,7 @@
 .divider {
   width: 1px;
   height: 12px;
-  background-color: #8e8e8e;
+  background-color: $gray-20;
   flex-shrink: 0;
   display: inline-block;
   margin: 0;
@@ -261,8 +227,12 @@
 .dividerLine {
   width: 100%;
   height: 1px;
-  background-color: rgba(255, 255, 255, 0.2);
-  margin: 0;
+  background-color: $gray-70;
+  margin-top: 72px;
+
+  @media (max-width: $breakpoint-tablet) {
+    margin-top: 8px;
+  }
 }
 
 .date {
@@ -271,7 +241,7 @@
   font-size: 15px;
   line-height: 1.5;
   letter-spacing: -0.075px;
-  color: #8e8e8e;
+  color: $gray-50;
 
   @media (max-width: $breakpoint-tablet) {
     font-weight: $font-weight-regular;
@@ -305,7 +275,7 @@
 }
 
 .bodyContent {
-  color: var(--grayscale-0, #FFF);
+  color: $gray-90;
   leading-trim: both;
   text-edge: cap;
   font-family: "IBM Plex Mono";
@@ -315,8 +285,6 @@
   line-height: 150%; /* 25.5px */
   letter-spacing: -0.085px;
   width: 100%;
-  max-width: 1120px;
-  margin: 0 auto;
 
   @media (max-width: $breakpoint-tablet) {
     font-family: $font-pretendard;
@@ -328,7 +296,7 @@
 
   // Toast UI Viewer 스타일 오버라이드
   :global(.toastui-editor-contents) {
-    color: var(--grayscale-0, #FFF) !important;
+    color: $gray-90 !important;
     leading-trim: both;
     text-edge: cap;
     font-family: "IBM Plex Mono";
@@ -346,8 +314,13 @@
       letter-spacing: -0.075px !important;
     }
 
-    p, span, div, li, td, th {
-      color: var(--grayscale-0, #FFF) !important;
+    p,
+    span,
+    div,
+    li,
+    td,
+    th {
+      color: $gray-90 !important;
       font-family: "IBM Plex Mono";
       font-size: 17px;
       font-style: normal;
@@ -378,23 +351,28 @@
 
     strong {
       font-weight: $font-weight-semibold;
-      color: var(--grayscale-0, #FFF) !important;
+      color: $gray-90 !important;
     }
 
-    h1, h2, h3, h4, h5, h6 {
-      color: var(--grayscale-0, #FFF) !important;
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6 {
+      color: $gray-90 !important;
       font-family: $font-pretendard;
       font-weight: $font-weight-semibold;
     }
 
     a {
-      color: #94b9e3;
+      color: $primary-50;
     }
 
     code {
       background: rgba(255, 255, 255, 0.1);
       color: #d8d8d8;
-      font-family: 'IBM Plex Mono', monospace;
+      font-family: "IBM Plex Mono", monospace;
     }
 
     pre {
@@ -404,8 +382,8 @@
     }
 
     blockquote {
-      border-left: 4px solid #94b9e3;
-      color: var(--grayscale-0, #FFF) !important;
+      border-left: 4px solid $primary-50;
+      color: $gray-90 !important;
       padding-left: 16px;
       margin: 16px 0;
     }
@@ -413,9 +391,10 @@
     table {
       border-color: rgba(255, 255, 255, 0.2);
 
-      th, td {
+      th,
+      td {
         border-color: rgba(255, 255, 255, 0.2);
-        color: var(--grayscale-0, #FFF) !important;
+        color: $gray-90 !important;
       }
     }
   }
@@ -425,6 +404,7 @@
 .attachmentsSection {
   display: flex;
   flex-direction: column;
+  align-items: flex-start;
   gap: 24px;
   width: 100%;
 
@@ -436,10 +416,10 @@
 .attachmentsTitle {
   font-family: $font-pretendard;
   font-weight: $font-weight-bold;
-  font-size: 25px;
+  font-size: 19px;
   line-height: 1.45;
   letter-spacing: -0.2px;
-  color: white;
+  color: $gray-80;
   margin: 0;
   text-align: center;
 
@@ -456,15 +436,12 @@
 }
 
 .attachmentItem {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 12px;
   padding: 12px 16px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   width: 100%;
-
+  border: 1px solid $gray-10;
   @media (max-width: $breakpoint-tablet) {
     padding: 10px 12px;
   }
@@ -479,11 +456,11 @@
 }
 
 .attachmentLabel {
-  background: #bfd8f3;
-  color: #002046;
+  background: $gray-10;
+  color: $gray-70;
   font-family: $font-pretendard;
   font-weight: $font-weight-semibold;
-  font-size: 13px;
+  font-size: 15px;
   line-height: 1.5;
   letter-spacing: -0.065px;
   padding: 7px;
@@ -514,22 +491,21 @@
   font-size: 15px;
   line-height: 1.5;
   letter-spacing: -0.075px;
-  color: #f0f0f0;
+  color: $gray-90;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .downloadButton {
-  border: 1px solid white;
-  border-radius: 100px;
+  border: 1px solid $primary-50;
   padding: 0 12px;
   height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 4px;
-  background: transparent;
+  background: #fff;
   cursor: pointer;
   transition: all 0.2s;
   flex-shrink: 0;
@@ -546,7 +522,6 @@
     width: 40px;
     height: 40px;
     padding: 0;
-    border-radius: 50%;
   }
 }
 
@@ -556,7 +531,7 @@
   font-size: 15px;
   line-height: 1.5;
   letter-spacing: -0.075px;
-  color: white;
+  color: $primary-50;
 
   @media (max-width: $breakpoint-tablet) {
     display: none;
@@ -582,7 +557,7 @@
 .commentsDivider {
   width: 100%;
   height: 1px;
-  background-color: rgba(255, 255, 255, 0.2);
+  background-color: $gray-20;
 }
 
 .commentsContent {
@@ -590,12 +565,20 @@
   flex-direction: column;
   gap: 40px;
   width: 100%;
+
+  @media (max-width: $breakpoint-tablet) {
+    gap: 32px;
+  }
 }
 
 .commentsHeader {
   display: flex;
   flex-direction: column;
   gap: 24px;
+
+  @media (max-width: $breakpoint-tablet) {
+    gap: 12px;
+  }
 }
 
 .commentsTitle {
@@ -604,7 +587,7 @@
   font-size: 25px;
   line-height: 1.45;
   letter-spacing: -0.2px;
-  color: white;
+  color: $gray-80;
   margin: 0;
 
   @media (max-width: $breakpoint-tablet) {
@@ -628,6 +611,9 @@
   gap: 20px;
   align-items: flex-end;
   width: 100%;
+  @media (max-width: $breakpoint-tablet) {
+    gap: 16px;
+  }
 }
 
 .commentFormHeader {
@@ -641,7 +627,7 @@
   font-size: 15px;
   line-height: 1.5;
   letter-spacing: -0.075px;
-  color: white;
+  color: $gray-80;
 }
 
 .commentInputWrapper {
@@ -651,32 +637,34 @@
 .commentInput {
   width: 100%;
   min-height: 148px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid #555;
+  background: $gray-5;
+  border: none;
   border-radius: 8px;
   padding: 20px;
   font-family: $font-pretendard;
   font-weight: $font-weight-regular;
   font-size: 15px;
   line-height: 1.5;
-  color: #f0f0f0;
+  color: $gray-90;
   resize: vertical;
   box-sizing: border-box;
 
   &::placeholder {
-    color: #8e8e8e;
+    color: $gray-50;
   }
 
   &:focus {
     outline: none;
-    border-color: #94b9e3;
+    border-color: $primary-50;
+  }
+  @media (max-width: $breakpoint-tablet) {
+    padding: 20px 16px;
   }
 }
 
 .commentSubmitButton {
-  background: white;
+  background: $primary-50;
   border: none;
-  border-radius: 100px;
   padding: 0 16px;
   height: 48px;
   display: flex;
@@ -687,7 +675,7 @@
   font-size: 17px;
   line-height: 1.5;
   letter-spacing: -0.085px;
-  color: black;
+  color: #fff;
   cursor: pointer;
   transition: opacity 0.2s;
   min-width: 110px;
@@ -699,6 +687,7 @@
   &:disabled {
     opacity: 0.5;
     cursor: not-allowed;
+    background: $gray-40;
   }
 
   @media (max-width: $breakpoint-tablet) {
@@ -720,14 +709,14 @@
   font-size: 25px;
   line-height: 1.45;
   letter-spacing: -0.2px;
-  color: white;
+  color: $gray-80;
   margin: 0;
   display: flex;
   gap: 12px;
   align-items: center;
 
   @media (max-width: $breakpoint-tablet) {
-    font-size: 20px;
+    // font-size: 20px;
   }
 }
 
@@ -737,7 +726,7 @@
   font-size: 25px;
   line-height: 1.45;
   letter-spacing: -0.2px;
-  color: white;
+  color: $gray-80;
 }
 
 .commentsList {
@@ -771,7 +760,7 @@
   font-size: 15px;
   line-height: 1.5;
   letter-spacing: -0.075px;
-  color: #f4f2ed;
+  color: $gray-90;
   flex: 1;
 }
 
@@ -783,7 +772,7 @@
   font-size: 13px;
   line-height: 1.5;
   letter-spacing: -0.065px;
-  color: #d8d8d8;
+  color: $gray-50;
   text-decoration: underline;
   cursor: pointer;
   padding: 0;
@@ -799,7 +788,7 @@
   font-weight: $font-weight-regular;
   font-size: 15px;
   line-height: 1.5;
-  color: #f4f2ed;
+  color: $gray-90;
   margin: 0;
   word-break: break-word;
 }
@@ -810,14 +799,14 @@
   font-size: 13px;
   line-height: 1.5;
   letter-spacing: -0.065px;
-  color: #d8d8d8;
+  color: $gray-50;
   margin: 0;
 }
 
 .commentDivider {
   width: 100%;
   height: 1px;
-  background-color: rgba(255, 255, 255, 0.2);
+  background-color: $gray-10;
 }
 
 .noComments {
@@ -838,20 +827,20 @@
   gap: 56px;
   align-items: center;
 
-  @media (max-width: $breakpoint-tablet) {
+  @media (max-width: $breakpoint-desktop) {
     gap: 48px;
-    padding-bottom: 80px;
+    padding-bottom: 176px;
   }
 }
 
 .navigation {
   display: flex;
   align-items: center;
-  justify-content: flex-start;
+  justify-content: space-between;
   width: 100%;
-  gap: 24px;
+    position: relative;
 
-  @media (max-width: $breakpoint-tablet) {
+  @media (max-width: $breakpoint-desktop) {
     flex-direction: column;
     gap: 24px;
     align-items: stretch;
@@ -865,15 +854,6 @@
   cursor: pointer;
   transition: opacity 0.2s;
 
-  &:first-child {
-    flex: 0 0 auto;
-  }
-
-  &:last-child {
-    flex: 0 0 auto;
-    margin-left: auto;
-  }
-
   &:hover {
     opacity: 0.8;
   }
@@ -882,10 +862,6 @@
     width: 100%;
     justify-content: flex-start;
     gap: 24px;
-
-    &:last-child {
-      margin-left: 0;
-    }
   }
 }
 
@@ -944,7 +920,7 @@
   font-size: 15px;
   line-height: 1.5;
   letter-spacing: -0.075px;
-  color: #94b9e3;
+  color: $primary-50;
   white-space: nowrap;
   flex-shrink: 0;
 }
@@ -954,12 +930,13 @@
   font-weight: $font-weight-regular;
   font-size: 15px;
   line-height: 1.5;
-  color: #d8d8d8;
+  color: $gray-70;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   flex: 1;
   min-width: 0;
+  max-width: 310px;
 
   @media (max-width: $breakpoint-tablet) {
     flex: 1;
@@ -972,20 +949,27 @@
   font-size: 15px;
   line-height: 1.5;
   color: #8e8e8e;
-  text-align: center;
   width: 100%;
 }
 
 .backButton {
-  border: 1px solid white;
-  border-radius: 100px;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  border: 1px solid $primary-50;
   padding: 12px 16px;
   display: flex;
   align-items: center;
   gap: 12px;
-
+  color: $primary-50;
+  background: #fff;
+  height: 48px;
   :global(.button__icon--left) {
     margin-top: 6px;
+  }
+  @media (max-width: $breakpoint-desktop) {
+    top: calc(100% + 64px);
   }
 }
 
@@ -997,12 +981,6 @@
     color: black !important;
     min-height: auto !important;
     padding-top: 0 !important;
-  }
-
-  // 컨테이너 패딩 조정
-  .container {
-    padding: 0 40px !important;
-    max-width: 100% !important;
   }
 
   .content {
@@ -1068,7 +1046,12 @@
     :global(.toastui-editor-contents) {
       color: black !important;
 
-      p, span, div, li, td, th {
+      p,
+      span,
+      div,
+      li,
+      td,
+      th {
         color: black !important;
       }
 
@@ -1076,7 +1059,12 @@
         color: black !important;
       }
 
-      h1, h2, h3, h4, h5, h6 {
+      h1,
+      h2,
+      h3,
+      h4,
+      h5,
+      h6 {
         color: black !important;
       }
 
@@ -1101,7 +1089,8 @@
       table {
         border-color: rgba(0, 0, 0, 0.2) !important;
 
-        th, td {
+        th,
+        td {
           border-color: rgba(0, 0, 0, 0.2) !important;
           color: black !important;
         }
@@ -1124,4 +1113,3 @@
     display: none !important;
   }
 }
-

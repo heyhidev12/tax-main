@@ -80,7 +80,7 @@
   }
 
   @media (max-width: $breakpoint-tablet) {
-    padding: 80px 0px 40px;
+    padding: 56px 0px 12px;
   }
 }
 
@@ -122,9 +122,16 @@
   margin-top: -15px;
   text-align: center;
   margin-top: 56px;
+  br{
+    display: none;
+  }
 
   @media (max-width: $breakpoint-tablet) {
     margin-top: 40px;
+
+    br{
+    display: block;
+  }
   }
 
   p {
@@ -176,9 +183,78 @@
   align-items: flex-end;
   justify-content: space-between;
   margin-bottom: 40px;
+  gap: 24px;
 
   @media (max-width: $breakpoint-tablet) {
-    margin-bottom: 40px;
+    margin-bottom: 8px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+}
+
+
+.sectionHeaderRight {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex: 1;
+  justify-content: flex-end;
+
+  @media (max-width: $breakpoint-tablet) {
+    width: 100%;
+    justify-content: space-between;
+  }
+}
+
+.searchInputWrapper {
+  display: flex;
+  justify-content: flex-end;
+  position: relative;
+  padding-bottom: 20px;
+  margin-bottom: 48px;
+  border-bottom: 1px solid $gray-90;
+
+  @media (max-width: $breakpoint-tablet) {
+    max-width: none;
+    flex: 1;
+    border-bottom: none;
+    padding-bottom: 8px;
+  }
+}
+
+.newEducationSearchInput {
+  width: 100%;
+  padding-left: 48px;
+  max-width: 280px;
+  background-color: $gray-5;
+  height: 48px;
+  border: none;
+  outline: none;
+  border-radius: 8px;
+   border: 1px solid transparent;
+   font-size: 15px;
+   color: $gray-90;
+   &::placeholder{
+    color: $gray-40;
+   }
+  &:focus{
+    border: 1px solid $primary-50;
+  }
+  @media (max-width: $breakpoint-tablet) {
+    max-width: 100%;
+  }
+}
+
+.searchIcon {
+  position: absolute;
+  right: 250px;
+  top: calc(50% - 10px);
+  transform: translateY(-50%);
+  pointer-events: none;
+  z-index: 1;
+  @media (max-width: $breakpoint-tablet) {
+    left: 16px;
   }
 }
 
@@ -372,6 +448,7 @@
     border: none;
     box-shadow: none;
     padding: 0;
+    
     &:hover {
       box-shadow: none;
       transform: none;
@@ -379,7 +456,7 @@
     @media (max-width: $breakpoint-tablet) {
       width: 100%;
       min-width: unset;
-      height: 280px;
+      // height: 280px;
       border: none;
       background: transparent;
       display: flex;
@@ -393,6 +470,10 @@
   justify-content: center;
   align-items: center;
   padding: 40px 0 0;
+
+  :global(.paginationButtonActive){
+    background: #00a89e;
+  }
 }
 
 .educationGrid {
@@ -421,6 +502,41 @@
   }
 }
 
+.newEducationSwiperWrapper {
+  width: 100%;
+  overflow: hidden;
+  margin-top: 0;
+
+  @media (max-width: $breakpoint-tablet) {
+    overflow: visible;
+  }
+}
+
+.newEducationSwiper {
+  width: 100%;
+  // overflow: hidden;
+  padding: 12px;
+
+  :global(.swiper-wrapper) {
+    display: flex;
+  }
+
+  :global(.swiper-slide) {
+    height: auto;
+    display: flex;
+  }
+
+  // Hide default Swiper navigation buttons (we use custom buttons)
+  :global(.swiper-button-next),
+  :global(.swiper-button-prev) {
+    display: none;
+  }
+  @media (max-width: $breakpoint-tablet) {
+    overflow: visible;
+    padding: 0;
+  }
+}
+
 .educationCard {
   border-radius: 12px;
   background: #fff;
@@ -429,6 +545,7 @@
   cursor: pointer;
   transition: all 0.2s ease;
   padding: 12px 12px 32px;
+  // aspect-ratio: 9/11;
 
   &:hover {
     transform: translateY(-4px);
@@ -437,12 +554,7 @@
   }
 
   @media (max-width: $breakpoint-tablet) {
-    width: 240px;
-    min-width: 240px;
-    height: 346px;
-    flex-shrink: 0;
-    display: flex;
-    flex-direction: column;
+    // aspect-ratio: 3/4;
   }
 }
 
@@ -458,9 +570,9 @@
     border-radius: 8px;
   }
 
-  @media (max-width: $breakpoint-tablet) {
-    aspect-ratio: 240 / 160;
-  }
+  // @media (max-width: $breakpoint-tablet) {
+  //   aspect-ratio: 240 / 160;
+  // }
 }
 
 .cardContent {
@@ -469,11 +581,11 @@
   flex-direction: column;
   gap: 12px;
 
-  @media (max-width: $breakpoint-tablet) {
-    gap: 12px;
-    position: relative;
-    flex: 1;
-  }
+  // @media (max-width: $breakpoint-tablet) {
+  //   gap: 12px;
+  //   position: relative;
+  //   flex: 1;
+  // }
 }
 
 .cardLabels {
@@ -558,11 +670,11 @@
   gap: 24px;
 
   @media (max-width: $breakpoint-tablet) {
-    position: absolute;
-    bottom: 24px;
-    left: 12px;
-    right: 12px;
-    gap: 16px;
+    // position: absolute;
+    // bottom: 24px;
+    // left: 12px;
+    // right: 12px;
+    // gap: 16px;
   }
 }
 
@@ -621,115 +733,16 @@
   gap: 24px;
 }
 
-// .educationListItem {
-//   background: rgba(255, 255, 255, 0.04);
-//   border: 1px solid #2d2d2d;
-//   border-radius: 12px;
-//   padding: 24px;
-//   display: flex;
-//   gap: 24px;
-//   cursor: pointer;
-//   transition: all 0.2s ease;
-
-//   &:hover {
-//     border-color: rgba(255, 255, 255, 0.2);
-//     background: rgba(255, 255, 255, 0.06);
-//   }
-
-//   @media (max-width: $breakpoint-tablet) {
-//     flex-direction: column;
-//   }
-// }
-
-// .listItemImage {
-//   width: 200px;
-//   height: 150px;
-//   flex-shrink: 0;
-//   border-radius: 8px;
-//   overflow: hidden;
-
-//   @media (max-width: $breakpoint-tablet) {
-//     width: 100%;
-//     height: 200px;
-//   }
-
-//   img {
-//     width: 100%;
-//     height: 100%;
-//     object-fit: cover;
-//   }
-// }
-
-// .listItemContent {
-//   flex: 1;
-//   display: flex;
-//   flex-direction: column;
-//   gap: 16px;
-// }
-
-// .listItemLabels {
-//   display: flex;
-//   gap: 4px;
-//   flex-wrap: wrap;
-// }
-
-// .listItemTitle {
-//   font-family: $font-pretendard;
-//   font-weight: $font-weight-semibold;
-//   font-size: 25px;
-//   line-height: 1.5;
-//   letter-spacing: -0.125px;
-//   color: white;
-//   margin: 0;
-// }
-
-// .listItemInfo {
-//   display: flex;
-//   flex-direction: column;
-//   gap: 8px;
-// }
-
-// .listItemLocation,
-// .listItemDate {
-//   font-family: $font-pretendard;
-//   font-weight: $font-weight-regular;
-//   font-size: 15px;
-//   line-height: 1.5;
-//   color: #d8d8d8;
-//   margin: 0;
-// }
-
 // Newsletter Section
 .newsletterSection {
   width: 100%;
   padding: 80px 0 160px;
+
+  @media (max-width: $breakpoint-tablet) {
+    padding: 56px 0 80px;
+  }
 }
 
-// .newsletterHero {
-//   width: 100%;
-
-//   &::after {
-//     content: "";
-//     position: absolute;
-//     inset: 0;
-//     background: linear-gradient(
-//         180deg,
-//         rgba(0, 78, 179, 0) 21.635%,
-//         rgba(0, 78, 179, 0.5) 100%
-//       ),
-//       linear-gradient(
-//         90deg,
-//         rgba(33, 33, 33, 0.9) 0%,
-//         rgba(33, 33, 33, 0.9) 100%
-//       );
-//     z-index: 1;
-//     border-radius: 24px;
-
-//     @media (max-width: $breakpoint-tablet) {
-//       border-radius: 16px;
-//     }
-//   }
-// }
 
 .newsletterHeroContent {
   position: relative;
@@ -747,7 +760,7 @@
   }
 
   @media (max-width: $breakpoint-tablet) {
-    gap: 60px;
+    gap: 56px;
   }
 }
 
@@ -764,9 +777,9 @@
   //   width: 100%;
   // }
 
-  // @media (max-width: $breakpoint-tablet) {
-  //   gap: 32px;
-  // }
+  @media (max-width: $breakpoint-tablet) {
+    padding: 32px;
+  }
 }
 
 .newsletterLabel {
@@ -813,12 +826,12 @@
 
   @media (max-width: $breakpoint-desktop) {
     gap: 60px;
-    padding-top: 0;
     width: 100%;
   }
 
   @media (max-width: $breakpoint-tablet) {
     gap: 40px;
+    padding: 32px 16px;
   }
 }
 
@@ -833,6 +846,15 @@
   p {
     color: $primary-70;
     font-size: 20px;
+  }
+   @media (max-width: $breakpoint-tablet) {
+    h2{
+      font-size: 20px;
+      margin-top: 24px;
+    }
+    p{
+      font-size: 15px;
+    }
   }
 }
 
@@ -937,6 +959,9 @@
   &:disabled {
     background: var(--grayscale-40, #c6c6c6);
     color: #fff;
+  }
+   @media (max-width: $breakpoint-tablet) {
+    margin-top: 24px;
   }
 }
 

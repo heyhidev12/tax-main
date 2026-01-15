@@ -13,6 +13,7 @@ import { API_ENDPOINTS } from "@/config/api";
 import type { EducationDetail, ApplicationStatus } from "@/types/education";
 import styles from "./detail.module.scss";
 import { AccessTime, CalendarToday } from "@mui/icons-material";
+import FloatingButton from "@/components/common/FloatingButton";
 
 interface UserProfile {
   id: number;
@@ -347,19 +348,18 @@ const EducationDetailPage: React.FC = () => {
       <Menu isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
 
       <div className="container">
-         <div className={styles.contentHeader}>
-            <div className={styles.labels}>
-              {daysLeft > 0 ? (
-                <span className={styles.labelRed}>신청마감 D-{daysLeft}</span>
-              ) : (
-                <span className={styles.labelGray}>신청마감</span>
-              )}
-              <span className={styles.labelWhite}>{education.typeLabel}</span>
-            </div>
-            <h1 className={styles.contentTitle}>{education.name}</h1>
+        <div className={styles.contentHeader}>
+          <div className={styles.labels}>
+            {daysLeft > 0 ? (
+              <span className={styles.labelRed}>신청마감 D-{daysLeft}</span>
+            ) : (
+              <span className={styles.labelGray}>신청마감</span>
+            )}
+            <span className={styles.labelWhite}>{education.typeLabel}</span>
           </div>
+          <h1 className={styles.contentTitle}>{education.name}</h1>
+        </div>
         <div className={styles.content}>
-         
           <div className={styles.imageSection}>
             <div className={styles.imageWrapper}>
               <img
@@ -371,27 +371,31 @@ const EducationDetailPage: React.FC = () => {
               />
             </div>
           </div>
+          <div className={styles.contentHeaderMobile}>
+            <div className={styles.labels}>
+              {daysLeft > 0 ? (
+                <span className={styles.labelRed}>신청마감 D-{daysLeft}</span>
+              ) : (
+                <span className={styles.labelGray}>신청마감</span>
+              )}
+              <span className={styles.labelWhite}>{education.typeLabel}</span>
+            </div>
+            <h1 className={styles.contentTitle}>{education.name}</h1>
+          </div>
 
           {/* 강의 정보 */}
           <div className={styles.sidebar}>
             <div className={styles.sidebarCard}>
-              <div className={styles.cardHeader}>
+              {/* <div className={styles.cardHeader}>
                 <div className={styles.labels}>
-                  {daysLeft > 0 ? (
-                    <span className={styles.labelRed}>
-                      신청마감 D-{daysLeft}
-                    </span>
-                  ) : (
-                    <span className={styles.labelGray}>신청마감</span>
-                  )}
-                  <span className={styles.labelWhite}>
-                    {education.typeLabel}
-                  </span>
+                 
+                    <span className={styles.labelGray}>교육 주제</span>
+                  
                 </div>
                 <h2 className={styles.cardTitle}>{education.name}</h2>
-              </div>
+              </div> */}
 
-              <div className={styles.divider} />
+              {/* <div className={styles.divider} /> */}
 
               <div className={styles.cardInfo}>
                 <div className={styles.infoRow}>
@@ -416,11 +420,9 @@ const EducationDetailPage: React.FC = () => {
               <div className={styles.divider} />
 
               <div className={styles.educationDetails}>
-                
                 <div className={styles.detailItem}>
                   <div className={styles.detailLabel}>
-                   
-                    <CalendarToday/>
+                    <CalendarToday />
                     <span className={styles.detailIcon}>교육 일자</span>
                   </div>
                   <p className={styles.detailValue}>
@@ -429,7 +431,7 @@ const EducationDetailPage: React.FC = () => {
                 </div>
                 <div className={styles.detailItem}>
                   <div className={styles.detailLabel}>
-                    <AccessTime/>
+                    <AccessTime />
                     <span className={styles.detailIcon}>교육 시간</span>
                   </div>
                   <p className={styles.detailValue}>
@@ -457,7 +459,7 @@ const EducationDetailPage: React.FC = () => {
 
               <div className={styles.dateSelector}>
                 <div className={styles.dateInput}>
-                  <CalendarToday/>
+                  <CalendarToday />
                   <p>{selectedDate || "참여 날짜 선택"}</p>
                 </div>
                 <button
@@ -491,7 +493,17 @@ const EducationDetailPage: React.FC = () => {
       <div className={styles.stickyButtonWrapper}>{renderActionButton()}</div>
 
       <Footer />
-
+      <div className={styles.floatingButtons}>
+        <FloatingButton
+          variant="consult"
+          label="상담 신청하기"
+          onClick={() => router.push("/consultation/apply")}
+        />
+        <FloatingButton
+          variant="top"
+          onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+        />
+      </div>
       <DatePickerModal
         isOpen={isDatePickerOpen}
         onClose={() => setIsDatePickerOpen(false)}

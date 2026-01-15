@@ -83,7 +83,6 @@ const HistoryPage: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [data, setData] = useState<HistoryYear[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
   // 연혁 탭 노출 여부 (다른 state보다 먼저 선언)
   const [historyExposed, setHistoryExposed] = useState(true);
