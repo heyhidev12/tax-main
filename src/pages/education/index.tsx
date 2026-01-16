@@ -19,6 +19,13 @@ import { API_ENDPOINTS } from '@/config/api';
 import type { EducationItem, EducationListResponse, EducationType } from '@/types/education';
 import styles from './education.module.scss';
 
+interface UserProfile {
+  id: number;
+  loginId: string;
+  name: string;
+  memberType?: string;
+}
+
 interface EducationPageProps {
   initialEducationList: EducationItem[];
   initialNewEducationList: EducationItem[];
@@ -34,12 +41,12 @@ const EducationPage: React.FC<EducationPageProps> = ({
 }) => {
   const router = useRouter();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  
+
   // Query-based tab management (like History page)
   // Currently only 'education' tab exists, but keeping query-based structure for consistency
   const tabFromQuery = router.query.tab as string;
   const validTabs = ['education'];
-  
+
   // Ensure URL has correct tab parameter if missing or invalid
   useEffect(() => {
     if (!tabFromQuery || !validTabs.includes(tabFromQuery)) {
@@ -60,10 +67,14 @@ const EducationPage: React.FC<EducationPageProps> = ({
   const [selectedType, setSelectedType] = useState<EducationType | 'ALL'>('ALL');
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(initialTotalPages);
-  
+
+  // User profile for visibility filtering
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [isLoadingAuth, setIsLoadingAuth] = useState(true);
+
   // Search state for New Education section
   const [newEducationSearchQuery, setNewEducationSearchQuery] = useState('');
-  
+
   // Swiper refs and state
   const newEducationSwiperRef = useRef<SwiperType | null>(null);
   const [newEducationButtonsDisabled, setNewEducationButtonsDisabled] = useState({
@@ -71,6 +82,44 @@ const EducationPage: React.FC<EducationPageProps> = ({
     next: false,
   });
 
+
+  // Fetch user profile on mount
+  useEffect(() => {
+    fetchUserProfile();
+  }, []);
+
+  const fetchUserProfile = async () => {
+    try {
+      setIsLoadingAuth(true);
+      const response = await getClient<UserProfile>(API_ENDPOINTS.AUTH.ME);
+      if (response.data) {
+        setUserProfile(response.data);
+      }
+    } catch (err) {
+      console.error('유저 정보를 불러오는 중 오류:', err);
+      // User is not logged in
+      setUserProfile(null);
+    } finally {
+      setIsLoadingAuth(false);
+    }
+  };
+
+  // Visibility filter helper
+  const isItemVisible = (item: EducationItem): boolean => {
+    // If targetMemberType is "ALL", show to everyone
+    if (item.targetMemberType === "ALL") {
+      return true;
+    }
+
+    // If targetMemberType is not "ALL", check authentication and memberType
+    if (!userProfile) {
+      // User is not logged in, hide restricted items
+      return false;
+    }
+
+    // Check if user's memberType matches targetMemberType
+    return userProfile.memberType === item.targetMemberType;
+  };
 
   // Client-side: fetch new education list if needed (for refresh)
   const fetchNewEducationList = async () => {
@@ -135,8 +184,14 @@ const EducationPage: React.FC<EducationPageProps> = ({
     }
   };
 
-  // Filter new education list based on search query
+  // Filter new education list based on search query AND visibility
   const filteredNewEducationList = newEducationList.filter((item) => {
+    // First check visibility
+    if (!isItemVisible(item)) {
+      return false;
+    }
+
+    // Then check search query
     if (!newEducationSearchQuery.trim()) {
       return true;
     }
@@ -179,6 +234,9 @@ const EducationPage: React.FC<EducationPageProps> = ({
     return dateString.replace(/\./g, '.');
   };
 
+  // Filter education list based on visibility
+  const visibleEducationList = educationList.filter(isItemVisible);
+
   // 모집 마감일까지 남은 일수 계산
   const getDaysUntilDeadline = (endDate: string) => {
     const today = new Date();
@@ -206,30 +264,30 @@ const EducationPage: React.FC<EducationPageProps> = ({
       <div className={styles.page}>
         <Header variant="white" onMenuClick={() => setIsMenuOpen(true)} isFixed={true} />
         <Menu isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
-      <div className={styles.headerImage}/>
-      <div className="container">
-        <div className={styles.pageHeaderWrapper}>
-          <PageHeader
-            // title="교육/세미나"
-            breadcrumbs={[{ label: '교육/세미나' }]}
-          />
-        </div>
-
-        <div className={styles.heroSection}>
-          <p className={styles.heroSubtitle}>Education & Seminar</p>
-          <div className={styles.heroTitle}>
-            <span>기업의 성장</span>을 돕는 <br /> 가장 확실한 방법!
+        <div className={styles.headerImage} />
+        <div className="container">
+          <div className={styles.pageHeaderWrapper}>
+            <PageHeader
+              // title="교육/세미나"
+              breadcrumbs={[{ label: '교육/세미나' }]}
+            />
           </div>
-          <div className={styles.heroDescriptionText}>
-            <p>
-              <span>세무법인 함께의</span>
-              <span className={styles.boldText}>전문가 교육</span>은 <br />
-              <span className={styles.boldText}>기업의 성공적인 내일</span>을 만듭니다.
-            </p>
-          </div>
-        </div>
 
-        <div className={styles.content}>
+          <div className={styles.heroSection}>
+            <p className={styles.heroSubtitle}>Education & Seminar</p>
+            <div className={styles.heroTitle}>
+              <span>기업의 성장</span>을 돕는 <br /> 가장 확실한 방법!
+            </div>
+            <div className={styles.heroDescriptionText}>
+              <p>
+                <span>세무법인 함께의</span>
+                <span className={styles.boldText}>전문가 교육</span>은 <br />
+                <span className={styles.boldText}>기업의 성공적인 내일</span>을 만듭니다.
+              </p>
+            </div>
+          </div>
+
+          <div className={styles.content}>
             {error ? (
               <div className={styles.emptyState}>
                 <p>{error}</p>
@@ -238,43 +296,43 @@ const EducationPage: React.FC<EducationPageProps> = ({
               <>
                 <div className={styles.newSection}>
                   <div className={styles.searchInputWrapper}>
-                        <input
-                          type="text"
-                          placeholder="검색어를 입력해보세요"
-                          value={newEducationSearchQuery}
-                          onChange={(e) => setNewEducationSearchQuery(e.target.value)}
-                          className={styles.newEducationSearchInput}
-                        />
-                        <svg
-                          width="20"
-                          height="20"
-                          viewBox="0 0 20 20"
-                          fill="none"
-                          className={styles.searchIcon}
-                        >
-                          <path
-                            d="M9 17C13.4183 17 17 13.4183 17 9C17 4.58172 13.4183 1 9 1C4.58172 1 1 4.58172 1 9C1 13.4183 4.58172 17 9 17Z"
-                            stroke="#717171"
-                            strokeWidth="1.5"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          />
-                          <path
-                            d="M19 19L14.65 14.65"
-                            stroke="#717171"
-                            strokeWidth="1.5"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          />
-                        </svg>
-                      </div>
+                    <input
+                      type="text"
+                      placeholder="검색어를 입력해보세요"
+                      value={newEducationSearchQuery}
+                      onChange={(e) => setNewEducationSearchQuery(e.target.value)}
+                      className={styles.newEducationSearchInput}
+                    />
+                    <svg
+                      width="20"
+                      height="20"
+                      viewBox="0 0 20 20"
+                      fill="none"
+                      className={styles.searchIcon}
+                    >
+                      <path
+                        d="M9 17C13.4183 17 17 13.4183 17 9C17 4.58172 13.4183 1 9 1C4.58172 1 1 4.58172 1 9C1 13.4183 4.58172 17 9 17Z"
+                        stroke="#717171"
+                        strokeWidth="1.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                      <path
+                        d="M19 19L14.65 14.65"
+                        stroke="#717171"
+                        strokeWidth="1.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  </div>
                   <div className={styles.sectionHeader}>
-                    
+
                     <div className={styles.sectionTitleWrapper}>
                       <h4 className={styles.sectionTitle}>신규 교육</h4>
                     </div>
                     <div className={styles.sectionHeaderRight}>
-                      
+
                       {filteredNewEducationList.length > 0 && (
                         <div className={styles.sectionNav}>
                           <button
@@ -357,7 +415,7 @@ const EducationPage: React.FC<EducationPageProps> = ({
                                     <p className={styles.cardLocation}>{item.location}</p>
                                     <div className={styles.cardDateWrapper}>
                                       <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className={styles.cardDateIcon}>
-                                        <path d="M3 2V4M13 2V4M2 6H14M3 2H13C13.5523 2 14 2.44772 14 3V13C14 13.5523 13.5523 14 13 14H3C2.44772 14 2 13.5523 2 13V3C2 2.44772 2.44772 2 3 2Z" stroke="#d8d8d8" strokeWidth="1" strokeLinecap="round"/>
+                                        <path d="M3 2V4M13 2V4M2 6H14M3 2H13C13.5523 2 14 2.44772 14 3V13C14 13.5523 13.5523 14 13 14H3C2.44772 14 2 13.5523 2 13V3C2 2.44772 2.44772 2 3 2Z" stroke="#d8d8d8" strokeWidth="1" strokeLinecap="round" />
                                       </svg>
                                       <p className={styles.cardDate}>
                                         {item.educationDates[0]} {item.educationTimeSlots[0]}
@@ -419,10 +477,10 @@ const EducationPage: React.FC<EducationPageProps> = ({
                       </div>
                     </div>
                     <div className={styles.mainContent}>
-                      {educationList.length > 0 ? (
+                      {visibleEducationList.length > 0 ? (
                         <>
                           <div className={styles.educationGrid}>
-                            {educationList.map((item) => {
+                            {visibleEducationList.map((item) => {
                               const daysLeft = getDaysUntilDeadline(item.recruitmentEndDate);
                               return (
                                 <div
@@ -453,7 +511,7 @@ const EducationPage: React.FC<EducationPageProps> = ({
                                       <p className={styles.cardLocation}>{item.location}</p>
                                       <div className={styles.cardDateWrapper}>
                                         <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className={styles.cardDateIcon}>
-                                          <path d="M3 2V4M13 2V4M2 6H14M3 2H13C13.5523 2 14 2.44772 14 3V13C14 13.5523 13.5523 14 13 14H3C2.44772 14 2 13.5523 2 13V3C2 2.44772 2.44772 2 3 2Z" stroke="#d8d8d8" strokeWidth="1" strokeLinecap="round"/>
+                                          <path d="M3 2V4M13 2V4M2 6H14M3 2H13C13.5523 2 14 2.44772 14 3V13C14 13.5523 13.5523 14 13 14H3C2.44772 14 2 13.5523 2 13V3C2 2.44772 2.44772 2 3 2Z" stroke="#d8d8d8" strokeWidth="1" strokeLinecap="round" />
                                         </svg>
                                         <p className={styles.cardDate}>
                                           {item.educationDates[0]} {item.educationTimeSlots[0]}
@@ -489,22 +547,22 @@ const EducationPage: React.FC<EducationPageProps> = ({
               </>
             )}
           </div>
-      </div>
+        </div>
 
-      <Footer />
+        <Footer />
 
-      {/* Floating Buttons */}
-      <div className={styles.floatingButtons}>
-        <FloatingButton
-          variant="consult"
-          label="상담 신청하기"
-          onClick={() => router.push('/consultation/apply')}
-        />
-        <FloatingButton
-          variant="top"
-          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-        />
-      </div>
+        {/* Floating Buttons */}
+        <div className={styles.floatingButtons}>
+          <FloatingButton
+            variant="consult"
+            label="상담 신청하기"
+            onClick={() => router.push('/consultation/apply')}
+          />
+          <FloatingButton
+            variant="top"
+            onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+          />
+        </div>
       </div>
     </>
   );

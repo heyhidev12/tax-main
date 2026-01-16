@@ -483,9 +483,9 @@ background: var(--grayscale-5, #F8F8F8);
 .checkbox {
   width: 16px;
   height: 16px;
-  // border: 1px solid #c6c6c6;
+  border: 1px solid $gray-40;
   border-radius: 2px;
-  background: transparent;
+  background: $gray-5;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -527,7 +527,7 @@ background: var(--grayscale-5, #F8F8F8);
   transition: all 0.2s ease;
 
   &:hover:not(:disabled) {
-    background: rgba(255, 255, 255, 0.9);
+    background: $primary-40;
   }
 }
 

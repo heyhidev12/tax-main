@@ -22,6 +22,7 @@ interface UserProfile {
   id: number;
   loginId: string;
   name: string;
+  memberType?: string;
 }
 
 // Toast UI Viewer는 클라이언트 사이드에서만 로드
@@ -45,6 +46,8 @@ const EducationDetailPage: React.FC<EducationDetailPageProps> = ({ education: in
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
   const [isApplicationModalOpen, setIsApplicationModalOpen] = useState(false);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [isLoadingAuth, setIsLoadingAuth] = useState(true);
+  const [visibilityError, setVisibilityError] = useState<string | null>(null);
 
   // 사용자 정보 가져오기 (CSR - auth-related)
   useEffect(() => {
@@ -53,14 +56,48 @@ const EducationDetailPage: React.FC<EducationDetailPageProps> = ({ education: in
 
   const fetchUserProfile = async () => {
     try {
+      setIsLoadingAuth(true);
       const response = await getClient<UserProfile>(API_ENDPOINTS.AUTH.ME);
       if (response.data) {
         setUserProfile(response.data);
       }
     } catch (err) {
       console.error("유저 정보를 불러오는 중 오류:", err);
+      // User is not logged in
+      setUserProfile(null);
+    } finally {
+      setIsLoadingAuth(false);
     }
   };
+
+  // Visibility filtering based on targetMemberType
+  useEffect(() => {
+    if (!education || isLoadingAuth) return;
+
+    const { targetMemberType } = education;
+
+    // If targetMemberType is "ALL", show to everyone
+    if (targetMemberType === "ALL") {
+      setVisibilityError(null);
+      return;
+    }
+
+    // If targetMemberType is not "ALL", check authentication and memberType
+    if (!userProfile) {
+      // User is not logged in
+      setVisibilityError("로그인이 필요한 교육입니다.");
+      return;
+    }
+
+    // Check if user's memberType matches targetMemberType
+    if (userProfile.memberType !== targetMemberType) {
+      setVisibilityError("이 교육은 " + education.targetMemberTypeLabel + " 전용입니다.");
+      return;
+    }
+
+    // User has access
+    setVisibilityError(null);
+  }, [education, userProfile, isLoadingAuth]);
 
   const getDaysUntilDeadline = (endDate: string) => {
     const today = new Date();
@@ -139,6 +176,23 @@ const EducationDetailPage: React.FC<EducationDetailPageProps> = ({ education: in
     return `${firstFormatted} ~ ${lastFormatted}`;
   };
 
+  // Show loading state while checking auth
+  if (isLoadingAuth) {
+    return (
+      <div className={styles.page}>
+        <Header variant="transparent" onMenuClick={() => setIsMenuOpen(true)} />
+        <Menu isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
+        <div className={styles.container}>
+          <div className={styles.error}>
+            로딩 중...
+          </div>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+
+  // Show error if education not found or initial error
   if (error || !education) {
     return (
       <div className={styles.page}>
@@ -147,6 +201,22 @@ const EducationDetailPage: React.FC<EducationDetailPageProps> = ({ education: in
         <div className={styles.container}>
           <div className={styles.error}>
             {error || "교육 정보를 찾을 수 없습니다."}
+          </div>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+
+  // Show visibility error if user doesn't have access
+  if (visibilityError) {
+    return (
+      <div className={styles.page}>
+        <Header variant="transparent" onMenuClick={() => setIsMenuOpen(true)} />
+        <Menu isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
+        <div className={styles.container}>
+          <div className={styles.error}>
+            {visibilityError}
           </div>
         </div>
         <Footer />
@@ -306,7 +376,7 @@ const EducationDetailPage: React.FC<EducationDetailPageProps> = ({ education: in
     <>
       <Head>
         <title>{education.name} - 세무법인 함께</title>
-        <meta
+        {/* <meta
           name="description"
           content={education.description || `${education.name} - 세무법인 함께 교육 프로그램`}
         />
@@ -314,7 +384,7 @@ const EducationDetailPage: React.FC<EducationDetailPageProps> = ({ education: in
         <meta
           property="og:description"
           content={education.description || `${education.name}`}
-        />
+        /> */}
         <meta property="og:type" content="article" />
         {education.image?.url && (
           <meta property="og:image" content={education.image.url} />
@@ -328,31 +398,8 @@ const EducationDetailPage: React.FC<EducationDetailPageProps> = ({ education: in
         />
         <Menu isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
 
-      <div className="container">
-        <div className={styles.contentHeader}>
-          <div className={styles.labels}>
-            {daysLeft > 0 ? (
-              <span className={styles.labelRed}>신청마감 D-{daysLeft}</span>
-            ) : (
-              <span className={styles.labelGray}>신청마감</span>
-            )}
-            <span className={styles.labelWhite}>{education.typeLabel}</span>
-          </div>
-          <h1 className={styles.contentTitle}>{education.name}</h1>
-        </div>
-        <div className={styles.content}>
-          <div className={styles.imageSection}>
-            <div className={styles.imageWrapper}>
-              <img
-                src={
-                  education.image?.url ||
-                  "/images/education/default-thumbnail.png"
-                }
-                alt={education.name}
-              />
-            </div>
-          </div>
-          <div className={styles.contentHeaderMobile}>
+        <div className="container">
+          <div className={styles.contentHeader}>
             <div className={styles.labels}>
               {daysLeft > 0 ? (
                 <span className={styles.labelRed}>신청마감 D-{daysLeft}</span>
@@ -363,11 +410,34 @@ const EducationDetailPage: React.FC<EducationDetailPageProps> = ({ education: in
             </div>
             <h1 className={styles.contentTitle}>{education.name}</h1>
           </div>
+          <div className={styles.content}>
+            <div className={styles.imageSection}>
+              <div className={styles.imageWrapper}>
+                <img
+                  src={
+                    education.image?.url ||
+                    "/images/education/default-thumbnail.png"
+                  }
+                  alt={education.name}
+                />
+              </div>
+            </div>
+            <div className={styles.contentHeaderMobile}>
+              <div className={styles.labels}>
+                {daysLeft > 0 ? (
+                  <span className={styles.labelRed}>신청마감 D-{daysLeft}</span>
+                ) : (
+                  <span className={styles.labelGray}>신청마감</span>
+                )}
+                <span className={styles.labelWhite}>{education.typeLabel}</span>
+              </div>
+              <h1 className={styles.contentTitle}>{education.name}</h1>
+            </div>
 
-          {/* 강의 정보 */}
-          <div className={styles.sidebar}>
-            <div className={styles.sidebarCard}>
-              {/* <div className={styles.cardHeader}>
+            {/* 강의 정보 */}
+            <div className={styles.sidebar}>
+              <div className={styles.sidebarCard}>
+                {/* <div className={styles.cardHeader}>
                 <div className={styles.labels}>
                  
                     <span className={styles.labelGray}>교육 주제</span>
@@ -376,134 +446,134 @@ const EducationDetailPage: React.FC<EducationDetailPageProps> = ({ education: in
                 <h2 className={styles.cardTitle}>{education.name}</h2>
               </div> */}
 
-              {/* <div className={styles.divider} /> */}
+                {/* <div className={styles.divider} /> */}
 
-              <div className={styles.cardInfo}>
-                <div className={styles.infoRow}>
-                  <div className={styles.infoLabel}>
-                    <span className={styles.icon}>유형</span>
+                <div className={styles.cardInfo}>
+                  <div className={styles.infoRow}>
+                    <div className={styles.infoLabel}>
+                      <span className={styles.icon}>유형</span>
+                    </div>
+                    <p className={styles.infoValue}>{education.typeLabel}</p>
                   </div>
-                  <p className={styles.infoValue}>{education.typeLabel}</p>
-                </div>
-                <div className={styles.infoRow}>
-                  <div className={styles.infoLabel}>
-                    <span className={styles.icon}>강사</span>
+                  <div className={styles.infoRow}>
+                    <div className={styles.infoLabel}>
+                      <span className={styles.icon}>강사</span>
+                    </div>
+                    <p className={styles.infoValue}>{education.instructorName}</p>
                   </div>
-                  <p className={styles.infoValue}>{education.instructorName}</p>
-                </div>
-                <div className={styles.infoRow}>
-                  <div className={styles.infoLabel}>
-                    <span className={styles.icon}>대상</span>
+                  <div className={styles.infoRow}>
+                    <div className={styles.infoLabel}>
+                      <span className={styles.icon}>대상</span>
+                    </div>
+                    <p className={styles.infoValue}>{education.target}</p>
                   </div>
-                  <p className={styles.infoValue}>{education.target}</p>
                 </div>
-              </div>
-              <div className={styles.divider} />
+                <div className={styles.divider} />
 
-              <div className={styles.educationDetails}>
-                <div className={styles.detailItem}>
-                  <div className={styles.detailLabel}>
+                <div className={styles.educationDetails}>
+                  <div className={styles.detailItem}>
+                    <div className={styles.detailLabel}>
+                      <CalendarToday />
+                      <span className={styles.detailIcon}>교육 일자</span>
+                    </div>
+                    <p className={styles.detailValue}>
+                      {formatEducationDates(education.educationDates)}
+                    </p>
+                  </div>
+                  <div className={styles.detailItem}>
+                    <div className={styles.detailLabel}>
+                      <AccessTime />
+                      <span className={styles.detailIcon}>교육 시간</span>
+                    </div>
+                    <p className={styles.detailValue}>
+                      {education.educationTimeSlots.join(", ")}
+                    </p>
+                  </div>
+                  <div className={styles.detailItem}>
+                    <div className={styles.detailLabel}>
+                      <img
+                        src="/images/common/map-icon.svg"
+                        alt="교육 장소"
+                        className={styles.detailIconImage}
+                      />
+                      <span className={styles.detailIcon}>교육 장소</span>
+                    </div>
+                    <p className={styles.detailValue}>{education.location}</p>
+                  </div>
+                </div>
+
+                {education.otherInfo && (
+                  <div className={styles.otherInfo}>
+                    <p>{education.otherInfo}</p>
+                  </div>
+                )}
+
+                <div className={styles.dateSelector}>
+                  <div className={styles.dateInput}>
                     <CalendarToday />
-                    <span className={styles.detailIcon}>교육 일자</span>
+                    <p>{selectedDate || "참여 날짜 선택"}</p>
                   </div>
-                  <p className={styles.detailValue}>
-                    {formatEducationDates(education.educationDates)}
-                  </p>
+                  <button
+                    className={styles.dateButton}
+                    onClick={() => setIsDatePickerOpen(true)}
+                  >
+                    날짜 선택
+                  </button>
                 </div>
-                <div className={styles.detailItem}>
-                  <div className={styles.detailLabel}>
-                    <AccessTime />
-                    <span className={styles.detailIcon}>교육 시간</span>
-                  </div>
-                  <p className={styles.detailValue}>
-                    {education.educationTimeSlots.join(", ")}
-                  </p>
-                </div>
-                <div className={styles.detailItem}>
-                  <div className={styles.detailLabel}>
-                    <img
-                      src="/images/common/map-icon.svg"
-                      alt="교육 장소"
-                      className={styles.detailIconImage}
-                    />
-                    <span className={styles.detailIcon}>교육 장소</span>
-                  </div>
-                  <p className={styles.detailValue}>{education.location}</p>
-                </div>
-              </div>
 
-              {education.otherInfo && (
-                <div className={styles.otherInfo}>
-                  <p>{education.otherInfo}</p>
+                <div className={styles.price}>
+                  <p>0원</p>
                 </div>
-              )}
 
-              <div className={styles.dateSelector}>
-                <div className={styles.dateInput}>
-                  <CalendarToday />
-                  <p>{selectedDate || "참여 날짜 선택"}</p>
+                <div className={styles.actionButtonDesktop}>
+                  {renderActionButton()}
                 </div>
-                <button
-                  className={styles.dateButton}
-                  onClick={() => setIsDatePickerOpen(true)}
-                >
-                  날짜 선택
-                </button>
-              </div>
-
-              <div className={styles.price}>
-                <p>0원</p>
-              </div>
-
-              <div className={styles.actionButtonDesktop}>
-                {renderActionButton()}
               </div>
             </div>
-          </div>
 
-          {/* 설명 섹션 */}
-          <div className={styles.bodySection}>
-            <div className={styles.bodyContent}>
-              <Viewer initialValue={education.body} />
+            {/* 설명 섹션 */}
+            <div className={styles.bodySection}>
+              <div className={styles.bodyContent}>
+                <Viewer initialValue={education.body} />
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* 모바일 하단 고정 버튼 */}
-      <div className={styles.stickyButtonWrapper}>{renderActionButton()}</div>
+        {/* 모바일 하단 고정 버튼 */}
+        <div className={styles.stickyButtonWrapper}>{renderActionButton()}</div>
 
-      <Footer />
-      <div className={styles.floatingButtons}>
-        <FloatingButton
-          variant="consult"
-          label="상담 신청하기"
-          onClick={() => router.push("/consultation/apply")}
+        <Footer />
+        <div className={styles.floatingButtons}>
+          <FloatingButton
+            variant="consult"
+            label="상담 신청하기"
+            onClick={() => router.push("/consultation/apply")}
+          />
+          <FloatingButton
+            variant="top"
+            onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+          />
+        </div>
+        <DatePickerModal
+          isOpen={isDatePickerOpen}
+          onClose={() => setIsDatePickerOpen(false)}
+          onConfirm={(date) => setSelectedDate(date)}
+          availableDates={education.educationDates}
         />
-        <FloatingButton
-          variant="top"
-          onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-        />
-      </div>
-      <DatePickerModal
-        isOpen={isDatePickerOpen}
-        onClose={() => setIsDatePickerOpen(false)}
-        onConfirm={(date) => setSelectedDate(date)}
-        availableDates={education.educationDates}
-      />
 
-      {education && (
-        <ApplicationModal
-          isOpen={isApplicationModalOpen}
-          onClose={() => setIsApplicationModalOpen(false)}
-          education={education}
-          initialDate={selectedDate}
-          onSuccess={() => {
-            // 신청 성공 후 데이터 새로고침
-            router.reload();
-          }}
-        />
-      )}
+        {education && (
+          <ApplicationModal
+            isOpen={isApplicationModalOpen}
+            onClose={() => setIsApplicationModalOpen(false)}
+            education={education}
+            initialDate={selectedDate}
+            onSuccess={() => {
+              // 신청 성공 후 데이터 새로고침
+              router.reload();
+            }}
+          />
+        )}
       </div>
     </>
   );
