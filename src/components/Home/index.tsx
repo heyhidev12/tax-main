@@ -1,4 +1,3 @@
-import { useEffect, useState } from "react";
 import Navbar from "../common/Navbar/Navbar";
 import ViewMore from "../common/ViewMore";
 import Footer from "@/components/Footer";
@@ -11,10 +10,8 @@ import ServiceAreas from "./service-areas";
 import TrustedExperts from "./trusted-experts";
 import VisionSections from "./vision-section";
 import styles from "./styles.module.scss";
-import { get } from "@/lib/api";
-import { API_ENDPOINTS } from "@/config/api";
 
-interface BannerMedia {
+export interface BannerMedia {
   mediaType: "IMAGE" | "VIDEO";
   media: {
     url: string;
@@ -22,32 +19,11 @@ interface BannerMedia {
   displayOrder: number;
 }
 
-type BannersApiResponse =
-  | BannerMedia[]
-  | {
-    items?: BannerMedia[];
-    data?: BannerMedia[] | { items?: BannerMedia[] };
-  };
+interface HomeProps {
+  heroBanner: BannerMedia | null;
+}
 
-export default function Home() {
-  const [heroBanner, setHeroBanner] = useState<BannerMedia | null>(null);
-
-  useEffect(() => {
-    const fetchBanners = async () => {
-      const response = await get<BannerMedia[]>(API_ENDPOINTS.BANNERS);
-      if (response.data && Array.isArray(response.data) && response.data.length > 0) {
-        const sorted = [...response.data].sort(
-          (a, b) => (a.displayOrder ?? 0) - (b.displayOrder ?? 0)
-        );
-        setHeroBanner(response.data[0]);
-
-      } else {
-        setHeroBanner(null);
-      }
-    };
-
-    fetchBanners();
-  }, []);
+export default function Home({ heroBanner }: HomeProps) {
 
 
   const renderHeroBackground = () => {

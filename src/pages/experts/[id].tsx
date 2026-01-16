@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/router";
+import { GetServerSideProps } from "next";
+import Head from "next/head";
 import dynamic from "next/dynamic";
 import "@toast-ui/editor/dist/toastui-editor-viewer.css";
 import { Swiper, SwiperSlide } from "swiper/react";
@@ -14,7 +16,8 @@ import FloatingButton from "@/components/common/FloatingButton";
 import PageHeader from "@/components/common/PageHeader";
 import ContentBox from "@/components/common/ContentBox";
 import Icon from "@/components/common/Icon";
-import { get } from "@/lib/api";
+import { get as getClient } from "@/lib/api";
+import { get } from "@/lib/api-server";
 import { API_ENDPOINTS } from "@/config/api";
 import styles from "./detail.module.scss";
 
@@ -24,7 +27,7 @@ const Viewer = dynamic(
   { ssr: false }
 );
 
-interface MemberDetail {
+export interface MemberDetail {
   id: number;
   name: string;
   mainPhoto?: {
@@ -91,13 +94,17 @@ interface InsightResponse {
   total: number;
 }
 
-const ExpertDetailPage: React.FC = () => {
+interface ExpertDetailPageProps {
+  data: MemberDetail | null;
+  error: string | null;
+}
+
+const ExpertDetailPage: React.FC<ExpertDetailPageProps> = ({ data: initialData, error: initialError }) => {
   const router = useRouter();
   const { id } = router.query;
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [data, setData] = useState<MemberDetail | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [data, setData] = useState<MemberDetail | null>(initialData);
+  const [error, setError] = useState<string | null>(initialError);
   const [experts, setExperts] = useState<Expert[]>([]);
   const [relatedNews, setRelatedNews] = useState<InsightItem[]>([]);
   const expertsSwiperRef = useRef<SwiperType | null>(null);
@@ -171,12 +178,12 @@ const ExpertDetailPage: React.FC = () => {
     };
   }, [relatedNews.length, updateNewsButtons]);
 
+  // Fetch related content client-side (secondary data)
   useEffect(() => {
-    if (id) {
-      fetchExpertDetail();
+    if (id && data) {
       fetchRelatedNews();
     }
-  }, [id]);
+  }, [id, data]);
 
   useEffect(() => {
     if (
@@ -188,30 +195,9 @@ const ExpertDetailPage: React.FC = () => {
     }
   }, [data?.workAreas, id]);
 
-  const fetchExpertDetail = async () => {
-    setLoading(true);
-    setError(null);
-
-    try {
-      const response = await get<MemberDetail>(
-        `${API_ENDPOINTS.MEMBERS}/${id}`
-      );
-
-      if (response.data) {
-        setData(response.data);
-      } else if (response.error) {
-        setError(response.error);
-      }
-    } catch (err) {
-      setError("전문가 정보를 불러오는 중 오류가 발생했습니다.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const fetchRelatedNews = async () => {
     try {
-      const response = await get<InsightResponse>(
+      const response = await getClient<InsightResponse>(
         `${API_ENDPOINTS.INSIGHTS}?page=1&limit=20`
       );
 
@@ -235,7 +221,7 @@ const ExpertDetailPage: React.FC = () => {
       if (!workAreaId) return;
 
       const url = `${API_ENDPOINTS.MEMBERS}?page=1&limit=20&workArea=${workAreaId}`;
-      const membersResponse = await get<
+      const membersResponse = await getClient<
         Expert[] | { items: Expert[]; data: Expert[] }
       >(url);
 
@@ -287,7 +273,11 @@ const ExpertDetailPage: React.FC = () => {
   };
 
   const handleConsultClick = () => {
-    router.push("/consultation/apply");
+    if (data?.id) {
+      router.push(`/consultation/apply?expertId=${data.id}`);
+    } else {
+      router.push("/consultation/apply");
+    }
   };
 
   const handleExpertPrev = () => {
@@ -347,19 +337,6 @@ const ExpertDetailPage: React.FC = () => {
     }
   };
 
-  if (loading) {
-    return (
-      <div className={styles.page}>
-        <Header variant="transparent" onMenuClick={() => setIsMenuOpen(true)} />
-        <Menu isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
-        <div className={styles.container}>
-          <div className={styles.loading}>로딩 중...</div>
-        </div>
-        <Footer />
-      </div>
-    );
-  }
-
   if (error || !data) {
     return (
       <div className={styles.page}>
@@ -376,9 +353,26 @@ const ExpertDetailPage: React.FC = () => {
   }
 
   return (
-    <div className={styles.page}>
-      <Header variant="transparent" onMenuClick={() => setIsMenuOpen(true)} isFixed={true} />
-      <Menu isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
+    <>
+      <Head>
+        <title>{data.name} 세무사 - 세무법인 함께</title>
+        <meta
+          name="description"
+          content={data.oneLineIntro || `${data.name} 세무사 - ${data.affiliation}`}
+        />
+        <meta property="og:title" content={`${data.name} 세무사 - 세무법인 함께`} />
+        <meta
+          property="og:description"
+          content={data.oneLineIntro || `${data.name} 세무사 - ${data.affiliation}`}
+        />
+        <meta property="og:type" content="profile" />
+        {data.mainPhoto?.url && (
+          <meta property="og:image" content={data.mainPhoto.url} />
+        )}
+      </Head>
+      <div className={styles.page}>
+        <Header variant="transparent" onMenuClick={() => setIsMenuOpen(true)} isFixed={true} />
+        <Menu isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
       <div className="container">
         {/* Hero Section - Full Width */}
         <div className={styles.heroSection}>
@@ -595,7 +589,7 @@ const ExpertDetailPage: React.FC = () => {
                         </div>
                       )}
 
-                      <button className={styles.getConsult}>
+                      <button className={styles.getConsult} onClick={handleConsultClick}>
                         이 전문가에게 바로 상담신청
                       </button>
                     </div>
@@ -723,7 +717,7 @@ const ExpertDetailPage: React.FC = () => {
           </div>
         </div>
         {isMobile && (
-          <button className={styles.getConsult}>
+          <button className={styles.getConsult} onClick={handleConsultClick}>
             이 전문가에게 바로 상담신청
           </button>
         )}
@@ -1038,8 +1032,43 @@ const ExpertDetailPage: React.FC = () => {
         )}
         <FloatingButton variant="top" onClick={handleTopClick} />
       </div>
-    </div>
+      </div>
+    </>
   );
+};
+
+export const getServerSideProps: GetServerSideProps<ExpertDetailPageProps> = async (context) => {
+  const { id } = context.params!;
+
+  try {
+    const response = await get<MemberDetail>(
+      `${API_ENDPOINTS.MEMBERS}/${id}`
+    );
+
+    if (response.data) {
+      return {
+        props: {
+          data: response.data,
+          error: null,
+        },
+      };
+    } else {
+      return {
+        props: {
+          data: null,
+          error: response.error || "전문가를 찾을 수 없습니다.",
+        },
+      };
+    }
+  } catch (err) {
+    console.error("Failed to fetch expert detail:", err);
+    return {
+      props: {
+        data: null,
+        error: "전문가 정보를 불러오는 중 오류가 발생했습니다.",
+      },
+    };
+  }
 };
 
 export default ExpertDetailPage;

@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/router";
+import { GetServerSideProps } from "next";
+import Head from "next/head";
 import Header from "@/components/common/Header";
 import Menu from "@/components/Menu";
 import Footer from "@/components/Footer";
@@ -10,7 +12,8 @@ import FloatingButton from "@/components/common/FloatingButton";
 import Card from "@/components/common/Card";
 import Icon from "@/components/common/Icon";
 import Tab from "@/components/common/Tab";
-import { get, post } from "@/lib/api";
+import { get as getClient, post } from "@/lib/api";
+import { get } from "@/lib/api-server";
 import { API_ENDPOINTS } from "@/config/api";
 import styles from "./insights.module.scss";
 import Checkbox from "@/components/common/Checkbox";
@@ -60,18 +63,37 @@ type LibraryDisplayType = "gallery" | "snippet" | "list";
 type SortField = "category" | "author" | null;
 type SortOrder = "asc" | "desc";
 
-const InsightsPage: React.FC = () => {
+interface InsightsPageProps {
+  initialInsights: InsightItem[];
+  initialTotal: number;
+  initialTotalPages: number;
+  initialActiveTab: InsightTab;
+  initialLibraryDisplayType?: LibraryDisplayType;
+  error: string | null;
+}
+
+const InsightsPage: React.FC<InsightsPageProps> = ({
+  initialInsights,
+  initialTotal,
+  initialTotalPages,
+  initialActiveTab,
+  initialLibraryDisplayType,
+  error: initialError,
+}) => {
   const router = useRouter();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<InsightTab>("column");
+  
+  // Query-based tab management (like History page)
+  const tabFromQuery = router.query.tab as string;
+  const validTabs = ["column", "library", "newsletter"];
+  const [activeTab, setActiveTab] = useState<InsightTab>(initialActiveTab);
   const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const [insights, setInsights] = useState<InsightItem[]>([]);
-  const [total, setTotal] = useState(0);
-  const [totalPages, setTotalPages] = useState(1);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [insights, setInsights] = useState<InsightItem[]>(initialInsights);
+  const [total, setTotal] = useState(initialTotal);
+  const [totalPages, setTotalPages] = useState(initialTotalPages);
+  const [error, setError] = useState<string | null>(initialError);
   const [sortField, setSortField] = useState<SortField>(null);
   const [sortOrder, setSortOrder] = useState<SortOrder>("asc");
   const [newsletterName, setNewsletterName] = useState('');
@@ -120,12 +142,59 @@ const InsightsPage: React.FC = () => {
       checkNewsletterExposed();
     }, []);
   
-    // 뉴스레터 탭이 숨겨진 상태에서 newsletter 탭에 접근하면 education으로 변경
+    // 뉴스레터 탭이 숨겨진 상태에서 newsletter 탭에 접근하면 column으로 리다이렉트
     useEffect(() => {
       if (!newsletterExposed && activeTab === 'newsletter') {
+        router.replace("/insights?tab=column", undefined, { shallow: true });
         setActiveTab('column');
       }
-    }, [newsletterExposed, activeTab]);
+    }, [newsletterExposed, activeTab, router]);
+  
+  // URL 쿼리 파라미터가 변경되면 탭 업데이트 (like History page)
+  // Remove dataRoom from query if present
+  useEffect(() => {
+    if (router.isReady && router.query.dataRoom) {
+      const { dataRoom, ...restQuery } = router.query;
+      router.replace(
+        {
+          pathname: router.pathname,
+          query: restQuery,
+        },
+        undefined,
+        { shallow: true }
+      );
+    }
+  }, [router.isReady, router.query.dataRoom, router]);
+
+  // URL 쿼리 파라미터가 변경되면 탭 업데이트 (like History page)
+  useEffect(() => {
+    if (tabFromQuery && validTabs.includes(tabFromQuery)) {
+      setActiveTab(tabFromQuery as InsightTab);
+    } else if (tabFromQuery && !validTabs.includes(tabFromQuery)) {
+      // Invalid tab in query, redirect to default
+      const { dataRoom, ...restQuery } = router.query;
+      router.replace(
+        {
+          pathname: router.pathname,
+          query: { ...restQuery, tab: "column" },
+        },
+        undefined,
+        { shallow: true }
+      );
+      setActiveTab("column");
+    } else if (!tabFromQuery) {
+      // No tab in query, set default and update URL
+      const { dataRoom, ...restQuery } = router.query;
+      router.replace(
+        {
+          pathname: router.pathname,
+          query: { ...restQuery, tab: "column" },
+        },
+        undefined,
+        { shallow: true }
+      );
+    }
+  }, [tabFromQuery, router]);
   
     // Email validation
     const validateEmail = (email: string) => {
@@ -206,18 +275,12 @@ const InsightsPage: React.FC = () => {
                         privacyAgreed;
   // 자료실 노출 타입 - API 응답에서 설정
   const [libraryDisplayType, setLibraryDisplayType] =
-    useState<LibraryDisplayType>("gallery");
+    useState<LibraryDisplayType>(initialLibraryDisplayType || "gallery");
 
-  // 현재 자료실 ID (URL 쿼리에서 가져옴)
-  const [currentDataRoom, setCurrentDataRoom] = useState<string>("");
 
-  // 자료실 정보 (이름 등)
-  const [dataRoomName, setDataRoomName] = useState<string>("");
-
-  // API에서 데이터 가져오기
+  // API에서 데이터 가져오기 (CSR for search/filter/pagination)
   const fetchInsights = async () => {
     try {
-      setLoading(true);
       setError(null);
 
       const params = new URLSearchParams();
@@ -231,12 +294,12 @@ const InsightsPage: React.FC = () => {
       }
       if (activeTab === "column") {
         params.append("categoryId", "1");
-      } else {
-        // URL 쿼리의 dataRoom 파라미터 사용
-        params.append("dataRoom", currentDataRoom || "A");
+      } else if (activeTab === "library") {
+        // Library tab - use default for now (dataRoom handling removed)
+        params.append("dataRoom", "A");
       }
 
-      const response = await get<InsightResponse>(
+      const response = await getClient<InsightResponse>(
         `${API_ENDPOINTS.INSIGHTS}?${params.toString()}`
       );
 
@@ -297,31 +360,17 @@ const InsightsPage: React.FC = () => {
       setInsights([]);
       setTotal(0);
       setTotalPages(1);
-    } finally {
-      setLoading(false);
     }
   };
 
-  // URL 쿼리 파라미터 처리
+
+  // Client-side: fetch when filters/search/pagination change
   useEffect(() => {
     if (router.isReady) {
-      const { tab, dataRoom } = router.query;
-
-      // 탭 설정
-      if (tab === "column" || tab === "library") {
-        setActiveTab(tab);
+      // Only fetch if something changed from initial state
+      if (searchQuery || categoryFilter !== "all" || currentPage !== 1 || activeTab !== initialActiveTab) {
+        fetchInsights();
       }
-
-      // 자료실 ID 설정
-      if (typeof dataRoom === "string") {
-        setCurrentDataRoom(dataRoom);
-      }
-    }
-  }, [router.isReady, router.query]);
-
-  useEffect(() => {
-    if (router.isReady) {
-      fetchInsights();
     }
   }, [
     router.isReady,
@@ -329,7 +378,7 @@ const InsightsPage: React.FC = () => {
     categoryFilter,
     currentPage,
     searchQuery,
-    currentDataRoom,
+    initialActiveTab,
   ]);
 
   // 검색 핸들러 (Enter 키 또는 검색 버튼 클릭 시)
@@ -395,23 +444,24 @@ const InsightsPage: React.FC = () => {
     });
   };
 
-  // 탭 변경 핸들러
+  // 탭 변경 핸들러 (query-based, like History page)
   const handleTabChange = (tabId: string) => {
-    setActiveTab(tabId as InsightTab);
+    const newTab = tabId as InsightTab;
+    setActiveTab(newTab);
     setCurrentPage(1);
     setCategoryFilter("all");
     setSearchQuery("");
 
-    // URL 업데이트
-    if (tabId === "column") {
-      router.push("/insights?tab=column", undefined, { shallow: true });
-    } else {
-      // 자료실 탭: 현재 dataRoom 유지 (없으면 기본값)
-      const dataRoom = currentDataRoom || "A";
-      router.push(`/insights?tab=library&dataRoom=${dataRoom}`, undefined, {
-        shallow: true,
-      });
-    }
+    // URL 업데이트 - only use tab parameter, remove dataRoom
+    const { dataRoom, ...restQuery } = router.query;
+    router.replace(
+      {
+        pathname: router.pathname,
+        query: { ...restQuery, tab: newTab },
+      },
+      undefined,
+      { shallow: true }
+    );
   };
 
   // 카테고리 필터 변경 핸들러
@@ -444,13 +494,13 @@ const InsightsPage: React.FC = () => {
   const breadcrumbs = [{ label: "인사이트" }];
 
   // 탭 아이템
-   const tabItems = [
+  const tabItems = [
     { id: "column", label: "칼럼" },
-    { id: "datarooms", label: "자료실" },
+    { id: "library", label: "자료실" },
     { id: "newsletter", label: "뉴스레터" },
   ];
 
-  // 연혁 탭 노출 여부에 따라 탭 필터링
+  // 뉴스레터 탭 노출 여부에 따라 탭 필터링
   const filteredTabItems = tabItems.filter((tab) => {
     if (tab.id === "newsletter") return newsletterExposed;
     return true;
@@ -481,10 +531,7 @@ const InsightsPage: React.FC = () => {
                 })),
                 onChange: (value) => {
                   const tabId = String(value);
-                  setActiveTab(tabId as InsightTab);
-                  router.replace(`/insights?tab=${tabId}`, undefined, {
-                    shallow: true,
-                  });
+                  handleTabChange(tabId);
                 },
               },
             }}
@@ -574,9 +621,7 @@ const InsightsPage: React.FC = () => {
 
                     <div className={styles.divider} />
 
-                    {loading ? (
-                      <div className={styles.loading}>로딩 중...</div>
-                    ) : error ? (
+                    {error ? (
                       <div className={styles.error}>
                         <div className={styles.errorIcon}>⚠️</div>
                         <p>{error}</p>
@@ -657,10 +702,10 @@ const InsightsPage: React.FC = () => {
                 {/* 모바일 타이틀 섹션 */}
                 <div className={styles.mobileLibraryTitleSection}>
                   <h2 className={styles.mobileLibraryTitle}>
-                    ARCHIVES {currentDataRoom || "A"}
+                    ARCHIVES A
                   </h2>
                   <p className={styles.mobileLibrarySubtitle}>
-                    {dataRoomName || `자료실${currentDataRoom || "A"}`}
+                    자료실A
                   </p>
                 </div>
 
@@ -727,15 +772,13 @@ const InsightsPage: React.FC = () => {
 
                 <div className={styles.libraryTitleSection}>
                   <h2 className={styles.libraryTitle}>
-                    {dataRoomName
-                      ? `ARCHIVES ${currentDataRoom}`
-                      : `ARCHIVES ${currentDataRoom || "A"}`}
+                    ARCHIVES A
                   </h2>
                 </div>
                 <div className={styles.libraryMainContent}>
                   <div className={styles.librarySidebar}>
                     <h2 className={styles.librarySidebarTitle}>
-                      {dataRoomName || `자료실${currentDataRoom || "A"}`}
+                      자료실A
                     </h2>
                     <nav className={styles.libraryCategoryNav}>
                       <button
@@ -802,9 +845,7 @@ const InsightsPage: React.FC = () => {
                       <div className={styles.divider} />
                     )}
 
-                    {loading ? (
-                      <div className={styles.loading}>로딩 중...</div>
-                    ) : error ? (
+                    {error ? (
                       <div className={styles.error}>
                         <div className={styles.errorIcon}>⚠️</div>
                         <p>{error}</p>
@@ -1247,8 +1288,74 @@ const InsightsPage: React.FC = () => {
       </div>
 
       <Footer />
-    </div>
+      </div>
+    // </div>
   );
+};
+
+export const getServerSideProps: GetServerSideProps<InsightsPageProps> = async (context) => {
+  const { tab } = context.query;
+  const activeTab = (tab && ["column", "library", "newsletter"].includes(tab as string))
+    ? (tab as InsightTab)
+    : "column";
+
+  try {
+    const params = new URLSearchParams();
+    params.append("page", "1");
+    params.append("limit", "9");
+    if (activeTab === "column") {
+      params.append("categoryId", "1");
+    } else if (activeTab === "library") {
+      params.append("dataRoom", "A");
+    }
+
+    const response = await get<InsightResponse>(
+      `${API_ENDPOINTS.INSIGHTS}?${params.toString()}`
+    );
+
+    if (response.data) {
+      const data = response.data;
+      let filteredItems = data.items || [];
+      const limit = data.limit || 9;
+      const calculatedTotalPages = Math.ceil(filteredItems.length / limit);
+
+      return {
+        props: {
+          initialInsights: filteredItems,
+          initialTotal: filteredItems.length,
+          initialTotalPages: calculatedTotalPages,
+          initialActiveTab: activeTab,
+          initialLibraryDisplayType: activeTab === "library" && data.displayType
+            ? data.displayType
+            : undefined,
+          error: null,
+        },
+      };
+    } else {
+      return {
+        props: {
+          initialInsights: [],
+          initialTotal: 0,
+          initialTotalPages: 1,
+          initialActiveTab: activeTab,
+          initialLibraryDisplayType: undefined,
+          error: response.error || null,
+        },
+      };
+    }
+  } catch (err) {
+    console.error("Failed to fetch insights:", err);
+    return {
+      props: {
+        initialInsights: [],
+        initialTotal: 0,
+        initialTotalPages: 1,
+        initialActiveTab: activeTab,
+        initialLibraryDisplayType: undefined,
+        error: "데이터를 불러오는데 실패했습니다.",
+      },
+    };
+  }
 };
 
 export default InsightsPage;

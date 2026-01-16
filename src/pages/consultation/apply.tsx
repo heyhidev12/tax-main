@@ -113,15 +113,33 @@ const ConsultationApplyPage: React.FC = () => {
     }
 
     // 상담 분야 (카테고리) 가져오기
+    // expertId가 있거나 expert-specific workAreas가 이미 로드되었으면 스킵
     const fetchCategories = async () => {
+      // router가 준비되지 않았으면 나중에 다시 시도
+      if (!router.isReady) {
+        return;
+      }
+      
+      // expertId가 있으면 스킵 (expert-specific workAreas가 로드될 것임)
+      if (router.query.expertId) {
+        console.log('[Consultation Apply] Skipping initial categories fetch, expertId present');
+        return;
+      }
+      
+      // expert-specific workAreas가 이미 로드되었으면 스킵
+      if (expertWorkAreasLoadedRef.current) {
+        console.log('[Consultation Apply] Skipping initial categories fetch, expert workAreas already loaded');
+        return;
+      }
+      
       try {
         const response = await get<CategoryItem[]>(API_ENDPOINTS.BUSINESS_AREAS_CATEGORIES);
         if (response.data) {
           const options: SelectOption[] = response.data
-            .filter(item => item.isExposed)
-            .map(item => ({
-              value: item.id.toString(),
-              label: item.name
+              .filter(item => item.isExposed)
+              .map(item => ({
+                value: item.id.toString(),
+                label: item.name
             }));
           setConsultationFields(options);
         }
@@ -131,7 +149,177 @@ const ConsultationApplyPage: React.FC = () => {
     };
 
     fetchCategories();
-  }, []);
+  }, [router.isReady, router.query.expertId]);
+
+  // expertId가 query에 있으면 전문가 정보를 가져와서 자동 선택
+  useEffect(() => {
+    // router가 준비될 때까지 대기
+    if (!router.isReady) return;
+    
+    const expertId = router.query.expertId as string;
+    
+    // expertId가 없거나 이미 해당 expertId로 설정되어 있으면 스킵
+    if (!expertId) {
+      console.log('[Consultation Apply] No expertId in query, skipping');
+      return;
+    }
+    
+    // 이미 같은 expertId로 설정되어 있으면 스킵
+    if (formData.taxAccountant === expertId) {
+      console.log('[Consultation Apply] Expert already selected, skipping');
+      return;
+    }
+
+    const fetchExpertAndPreFill = async () => {
+      console.log('[Consultation Apply] Starting expert pre-fill for expertId:', expertId);
+      try {
+        // 전문가 정보 가져오기
+        const expertResponse = await get<{
+          id: number;
+          name: string;
+          workAreas: string[] | Array<{ id: number; value: string }>;
+        }>(`${API_ENDPOINTS.MEMBERS}/${expertId}`);
+
+        if (expertResponse.data) {
+          const expert = expertResponse.data;
+          
+          // 첫 번째 workArea ID 추출
+          let firstWorkAreaId: string | null = null;
+          if (expert.workAreas && expert.workAreas.length > 0) {
+            const firstWorkArea = expert.workAreas[0];
+            
+            if (typeof firstWorkArea === 'object' && firstWorkArea.id) {
+              firstWorkAreaId = firstWorkArea.id.toString();
+              console.log('[Consultation Apply] Extracted workAreaId from object:', firstWorkAreaId);
+            } else if (typeof firstWorkArea === 'string') {
+              // workArea가 문자열인 경우, 전체 카테고리에서 ID 찾기
+              const categoriesResponse = await get<CategoryItem[]>(API_ENDPOINTS.BUSINESS_AREAS_CATEGORIES);
+              if (categoriesResponse.data) {
+                const matchingCategory = categoriesResponse.data.find(
+                  cat => cat.name === firstWorkArea
+                );
+                if (matchingCategory) {
+                  firstWorkAreaId = matchingCategory.id.toString();
+                  console.log('[Consultation Apply] Found workAreaId from categories:', firstWorkAreaId);
+                } else {
+                  console.log('[Consultation Apply] Could not find matching category for:', firstWorkArea);
+                }
+              }
+            }
+          } else {
+            console.log('[Consultation Apply] Expert has no workAreas');
+          }
+
+          // 1. 먼저 전문가의 업무 분야 목록 가져오기
+          console.log('[Consultation Apply] Step 1: Fetching workAreas for expert');
+          const categoriesResponse = await get<CategoryItem[]>(
+            `${API_ENDPOINTS.BUSINESS_AREAS_CATEGORIES}?memberId=${expertId}`
+          );
+          
+          if (categoriesResponse.data && categoriesResponse.data.length > 0) {
+            const workAreaOptions: SelectOption[] = categoriesResponse.data
+              .filter(item => item.isExposed)
+              .map(item => ({
+                value: item.id.toString(),
+                label: item.name
+              }));
+            console.log('[Consultation Apply] Step 1: Fetched workAreas:', workAreaOptions.length, workAreaOptions);
+            // 전문가의 모든 업무 분야를 consultationFields에 설정 (드롭다운에 모두 표시됨)
+            setConsultationFields(workAreaOptions);
+            expertWorkAreasLoadedRef.current = true; // 플래그 설정하여 초기 fetch가 덮어쓰지 않도록 함
+            
+            // 첫 번째 workArea ID가 가져온 목록에 있는지 확인
+            let workAreaIdToSet = firstWorkAreaId;
+            if (firstWorkAreaId) {
+              const workAreaExists = workAreaOptions.some(opt => opt.value === firstWorkAreaId);
+              if (!workAreaExists && workAreaOptions.length > 0) {
+                // 첫 번째 workArea가 목록에 없으면, 목록의 첫 번째 항목 사용
+                workAreaIdToSet = workAreaOptions[0].value;
+                console.log('[Consultation Apply] First workArea not in list, using first available:', workAreaIdToSet);
+              }
+            } else if (workAreaOptions.length > 0) {
+              // workAreaId를 찾지 못했지만 목록이 있으면 첫 번째 사용
+              workAreaIdToSet = workAreaOptions[0].value;
+              console.log('[Consultation Apply] No workAreaId found, using first available:', workAreaIdToSet);
+            }
+            
+            // 2. 해당 workArea의 전문가 목록 가져오기
+            if (workAreaIdToSet) {
+              console.log('[Consultation Apply] Step 2: Fetching experts for workArea:', workAreaIdToSet);
+              const expertsResponse = await get<MembersResponse>(
+                `${API_ENDPOINTS.MEMBERS}?page=1&limit=100&workArea=${workAreaIdToSet}`
+              );
+              
+              if (expertsResponse.data?.items) {
+                const expertOptions: SelectOption[] = expertsResponse.data.items
+                  .filter(item => item.isExposed)
+                  .map(item => ({
+                    value: item.id.toString(),
+                    label: item.name
+                  }));
+                console.log('[Consultation Apply] Step 2: Fetched experts:', expertOptions.length);
+                
+                // 선택한 전문가가 목록에 있는지 확인
+                const expertExists = expertOptions.some(opt => opt.value === expertId);
+                if (expertExists) {
+                  setTaxAccountants(expertOptions);
+                  
+                  // 3. 양쪽 모두 설정
+                  console.log('[Consultation Apply] Step 3: Setting both expert and workArea');
+                  setFormData(prev => ({
+                    ...prev,
+                    taxAccountant: expertId,
+                    consultationField: workAreaIdToSet!
+                  }));
+                  console.log('[Consultation Apply] Step 3 complete: Both values set', {
+                    taxAccountant: expertId,
+                    consultationField: workAreaIdToSet
+                  });
+                } else {
+                  console.warn('[Consultation Apply] Expert not found in workArea list, setting expert only');
+                  setTaxAccountants(expertOptions);
+                  setFormData(prev => ({
+                    ...prev,
+                    taxAccountant: expertId,
+                    consultationField: ''
+                  }));
+                }
+              } else {
+                console.warn('[Consultation Apply] No experts found for workArea');
+                setFormData(prev => ({
+                  ...prev,
+                  taxAccountant: expertId,
+                  consultationField: workAreaIdToSet!
+                }));
+              }
+            } else {
+              // workArea를 찾을 수 없으면 전문가만 설정
+              console.log('[Consultation Apply] No workArea to set, setting expert only');
+              setFormData(prev => ({
+                ...prev,
+                taxAccountant: expertId,
+                consultationField: ''
+              }));
+            }
+          } else {
+            console.warn('[Consultation Apply] No workAreas found for expert, setting expert only');
+            setFormData(prev => ({
+              ...prev,
+              taxAccountant: expertId,
+              consultationField: ''
+            }));
+          }
+        } else {
+          console.log('[Consultation Apply] No expert data in response');
+        }
+      } catch (error) {
+        console.error('[Consultation Apply] Failed to fetch expert data:', error);
+      }
+    };
+
+    fetchExpertAndPreFill();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [router.isReady, router.query.expertId]);
 
   const [formData, setFormData] = useState<ConsultationFormData>({
     consultationField: '',
@@ -149,6 +337,7 @@ const ConsultationApplyPage: React.FC = () => {
   const accountantInputRef = useRef<HTMLInputElement>(null);
   const nameInputRef = useRef<HTMLInputElement>(null);
   const phoneInputRef = useRef<HTMLInputElement>(null);
+  const expertWorkAreasLoadedRef = useRef<boolean>(false);
 
   // 필터링된 옵션
   const filteredFields = consultationFields.filter(field =>
@@ -203,6 +392,7 @@ const ConsultationApplyPage: React.FC = () => {
 
   const handleFieldChange = async (value: string) => {
     const previousTaxAccountant = formData.taxAccountant;
+    console.log('[handleFieldChange] Called with value:', value, 'previousTaxAccountant:', previousTaxAccountant);
 
     // 분야가 선택된 경우 해당 분야의 세무사 목록 조회
     if (value) {
@@ -212,16 +402,19 @@ const ConsultationApplyPage: React.FC = () => {
         );
         if (response.data?.items) {
           const options: SelectOption[] = response.data.items
-            .filter(item => item.isExposed)
-            .map(item => ({
-              value: item.id.toString(),
-              label: item.name
+              .filter(item => item.isExposed)
+              .map(item => ({
+                value: item.id.toString(),
+                label: item.name
             }));
+          console.log('[handleFieldChange] Fetched experts for workArea:', options.length, 'experts');
           setTaxAccountants(options);
           
           // 이전에 선택된 세무사가 새로운 목록에 있는지 확인
           const isValidAccountant = previousTaxAccountant && 
             options.some(opt => opt.value === previousTaxAccountant);
+          
+          console.log('[handleFieldChange] isValidAccountant:', isValidAccountant, 'for expertId:', previousTaxAccountant);
           
           // 유효하지 않으면 세무사 선택 초기화
           setFormData(prev => ({
@@ -264,6 +457,7 @@ const ConsultationApplyPage: React.FC = () => {
 
   const handleAccountantChange = async (value: string) => {
     const previousConsultationField = formData.consultationField;
+    console.log('[handleAccountantChange] Called with value:', value, 'previousConsultationField:', previousConsultationField);
     
     // 세무사가 선택된 경우 해당 세무사의 업무 분야 목록 조회
     if (value) {
@@ -278,11 +472,14 @@ const ConsultationApplyPage: React.FC = () => {
               value: item.id.toString(),
               label: item.name
             }));
+          console.log('[handleAccountantChange] Fetched workAreas for expert:', options.length, 'workAreas');
           setConsultationFields(options);
           
           // 이전에 선택된 분야가 새로운 목록에 있는지 확인
           const isValidField = previousConsultationField && 
             options.some(opt => opt.value === previousConsultationField);
+          
+          console.log('[handleAccountantChange] isValidField:', isValidField, 'for workAreaId:', previousConsultationField);
           
           // 유효하지 않으면 분야 선택 초기화
           setFormData(prev => ({
@@ -324,7 +521,7 @@ const ConsultationApplyPage: React.FC = () => {
       } catch (error) {
         console.error('Failed to fetch categories:', error);
       }
-      setFormData(prev => ({ ...prev, taxAccountant: value }));
+    setFormData(prev => ({ ...prev, taxAccountant: value }));
     }
     
     setSearchAccountantQuery('');

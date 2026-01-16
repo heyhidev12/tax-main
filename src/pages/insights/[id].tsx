@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/router";
+import { GetServerSideProps } from "next";
+import Head from "next/head";
 import dynamic from "next/dynamic";
 import "@toast-ui/editor/dist/toastui-editor-viewer.css";
 import Header from "@/components/common/Header";
@@ -8,7 +10,8 @@ import Footer from "@/components/Footer";
 import FloatingButton from "@/components/common/FloatingButton";
 import Button from "@/components/common/Button";
 import Icon from "@/components/common/Icon";
-import { get, post, del } from "@/lib/api";
+import { get as getClient, post, del } from "@/lib/api";
+import { get } from "@/lib/api-server";
 import { API_ENDPOINTS, API_BASE_URL } from "@/config/api";
 import styles from "./detail.module.scss";
 
@@ -45,7 +48,7 @@ interface PdfFile {
   url: string;
 }
 
-interface InsightDetail {
+export interface InsightDetail {
   id: number;
   title: string;
   content: string;
@@ -94,19 +97,23 @@ interface CommentsResponse {
   total: number;
 }
 
-const InsightDetailPage: React.FC = () => {
+interface InsightDetailPageProps {
+  insight: InsightDetail | null;
+  error: string | null;
+}
+
+const InsightDetailPage: React.FC<InsightDetailPageProps> = ({ insight: initialInsight, error: initialError }) => {
   const router = useRouter();
   const { id } = router.query;
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [insight, setInsight] = useState<InsightDetail | null>(null);
+  const [insight, setInsight] = useState<InsightDetail | null>(initialInsight);
   const [prevInsight, setPrevInsight] = useState<InsightNavigation | null>(
     null
   );
   const [nextInsight, setNextInsight] = useState<InsightNavigation | null>(
     null
   );
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(initialError);
   const [comments, setComments] = useState<Comment[]>([]);
   const [commentTotal, setCommentTotal] = useState(0);
   const [commentText, setCommentText] = useState("");
@@ -118,10 +125,9 @@ const InsightDetailPage: React.FC = () => {
     loginId?: string;
   } | null>(null);
 
+  // Client-side: fetch comments, view increment, navigation
   useEffect(() => {
-    if (id) {
-      fetchInsightDetail();
-    }
+    if (!id || !insight) return;
 
     // 로그인 상태 확인 및 사용자 정보 가져오기
     if (typeof window !== "undefined") {
@@ -133,60 +139,34 @@ const InsightDetailPage: React.FC = () => {
         fetchCurrentUser();
       }
     }
-  }, [id]);
 
-  const fetchInsightDetail = async () => {
-    setLoading(true);
-    setError(null);
+    // 댓글이 활성화되어 있으면 댓글 목록 가져오기
+    if (insight.enableComments) {
+      const token =
+        typeof window !== "undefined"
+          ? localStorage.getItem("accessToken")
+          : null;
+      if (token) {
+        fetchCurrentUser().then((user) => fetchComments(user));
+      } else {
+        fetchComments(null);
+      }
+    }
 
-    try {
-      // 상세 데이터 가져오기
-      const response = await get<InsightDetail>(
-        `${API_ENDPOINTS.INSIGHTS}/${id}`
-      );
+    // 조회수 증가 (클라이언트에서만 실행)
+    if (typeof window !== "undefined") {
+      post(`${API_ENDPOINTS.INSIGHTS}/${id}/increment-view`).catch((err) => {
+        console.log("조회수 증가 실패:", err);
+      });
+    }
 
-      if (response.data) {
-        // API 응답 확인용 로그 (개발 중에만)
-        if (process.env.NODE_ENV === "development") {
-          console.log("Insight data:", response.data);
-          console.log("PDF:", response.data.pdf);
-        }
+    // 이전/다음 글 가져오기
+    setPrevInsight(null);
+    setNextInsight(null);
 
-        setInsight(response.data);
-
-        // 댓글이 활성화되어 있으면 댓글 목록 가져오기
-        if (response.data.enableComments) {
-          // 토큰이 있는지 직접 확인 (state보다 정확)
-          const token =
-            typeof window !== "undefined"
-              ? localStorage.getItem("accessToken")
-              : null;
-          if (token) {
-            // 사용자 정보를 먼저 가져온 후 댓글 가져오기
-            const user = await fetchCurrentUser();
-            fetchComments(user);
-          } else {
-            fetchComments(null);
-          }
-        }
-
-        // 조회수 증가 (클라이언트에서만 실행, 매번 페이지 열 때마다 실행)
-        if (typeof window !== "undefined") {
-          try {
-            await post(`${API_ENDPOINTS.INSIGHTS}/${id}/increment-view`);
-          } catch (err) {
-            // 조회수 증가 실패는 무시 (에러 로그만 출력)
-            console.log("조회수 증가 실패:", err);
-          }
-        }
-
-        // 이전/다음 글 가져오기
-        // 먼저 초기화
-        setPrevInsight(null);
-        setNextInsight(null);
-
-        try {
-          const navResponse = await get<{ items: InsightDetail[] }>(
+    (async () => {
+      try {
+        const navResponse = await getClient<{ items: InsightDetail[] }>(
             `${API_ENDPOINTS.INSIGHTS}?page=1&limit=100`
           );
 
@@ -217,16 +197,10 @@ const InsightDetailPage: React.FC = () => {
           }
         } catch (err) {
           // 네비게이션 실패는 무시
+          console.log("Navigation fetch failed:", err);
         }
-      } else if (response.error) {
-        setError(response.error);
-      }
-    } catch (err) {
-      setError("데이터를 불러오는 중 오류가 발생했습니다.");
-    } finally {
-      setLoading(false);
-    }
-  };
+    })();
+  }, [id, insight]);
 
 const formatDate = (
   dateString?: string,
@@ -613,19 +587,6 @@ const formatDateTime = (
     }
   };
 
-  if (loading) {
-    return (
-      <div className={styles.page}>
-        <Header variant="transparent" onMenuClick={() => setIsMenuOpen(true)} />
-        <Menu isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
-        <div className="container">
-          <div className={styles.loading}>로딩 중...</div>
-        </div>
-        <Footer />
-      </div>
-    );
-  }
-
   if (error || !insight) {
     return (
       <div className={styles.page}>
@@ -643,13 +604,33 @@ const formatDateTime = (
   }
 
   return (
-    <div className={styles.page}>
-      <Header
-        variant="transparent"
-        onMenuClick={() => setIsMenuOpen(true)}
-        isFixed={true}
-      />
-      <Menu isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
+    <>
+      <Head>
+        <title>{insight.title} - 세무법인 함께</title>
+        <meta
+          name="description"
+          content={insight.content.substring(0, 160).replace(/<[^>]*>/g, '') || `${insight.title} - 세무법인 함께`}
+        />
+        <meta property="og:title" content={`${insight.title} - 세무법인 함께`} />
+        <meta
+          property="og:description"
+          content={insight.content.substring(0, 160).replace(/<[^>]*>/g, '') || `${insight.title}`}
+        />
+        <meta property="og:type" content="article" />
+        {insight.thumbnail?.url && (
+          <meta property="og:image" content={insight.thumbnail.url} />
+        )}
+        {insight.createdAt && (
+          <meta property="article:published_time" content={insight.createdAt} />
+        )}
+      </Head>
+      <div className={styles.page}>
+        <Header
+          variant="transparent"
+          onMenuClick={() => setIsMenuOpen(true)}
+          isFixed={true}
+        />
+        <Menu isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
 
       <div className={styles.floatingButtons}>
         <FloatingButton
@@ -907,8 +888,43 @@ const formatDateTime = (
       </div>
 
       <Footer />
-    </div>
+      </div>
+    </>
   );
+};
+
+export const getServerSideProps: GetServerSideProps<InsightDetailPageProps> = async (context) => {
+  const { id } = context.params!;
+
+  try {
+    const response = await get<InsightDetail>(
+      `${API_ENDPOINTS.INSIGHTS}/${id}`
+    );
+
+    if (response.data) {
+      return {
+        props: {
+          insight: response.data,
+          error: null,
+        },
+      };
+    } else {
+      return {
+        props: {
+          insight: null,
+          error: response.error || "인사이트를 찾을 수 없습니다.",
+        },
+      };
+    }
+  } catch (err) {
+    console.error("Failed to fetch insight detail:", err);
+    return {
+      props: {
+        insight: null,
+        error: "데이터를 불러오는 중 오류가 발생했습니다.",
+      },
+    };
+  }
 };
 
 export default InsightDetailPage;

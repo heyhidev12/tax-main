@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/router";
+import { GetServerSideProps } from "next";
+import Head from "next/head";
 import dynamic from "next/dynamic";
 import "@toast-ui/editor/dist/toastui-editor-viewer.css";
 import Header from "@/components/common/Header";
@@ -8,7 +10,8 @@ import Footer from "@/components/Footer";
 import Icon from "@/components/common/Icon";
 import DatePickerModal from "@/components/education/DatePickerModal";
 import ApplicationModal from "@/components/education/ApplicationModal";
-import { get, del } from "@/lib/api";
+import { get as getClient, del } from "@/lib/api";
+import { get } from "@/lib/api-server";
 import { API_ENDPOINTS } from "@/config/api";
 import type { EducationDetail, ApplicationStatus } from "@/types/education";
 import styles from "./detail.module.scss";
@@ -27,58 +30,35 @@ const Viewer = dynamic(
   { ssr: false }
 );
 
-const EducationDetailPage: React.FC = () => {
+interface EducationDetailPageProps {
+  education: EducationDetail | null;
+  error: string | null;
+}
+
+const EducationDetailPage: React.FC<EducationDetailPageProps> = ({ education: initialEducation, error: initialError }) => {
   const router = useRouter();
   const { id } = router.query;
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [education, setEducation] = useState<EducationDetail | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [education, setEducation] = useState<EducationDetail | null>(initialEducation);
+  const [error, setError] = useState<string | null>(initialError);
   const [selectedDate, setSelectedDate] = useState<string>("");
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
   const [isApplicationModalOpen, setIsApplicationModalOpen] = useState(false);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
 
-  // 사용자 정보 가져오기
+  // 사용자 정보 가져오기 (CSR - auth-related)
   useEffect(() => {
     fetchUserProfile();
   }, []);
 
-  useEffect(() => {
-    if (id) {
-      fetchEducationDetail();
-    }
-  }, [id]);
-
   const fetchUserProfile = async () => {
     try {
-      const response = await get<UserProfile>(API_ENDPOINTS.AUTH.ME);
+      const response = await getClient<UserProfile>(API_ENDPOINTS.AUTH.ME);
       if (response.data) {
         setUserProfile(response.data);
       }
     } catch (err) {
       console.error("유저 정보를 불러오는 중 오류:", err);
-    }
-  };
-
-  const fetchEducationDetail = async () => {
-    setLoading(true);
-    setError(null);
-
-    try {
-      const response = await get<EducationDetail>(
-        `${API_ENDPOINTS.TRAINING_SEMINARS}/${id}`
-      );
-
-      if (response.data) {
-        setEducation(response.data);
-      } else if (response.error) {
-        setError(response.error);
-      }
-    } catch (err) {
-      setError("데이터를 불러오는 중 오류가 발생했습니다.");
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -158,23 +138,6 @@ const EducationDetailPage: React.FC = () => {
 
     return `${firstFormatted} ~ ${lastFormatted}`;
   };
-
-  if (loading) {
-    return (
-      <div className={styles.page}>
-        <Header
-          variant="transparent"
-          onMenuClick={() => setIsMenuOpen(true)}
-          isFixed={true}
-        />
-        <Menu isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
-        <div className={styles.container}>
-          <div className={styles.loading}>로딩 중...</div>
-        </div>
-        <Footer />
-      </div>
-    );
-  }
 
   if (error || !education) {
     return (
@@ -278,7 +241,8 @@ const EducationDetailPage: React.FC = () => {
       }
 
       alert("신청이 취소되었습니다.");
-      fetchEducationDetail(); // 데이터 새로고침
+      // Reload page to refresh data
+      router.reload();
     } catch (err) {
       console.error("신청 취소 중 오류:", err);
       alert("신청 취소 기능이 현재 지원되지 않습니다.");
@@ -339,13 +303,30 @@ const EducationDetailPage: React.FC = () => {
   };
 
   return (
-    <div className={styles.page}>
-      <Header
-        variant="transparent"
-        onMenuClick={() => setIsMenuOpen(true)}
-        isFixed={true}
-      />
-      <Menu isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
+    <>
+      <Head>
+        <title>{education.name} - 세무법인 함께</title>
+        <meta
+          name="description"
+          content={education.description || `${education.name} - 세무법인 함께 교육 프로그램`}
+        />
+        <meta property="og:title" content={`${education.name} - 세무법인 함께`} />
+        <meta
+          property="og:description"
+          content={education.description || `${education.name}`}
+        />
+        <meta property="og:type" content="article" />
+        {education.image?.url && (
+          <meta property="og:image" content={education.image.url} />
+        )}
+      </Head>
+      <div className={styles.page}>
+        <Header
+          variant="transparent"
+          onMenuClick={() => setIsMenuOpen(true)}
+          isFixed={true}
+        />
+        <Menu isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
 
       <div className="container">
         <div className={styles.contentHeader}>
@@ -519,12 +500,47 @@ const EducationDetailPage: React.FC = () => {
           initialDate={selectedDate}
           onSuccess={() => {
             // 신청 성공 후 데이터 새로고침
-            fetchEducationDetail();
+            router.reload();
           }}
         />
       )}
-    </div>
+      </div>
+    </>
   );
+};
+
+export const getServerSideProps: GetServerSideProps<EducationDetailPageProps> = async (context) => {
+  const { id } = context.params!;
+
+  try {
+    const response = await get<EducationDetail>(
+      `${API_ENDPOINTS.TRAINING_SEMINARS}/${id}`
+    );
+
+    if (response.data) {
+      return {
+        props: {
+          education: response.data,
+          error: null,
+        },
+      };
+    } else {
+      return {
+        props: {
+          education: null,
+          error: response.error || "교육 정보를 찾을 수 없습니다.",
+        },
+      };
+    }
+  } catch (err) {
+    console.error("Failed to fetch education detail:", err);
+    return {
+      props: {
+        education: null,
+        error: "데이터를 불러오는 중 오류가 발생했습니다.",
+      },
+    };
+  }
 };
 
 export default EducationDetailPage;

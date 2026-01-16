@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/router";
+import { GetServerSideProps } from "next";
+import Head from "next/head";
 import dynamic from "next/dynamic";
 import "@toast-ui/editor/dist/toastui-editor-viewer.css";
 import { Swiper, SwiperSlide } from "swiper/react";
@@ -14,7 +16,8 @@ import FloatingButton from "@/components/common/FloatingButton";
 import PageHeader from "@/components/common/PageHeader";
 import ContentBox from "@/components/common/ContentBox";
 import Icon from "@/components/common/Icon";
-import { get } from "@/lib/api";
+import { get as getClient } from "@/lib/api";
+import { get } from "@/lib/api-server";
 import { API_ENDPOINTS } from "@/config/api";
 import styles from "./detail.module.scss";
 
@@ -29,7 +32,7 @@ interface SectionContent {
   section: string;
 }
 
-interface BusinessAreaDetail {
+export interface BusinessAreaDetail {
   id: number;
   name: string;
   subDescription: string;
@@ -91,13 +94,17 @@ interface InsightResponse {
   total: number;
 }
 
-const BusinessAreaDetailPage: React.FC = () => {
+interface BusinessAreaDetailPageProps {
+  data: BusinessAreaDetail | null;
+  error: string | null;
+}
+
+const BusinessAreaDetailPage: React.FC<BusinessAreaDetailPageProps> = ({ data: initialData, error: initialError }) => {
   const router = useRouter();
   const { id } = router.query;
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [data, setData] = useState<BusinessAreaDetail | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [data, setData] = useState<BusinessAreaDetail | null>(initialData);
+  const [error, setError] = useState<string | null>(initialError);
   const [experts, setExperts] = useState<Expert[]>([]);
   const [relatedNews, setRelatedNews] = useState<InsightItem[]>([]);
   // Swiper refs for controlling carousels
@@ -212,18 +219,12 @@ const BusinessAreaDetailPage: React.FC = () => {
   const casesRef = useRef<HTMLDivElement>(null);
   const overviewRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    if (id) {
-      fetchBusinessAreaDetail();
-      setImageError(false); // 새 데이터 로드 시 이미지 에러 상태 초기화
-    }
-  }, [id]);
-
-  // 관련 데이터는 메인 데이터 로드 후에 가져오기
+  // Client-side: fetch related data (experts, news)
   useEffect(() => {
     if (id && typeof id === "string" && data?.id) {
       console.log("Fetching related data for workArea:", data);
       fetchRelatedData();
+      setImageError(false); // 새 데이터 로드 시 이미지 에러 상태 초기화
     }
   }, [id, data?.id]);
 
@@ -334,7 +335,7 @@ const BusinessAreaDetailPage: React.FC = () => {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const response = await get<
+        const response = await getClient<
           Array<{
             majorCategory: { id: number; name: string };
             minorCategories: Array<{ id: number; name: string }>;
@@ -406,26 +407,6 @@ const BusinessAreaDetailPage: React.FC = () => {
     updateMinorCategories();
   }, [data?.majorCategory.id, data?.minorCategory.id]);
 
-  const fetchBusinessAreaDetail = async () => {
-    setLoading(true);
-    setError(null);
-
-    try {
-      const response = await get<BusinessAreaDetail>(
-        `${API_ENDPOINTS.BUSINESS_AREAS}/${id}`
-      );
-
-      if (response.data) {
-        setData(response.data);
-      } else if (response.error) {
-        setError(response.error);
-      }
-    } catch (err) {
-      setError("데이터를 불러오는 중 오류가 발생했습니다.");
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const fetchRelatedData = async () => {
     try {
@@ -434,7 +415,7 @@ const BusinessAreaDetailPage: React.FC = () => {
         try {
           const url = `${API_ENDPOINTS.MEMBERS}?page=1&limit=20&workArea=${data?.minorCategory.id}`;
           console.log("Calling members API:", url);
-          const membersResponse = await get<
+          const membersResponse = await getClient<
             Expert[] | { items: Expert[]; data: Expert[] }
           >(url);
           console.log("Members API response:", membersResponse);
@@ -472,7 +453,7 @@ const BusinessAreaDetailPage: React.FC = () => {
 
       // 관련 소식 가져오기
       try {
-        const newsResponse = await get<InsightResponse>(
+        const newsResponse = await getClient<InsightResponse>(
           `${API_ENDPOINTS.INSIGHTS}?page=1&limit=20`
         );
         if (newsResponse.data?.items) {
@@ -580,19 +561,6 @@ const BusinessAreaDetailPage: React.FC = () => {
     )}.${String(date.getDate()).padStart(2, "0")}`;
   };
 
-  if (loading) {
-    return (
-      <div className={styles.page}>
-        <Header variant="transparent" onMenuClick={() => setIsMenuOpen(true)} />
-        <Menu isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
-        <div className="container">
-          <div className={styles.loading}>로딩 중...</div>
-        </div>
-        <Footer />
-      </div>
-    );
-  }
-
   if (error || !data) {
     return (
       <div className={styles.page}>
@@ -642,7 +610,7 @@ const BusinessAreaDetailPage: React.FC = () => {
             onChange: async (value: string | number) => {
               // Navigate to the first item in the selected minor category
               try {
-                const response = await get<
+                const response = await getClient<
                   Array<{
                     majorCategory: { id: number; name: string };
                     minorCategories: Array<{
@@ -1561,8 +1529,43 @@ const BusinessAreaDetailPage: React.FC = () => {
         </div>
       </section>
       <Footer />
-    </div>
+      </div>
+    </>
   );
+};
+
+export const getServerSideProps: GetServerSideProps<BusinessAreaDetailPageProps> = async (context) => {
+  const { id } = context.params!;
+
+  try {
+    const response = await get<BusinessAreaDetail>(
+      `${API_ENDPOINTS.BUSINESS_AREAS}/${id}`
+    );
+
+    if (response.data) {
+      return {
+        props: {
+          data: response.data,
+          error: null,
+        },
+      };
+    } else {
+      return {
+        props: {
+          data: null,
+          error: response.error || "업무 분야를 찾을 수 없습니다.",
+        },
+      };
+    }
+  } catch (err) {
+    console.error("Failed to fetch business area detail:", err);
+    return {
+      props: {
+        data: null,
+        error: "데이터를 불러오는 중 오류가 발생했습니다.",
+      },
+    };
+  }
 };
 
 export default BusinessAreaDetailPage;

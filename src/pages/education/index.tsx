@@ -1,39 +1,65 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/router';
+import { GetServerSideProps } from 'next';
+import Head from 'next/head';
 import Header from '@/components/common/Header';
 import Menu from '@/components/Menu';
 import Footer from '@/components/Footer';
 import PageHeader from '@/components/common/PageHeader';
 import FloatingButton from '@/components/common/FloatingButton';
-import { TextField } from '@/components/common/TextField';
-import Checkbox from '@/components/common/Checkbox';
-import Button from '@/components/common/Button';
 import Pagination from '@/components/common/Pagination';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation } from 'swiper/modules';
 import type { Swiper as SwiperType } from 'swiper';
 import 'swiper/css';
 import 'swiper/css/navigation';
-import { get, post } from '@/lib/api';
+import { get as getClient } from '@/lib/api';
+import { get } from '@/lib/api-server';
 import { API_ENDPOINTS } from '@/config/api';
 import type { EducationItem, EducationListResponse, EducationType } from '@/types/education';
 import styles from './education.module.scss';
 
-const EducationPage: React.FC = () => {
+interface EducationPageProps {
+  initialEducationList: EducationItem[];
+  initialNewEducationList: EducationItem[];
+  initialTotalPages: number;
+  error: string | null;
+}
+
+const EducationPage: React.FC<EducationPageProps> = ({
+  initialEducationList,
+  initialNewEducationList,
+  initialTotalPages,
+  error: initialError,
+}) => {
   const router = useRouter();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [activeSubTab, setActiveSubTab] = useState<'education' | 'newsletter'>('education');
+  
+  // Query-based tab management (like History page)
+  // Currently only 'education' tab exists, but keeping query-based structure for consistency
+  const tabFromQuery = router.query.tab as string;
+  const validTabs = ['education'];
+  
+  // Ensure URL has correct tab parameter if missing or invalid
+  useEffect(() => {
+    if (!tabFromQuery || !validTabs.includes(tabFromQuery)) {
+      router.replace(
+        {
+          pathname: router.pathname,
+          query: { ...router.query, tab: 'education' },
+        },
+        undefined,
+        { shallow: true }
+      );
+    }
+  }, [tabFromQuery, router]);
 
-  // 뉴스레터 탭 노출 여부
-  const [newsletterExposed, setNewsletterExposed] = useState(true);
-  const [educationList, setEducationList] = useState<EducationItem[]>([]);
-  const [newEducationList, setNewEducationList] = useState<EducationItem[]>([]); // 신규 교육용 별도 목록
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [educationList, setEducationList] = useState<EducationItem[]>(initialEducationList);
+  const [newEducationList, setNewEducationList] = useState<EducationItem[]>(initialNewEducationList);
+  const [error, setError] = useState<string | null>(initialError);
   const [selectedType, setSelectedType] = useState<EducationType | 'ALL'>('ALL');
   const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [newEducationIndex, setNewEducationIndex] = useState(0);
+  const [totalPages, setTotalPages] = useState(initialTotalPages);
   
   // Search state for New Education section
   const [newEducationSearchQuery, setNewEducationSearchQuery] = useState('');
@@ -44,159 +70,12 @@ const EducationPage: React.FC = () => {
     prev: true,
     next: false,
   });
-  
-  // Newsletter form state
-  const [newsletterName, setNewsletterName] = useState('');
-  const [newsletterEmail, setNewsletterEmail] = useState('');
-  const [privacyAgreed, setPrivacyAgreed] = useState(false);
-  const [optionalAgreed, setOptionalAgreed] = useState(false);
-  const [nameError, setNameError] = useState('');
-  const [emailError, setEmailError] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // 로그인된 사용자 정보로 뉴스레터 폼 미리 채우기
-  useEffect(() => {
-    const userStr = localStorage.getItem('user');
-    if (userStr) {
-      try {
-        const user = JSON.parse(userStr);
-        if (user.name && !newsletterName) {
-          setNewsletterName(user.name);
-        }
-        // email 또는 loginId(이메일 형식인 경우) 사용
-        const email = user.email || (user.loginId && user.loginId.includes('@') ? user.loginId : '');
-        if (email && !newsletterEmail) {
-          setNewsletterEmail(email);
-        }
-      } catch (e) {
-        // 파싱 실패 시 무시
-      }
-    }
-  }, []);
 
-  // 뉴스레터 탭 노출 여부 확인
-  useEffect(() => {
-    const checkNewsletterExposed = async () => {
-      try {
-        const response = await get<{ isExposed: boolean }>(API_ENDPOINTS.NEWSLETTER.PAGE);
-        if (response.data) {
-          setNewsletterExposed(response.data.isExposed);
-        } else {
-          setNewsletterExposed(false);
-        }
-      } catch {
-        setNewsletterExposed(false);
-      }
-    };
-    checkNewsletterExposed();
-  }, []);
-
-  // 뉴스레터 탭이 숨겨진 상태에서 newsletter 탭에 접근하면 education으로 변경
-  useEffect(() => {
-    if (!newsletterExposed && activeSubTab === 'newsletter') {
-      setActiveSubTab('education');
-    }
-  }, [newsletterExposed, activeSubTab]);
-
-  // Email validation
-  const validateEmail = (email: string) => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
-  };
-  
-  // Handle newsletter subscription
-  const handleNewsletterSubmit = async () => {
-    // Reset errors
-    setNameError('');
-    setEmailError('');
-    
-    // Validate name
-    if (!newsletterName.trim()) {
-      setNameError('이름을 입력해주세요');
-      return;
-    }
-    
-    // Validate email
-    if (!newsletterEmail.trim()) {
-      setEmailError('이메일을 입력해주세요');
-      return;
-    }
-    
-    if (!validateEmail(newsletterEmail)) {
-      setEmailError('올바른 이메일 주소를 입력해주세요');
-      return;
-    }
-    
-    // Validate privacy agreement
-    if (!privacyAgreed) {
-      alert('개인정보 처리 방침 이용 동의는 필수입니다.');
-      return;
-    }
-    
-    // Prevent double submission
-    if (isSubmitting) {
-      return;
-    }
-    
-    setIsSubmitting(true);
-    
-    try {
-      const response = await post(
-        API_ENDPOINTS.NEWSLETTER.SUBSCRIBE,
-        {
-          name: newsletterName.trim(),
-          email: newsletterEmail.trim(),
-        }
-      );
-      
-      if (response.error) {
-        alert(response.error || '뉴스레터 구독 중 오류가 발생했습니다.');
-        return;
-      }
-      
-      // Success
-      alert('뉴스레터 구독이 완료되었습니다.');
-      
-      // Reset form
-      setNewsletterName('');
-      setNewsletterEmail('');
-      setPrivacyAgreed(false);
-      setOptionalAgreed(false);
-    } catch (error) {
-      console.error('Newsletter subscription error:', error);
-      alert('뉴스레터 구독 중 오류가 발생했습니다. 다시 시도해주세요.');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-  
-  // Check if form is valid
-  const isFormValid = newsletterName.trim() !== '' && 
-                      newsletterEmail.trim() !== '' && 
-                      validateEmail(newsletterEmail) && 
-                      privacyAgreed;
-
-  const subTabItems = [
-    { id: 'education', label: '교육/세미나 안내' },
-    { id: 'newsletter', label: '뉴스레터' },
-  ];
-
-  // 뉴스레터 탭 노출 여부에 따라 탭 필터링
-  const filteredSubTabItems = subTabItems.filter(tab => {
-    if (tab.id === 'newsletter') return newsletterExposed;
-    return true;
-  });
-
-  // 신규 교육 목록 가져오기 (필터 무관, 최초 1회)
-  useEffect(() => {
-    if (activeSubTab === 'education') {
-      fetchNewEducationList();
-    }
-  }, [activeSubTab]);
-
+  // Client-side: fetch new education list if needed (for refresh)
   const fetchNewEducationList = async () => {
     try {
-      const response = await get<EducationListResponse>(
+      const response = await getClient<EducationListResponse>(
         `${API_ENDPOINTS.TRAINING_SEMINARS}?page=1&limit=9`
       );
       if (response.data) {
@@ -207,21 +86,20 @@ const EducationPage: React.FC = () => {
     }
   };
 
-  // 전체 교육 목록 가져오기 (필터 적용)
+  // Client-side: fetch when filters/pagination change
   useEffect(() => {
-    if (activeSubTab === 'education') {
-      setCurrentPage(1); // 타입 변경 시 첫 페이지로 리셋
-    }
-  }, [activeSubTab, selectedType]);
+    setCurrentPage(1); // 타입 변경 시 첫 페이지로 리셋
+  }, [selectedType]);
 
   useEffect(() => {
-    if (activeSubTab === 'education') {
+    // Only fetch if filter or page changed from initial state
+    if (selectedType !== 'ALL' || currentPage !== 1) {
       fetchEducationList();
     }
-  }, [activeSubTab, selectedType, currentPage]);
+  }, [selectedType, currentPage]);
 
+  // Client-side: fetch education list when filters/pagination change
   const fetchEducationList = async () => {
-    setLoading(true);
     setError(null);
 
     try {
@@ -234,7 +112,7 @@ const EducationPage: React.FC = () => {
         params.append('type', selectedType);
       }
 
-      const response = await get<EducationListResponse>(
+      const response = await getClient<EducationListResponse>(
         `${API_ENDPOINTS.TRAINING_SEMINARS}?${params.toString()}`
       );
 
@@ -254,8 +132,6 @@ const EducationPage: React.FC = () => {
       }
     } catch (err) {
       setError('데이터를 불러오는 중 오류가 발생했습니다.');
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -313,9 +189,23 @@ const EducationPage: React.FC = () => {
   };
 
   return (
-    <div className={styles.page}>
-      <Header variant="white" onMenuClick={() => setIsMenuOpen(true)} isFixed={true} />
-      <Menu isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
+    <>
+      <Head>
+        <title>교육/세미나 안내 - 세무법인 함께</title>
+        <meta
+          name="description"
+          content="세무법인 함께의 전문가 교육 프로그램과 세미나 일정을 확인하세요"
+        />
+        <meta property="og:title" content="교육/세미나 안내 - 세무법인 함께" />
+        <meta
+          property="og:description"
+          content="세무법인 함께의 전문가 교육 프로그램과 세미나"
+        />
+        <meta property="og:type" content="website" />
+      </Head>
+      <div className={styles.page}>
+        <Header variant="white" onMenuClick={() => setIsMenuOpen(true)} isFixed={true} />
+        <Menu isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
       <div className={styles.headerImage}/>
       <div className="container">
         <div className={styles.pageHeaderWrapper}>
@@ -325,46 +215,22 @@ const EducationPage: React.FC = () => {
           />
         </div>
 
-        {/* <div className={styles.tabSection}>
-          <Tab
-            items={filteredSubTabItems}
-            activeId={activeSubTab}
-            onChange={(tabId) => {
-              setActiveSubTab(tabId as 'education' | 'newsletter');
-            }}
-            style="box"
-            size="large"
-            showActiveDot={true}
-          />
-        </div> */}
+        <div className={styles.heroSection}>
+          <p className={styles.heroSubtitle}>Education & Seminar</p>
+          <div className={styles.heroTitle}>
+            <span>기업의 성장</span>을 돕는 <br /> 가장 확실한 방법!
+          </div>
+          <div className={styles.heroDescriptionText}>
+            <p>
+              <span>세무법인 함께의</span>
+              <span className={styles.boldText}>전문가 교육</span>은 <br />
+              <span className={styles.boldText}>기업의 성공적인 내일</span>을 만듭니다.
+            </p>
+          </div>
+        </div>
 
-        {activeSubTab === 'education' && (
-          <>
-            <div className={styles.heroSection}>
-              
-              <p className={styles.heroSubtitle}>Education & Seminar</p>
-            <div className={styles.heroTitle}>
-              <span>기업의 성장</span>을 돕는 <br /> 가장 확실한 방법!
-            </div>
-            <div className={styles.heroDescriptionText}>
-              <p>
-                <span>세무법인 함께의</span>
-                <span className={styles.boldText}>전문가 교육</span>은 <br />
-             
-                <span className={styles.boldText}>기업의 성공적인 내일</span>을 만듭니다.
-              </p>
-            </div>
-            </div>
-          </>
-        )}
-
-        {activeSubTab === 'education' && (
-          <div className={styles.content}>
-            {loading ? (
-              <div className={styles.emptyState}>
-                <p>로딩 중...</p>
-              </div>
-            ) : error ? (
+        <div className={styles.content}>
+            {error ? (
               <div className={styles.emptyState}>
                 <p>{error}</p>
               </div>
@@ -623,93 +489,6 @@ const EducationPage: React.FC = () => {
               </>
             )}
           </div>
-        )}
-
-        {activeSubTab === 'newsletter' && (
-          <div className={styles.newsletterSection}>
-            <div className={styles.newsletterHero}>
-               <p className={styles.newsletterLabel}>NEWSLETTER</p>
-                <h2 className={styles.newsletterTitle}>뉴스레터</h2>
-              <div className={styles.newsletterHeroContent}>
-                <div className={styles.newsletterLeft}>
-                 
-                  <img src="/images/pages/newsletter.png" alt="" />
-                </div>
-                <div className={styles.newsletterRight}>
-                <div className={styles.newsletterRighTitle}>
-                  <p>Newsletter</p>
-                  <h2>알면 이익이 되는 세무 정보, <br /> 구독하고 빠르게 전달 받으세요</h2>
-                  </div>
-                  <div className={styles.newsletterForm}>
-                    <div className={styles.newsletterFormFields}>
-                      <TextField
-                        variant="line"
-                        label="이름"
-                        required
-                        placeholder="수신자 명"
-                        value={newsletterName}
-                        onChange={(value) => {
-                          setNewsletterName(value);
-                          if (nameError) setNameError('');
-                        }}
-                        error={!!nameError}
-                        errorMessage={nameError}
-                        fullWidth
-                        className={styles.newsletterTextField}
-                      />
-                      <TextField
-                        variant="line"
-                        label="이메일"
-                        required
-                        type="email"
-                        placeholder="뉴스레터를 받을 이메일 주소"
-                        value={newsletterEmail}
-                        onChange={(value) => {
-                          setNewsletterEmail(value);
-                          if (emailError) setEmailError('');
-                        }}
-                        error={!!emailError}
-                        errorMessage={emailError}
-                        fullWidth
-                        className={styles.newsletterTextField}
-                      />
-                    </div>
-                    <div className={styles.newsletterCheckboxes}>
-                      <div className={styles.newsletterCheckboxRow}>
-                        <Checkbox
-                          variant="square"
-                          checked={privacyAgreed}
-                          onChange={setPrivacyAgreed}
-                          label="[필수] 개인정보 처리 방침 이용 동의"
-                        />
-                        <button className={styles.newsletterLink}>보기</button>
-                      </div>
-                      <div className={styles.newsletterCheckboxRow}>
-                        <Checkbox
-                          variant="square"
-                          checked={optionalAgreed}
-                          onChange={setOptionalAgreed}
-                          label="[선택] OO OOOOO 이용 동의"
-                        />
-                        <button className={styles.newsletterLink}>보기</button>
-                      </div>
-                    </div>
-                    <Button
-                      type="primary"
-                      size="large"
-                      fullWidth
-                      disabled={!isFormValid || isSubmitting}
-                      onClick={handleNewsletterSubmit}
-                      className={styles.newsletterButton}
-                    >
-                      {isSubmitting ? '구독 중...' : '구독하기'}
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
 
       <Footer />
@@ -726,8 +505,48 @@ const EducationPage: React.FC = () => {
           onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
         />
       </div>
-    </div>
+      </div>
+    </>
   );
+};
+
+export const getServerSideProps: GetServerSideProps<EducationPageProps> = async () => {
+  try {
+    // Fetch new education list (first 9 items)
+    const newEducationResponse = await get<EducationListResponse>(
+      `${API_ENDPOINTS.TRAINING_SEMINARS}?page=1&limit=9`
+    );
+
+    // Fetch all education list (first page, all types)
+    const allEducationResponse = await get<EducationListResponse>(
+      `${API_ENDPOINTS.TRAINING_SEMINARS}?page=1&limit=9`
+    );
+
+    const newEducationList = newEducationResponse.data?.items || [];
+    const educationList = allEducationResponse.data?.items || [];
+    const total = allEducationResponse.data?.total || 0;
+    const limit = 9;
+    const totalPages = Math.ceil(total / limit);
+
+    return {
+      props: {
+        initialEducationList: educationList,
+        initialNewEducationList: newEducationList,
+        initialTotalPages: totalPages,
+        error: null,
+      },
+    };
+  } catch (err) {
+    console.error("Failed to fetch education data:", err);
+    return {
+      props: {
+        initialEducationList: [],
+        initialNewEducationList: [],
+        initialTotalPages: 1,
+        error: "데이터를 불러오는 중 오류가 발생했습니다.",
+      },
+    };
+  }
 };
 
 export default EducationPage;
