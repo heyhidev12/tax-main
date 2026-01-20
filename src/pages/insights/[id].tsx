@@ -62,7 +62,7 @@ export interface InsightDetail {
   updatedAt?: string;
   viewCount?: number;
   attachments?: Attachment[];
-  pdf?: PdfFile;
+  files?: any[];
   authorName?: string;
 }
 
@@ -698,40 +698,43 @@ const formatDateTime = (
             </div>
           </div>
 
-          {insight.pdf?.url && (
+          {insight.files && insight.files.length > 0 && (
             <div className={styles.attachmentsSection}>
               <h2 className={styles.attachmentsTitle}>첨부파일</h2>
               <div className={styles.attachmentsList}>
-                <div className={styles.attachmentItem}>
-                  <div className={styles.attachmentLeft}>
-                    <div className={styles.attachmentLabel}>1</div>
-                    <div className={styles.attachmentInfo}>
-                      <Icon
-                        type="document"
-                        size={24}
-                        className={styles.attachmentIcon}
-                      />
-                      <span className={styles.attachmentName}>
-                        {insight.pdf.url.split("/").pop() || "첨부 파일.pdf"}
-                      </span>
+                {insight.files.map((file: any, index: number) => (
+                  <div key={file.id || index} className={styles.attachmentItem}>
+                    <div className={styles.attachmentLeft}>
+                      <div className={styles.attachmentLabel}>{index + 1}</div>
+                      <div className={styles.attachmentInfo}>
+                        <Icon
+                          type="document"
+                          size={24}
+                          className={styles.attachmentIcon}
+                        />
+                        <span className={styles.attachmentName}>
+                          {file.name || file.originalName || file.url?.split("/").pop() || "첨부 파일"}
+                        </span>
+                      </div>
                     </div>
+                    <button
+                      className={styles.downloadButton}
+                      onClick={() => {
+                        if (file.url) {
+                          const fileName = file.name || file.originalName || file.url.split("/").pop() || "첨부 파일";
+                          handleDownload(file.url, fileName);
+                        }
+                      }}
+                    >
+                      <span className={styles.downloadButtonText}>다운로드</span>
+                      <Icon
+                        type="download-white"
+                        size={20}
+                        className={styles.downloadIcon}
+                      />
+                    </button>
                   </div>
-                  <button
-                    className={styles.downloadButton}
-                    onClick={() => {
-                      const fileName =
-                        insight.pdf?.url.split("/").pop() || "첨부 파일.pdf";
-                      handleDownload(insight.pdf!.url, fileName);
-                    }}
-                  >
-                    <span className={styles.downloadButtonText}>다운로드</span>
-                    <Icon
-                      type="download-white"
-                      size={20}
-                      className={styles.downloadIcon}
-                    />
-                  </button>
-                </div>
+                ))}
               </div>
             </div>
           )}

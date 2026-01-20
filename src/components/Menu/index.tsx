@@ -105,10 +105,11 @@ const Menu: React.FC<MenuProps> = ({ isOpen, onClose }) => {
       const exposedCategories = insightCategories
         .filter(cat => cat.isExposed !== false) // API already returns only exposed, but filter for safety
         .sort((a, b) => (a.displayOrder ?? 0) - (b.displayOrder ?? 0));
+      // Add newsletter as last item
       return {
         ...item,
-        subItems: exposedCategories.map(cat => cat.name),
-        subItemIds: exposedCategories.map(cat => cat.id),
+        subItems: [...exposedCategories.map(cat => cat.name), '뉴스레터'],
+        subItemIds: [...exposedCategories.map(cat => cat.id), 'newsletter'],
       };
     }
     return item;
@@ -132,19 +133,20 @@ const Menu: React.FC<MenuProps> = ({ isOpen, onClose }) => {
         setSelectedSubItem(null);
       } else if (pathname === '/insights' || pathname.startsWith('/insights/')) {
         setSelectedItem('insight');
-        // Insights 서브메뉴 선택 - API 데이터 기반으로 동적 매칭
-        const categoryId = query.categoryId as string;
-        const tab = query.tab as string;
+        // Insights 서브메뉴 선택 - NEW FORMAT: use category param
+        const category = query.category as string;
         const insightMenuItem = menuItems.find(item => item.id === 'insight');
         if (insightMenuItem && insightMenuItem.subItemIds) {
-          // Try to match by categoryId first, then by tab (for backward compatibility)
           let subItemIndex = -1;
-          if (categoryId) {
-            subItemIndex = insightMenuItem.subItemIds.findIndex(id => String(id) === categoryId);
-          } else if (tab === 'column') {
-            // Legacy support: 'column' tab - try to find category with name matching '칼럼' or first category
-            const columnIndex = insightMenuItem.subItems.findIndex(name => name === '칼럼' || name.toLowerCase().includes('column'));
-            subItemIndex = columnIndex !== -1 ? columnIndex : 0; // Default to first category if 'column' tab
+          if (category === 'newsletter') {
+            // Newsletter is always last item
+            subItemIndex = insightMenuItem.subItemIds.length - 1;
+          } else if (category) {
+            // Numeric category
+            const categoryId = parseInt(category, 10);
+            if (!isNaN(categoryId)) {
+              subItemIndex = insightMenuItem.subItemIds.findIndex(id => id === categoryId);
+            }
           }
           if (subItemIndex !== -1) {
             setSelectedSubItem(subItemIndex);
@@ -442,15 +444,18 @@ const Menu: React.FC<MenuProps> = ({ isOpen, onClose }) => {
         setTimeout(() => router.push(`/history?tab=${tab}`), 500);
       }
     } else if (selectedItem === 'insight') {
-      // 인사이트 서브메뉴 - API 데이터 기반으로 동적 라우팅
+      // 인사이트 서브메뉴 - NEW FORMAT: use category param
       const insightMenuItem = menuItems.find(item => item.id === 'insight');
       if (insightMenuItem && insightMenuItem.subItemIds) {
         const categoryIndex = insightMenuItem.subItems.findIndex(name => name === subItem);
         if (categoryIndex !== -1 && insightMenuItem.subItemIds[categoryIndex]) {
-          const categoryId = insightMenuItem.subItemIds[categoryIndex];
-          // Navigate to insights page with category ID
-          // Use categoryId query parameter for dynamic category routing
-          setTimeout(() => router.push(`/insights?categoryId=${categoryId}`), 500);
+          const categoryValue = insightMenuItem.subItemIds[categoryIndex];
+          // Navigate to insights page with category param
+          if (categoryValue === 'newsletter') {
+            setTimeout(() => router.push(`/insights?category=newsletter`), 500);
+          } else {
+            setTimeout(() => router.push(`/insights?category=${categoryValue}`), 500);
+          }
         }
       }
     }

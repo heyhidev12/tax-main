@@ -100,11 +100,15 @@ export default function ToggleMenu({
         router.push(`/history?tab=${tab}`);
       }
     } else if (rootId === "insight") {
-      // Use subItemIds if available (from API data)
+      // Use subItemIds if available (from API data) - NEW FORMAT: use category param
       const insightItem = effectiveMenuItems.find(mi => mi.id === "insight");
       if (insightItem && insightItem.subItemIds && insightItem.subItemIds.length > index) {
-        const categoryId = insightItem.subItemIds[index];
-        router.push(`/insights?categoryId=${categoryId}`);
+        const categoryValue = insightItem.subItemIds[index];
+        if (categoryValue === 'newsletter') {
+          router.push(`/insights?category=newsletter`);
+        } else {
+          router.push(`/insights?category=${categoryValue}`);
+        }
       } else {
         // Fallback for standalone use without API data
         router.push("/insights");

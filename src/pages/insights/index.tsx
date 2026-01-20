@@ -47,6 +47,9 @@ interface InsightItem {
   isMainExposed: boolean;
   createdAt?: string;
   updatedAt?: string;
+  authorName?: string;
+  viewCount ?: number;
+  files: any[];
 }
 
 interface InsightResponse {
@@ -57,8 +60,21 @@ interface InsightResponse {
   displayType?: "gallery" | "snippet" | "list"; // 자료실 노출 방식
 }
 
+// Hierarchical API types
+interface InsightHierarchicalSubcategory {
+  id: number;
+  name: string;
+  items: InsightItem[];
+}
+
+interface InsightHierarchicalItem {
+  category: InsightCategory;
+  subcategories: InsightHierarchicalSubcategory[];
+}
+
+type InsightHierarchicalData = InsightHierarchicalItem[];
+
 type InsightTab = "column" | "library" | "newsletter";
-type CategoryFilter = "all" | "industry" | "consulting";
 type LibraryDisplayType = "gallery" | "snippet" | "list";
 type SortField = "category" | "author" | null;
 type SortOrder = "asc" | "desc";
@@ -69,6 +85,7 @@ interface InsightsPageProps {
   initialTotalPages: number;
   initialActiveTab: InsightTab;
   initialLibraryDisplayType?: LibraryDisplayType | null;
+  initialCategoryValue?: string | number; // Initial category value for select
   error: string | null;
 }
 
@@ -76,18 +93,19 @@ const InsightsPage: React.FC<InsightsPageProps> = ({
   initialInsights,
   initialTotal,
   initialTotalPages,
-  initialActiveTab,
   initialLibraryDisplayType,
+  initialCategoryValue,
   error: initialError,
 }) => {
   const router = useRouter();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-  // Query-based tab management (like History page)
-  const tabFromQuery = router.query.tab as string;
-  const validTabs = ["column", "library", "newsletter"];
-  const [activeTab, setActiveTab] = useState<InsightTab>(initialActiveTab);
-  const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>("all");
+  // Query-based category management - NEW FORMAT: category and sub only
+  // Always normalize to string for consistent comparison
+  const categoryFromQuery = String(router.query.category || "");
+  const subFromQuery = String(router.query.sub || "");
+  const isNewsletterCategory = categoryFromQuery === "newsletter";
+
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [insights, setInsights] = useState<InsightItem[]>(initialInsights);
@@ -104,6 +122,34 @@ const InsightsPage: React.FC<InsightsPageProps> = ({
   const [emailError, setEmailError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [newsletterExposed, setNewsletterExposed] = useState(true);
+
+  // Hierarchical data state
+  const [hierarchicalData, setHierarchicalData] = useState<InsightHierarchicalData>([]);
+  // Store category as string for consistent type matching with select
+  const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(() => {
+    // Initialize from URL query if available (numeric category only)
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      const category = urlParams.get('category');
+      if (category && category !== "newsletter") {
+        const parsed = parseInt(category, 10);
+        return !isNaN(parsed) ? parsed : null;
+      }
+    }
+    return null;
+  });
+  // Virtual "전체" subcategory has id = 0 (special value)
+  const [selectedSubcategoryId, setSelectedSubcategoryId] = useState<number | null>(() => {
+    // Initialize from URL query if available
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      const sub = urlParams.get('sub');
+      return sub ? parseInt(sub, 10) : null;
+    }
+    // Default to "전체" (0) if no sub in URL
+    return null; // Will be set to 0 (전체) if missing
+  });
+  const [isLoadingHierarchical, setIsLoadingHierarchical] = useState(false);
 
   // 로그인된 사용자 정보로 뉴스레터 폼 미리 채우기
   useEffect(() => {
@@ -142,59 +188,65 @@ const InsightsPage: React.FC<InsightsPageProps> = ({
     checkNewsletterExposed();
   }, []);
 
-  // 뉴스레터 탭이 숨겨진 상태에서 newsletter 탭에 접근하면 column으로 리다이렉트
+  // Clean up old query params (categoryId, tab, dataRoom) and migrate to new format
   useEffect(() => {
-    if (!newsletterExposed && activeTab === 'newsletter') {
-      router.replace("/insights?tab=column", undefined, { shallow: true });
-      setActiveTab('column');
-    }
-  }, [newsletterExposed, activeTab, router]);
+    if (router.isReady) {
+      const { categoryId, tab, dataRoom, category, sub, ...restQuery } = router.query;
+      const needsCleanup = categoryId || tab || dataRoom;
 
-  // URL 쿼리 파라미터가 변경되면 탭 업데이트 (like History page)
-  // Remove dataRoom from query if present
-  useEffect(() => {
-    if (router.isReady && router.query.dataRoom) {
-      const { dataRoom, ...restQuery } = router.query;
-      router.replace(
-        {
-          pathname: router.pathname,
-          query: restQuery,
-        },
-        undefined,
-        { shallow: true }
-      );
-    }
-  }, [router.isReady, router.query.dataRoom, router]);
+      if (needsCleanup) {
+        // Migrate old format to new format
+        let newCategory = category;
+        let newSub = sub;
 
-  // URL 쿼리 파라미터가 변경되면 탭 업데이트 (like History page)
-  useEffect(() => {
-    if (tabFromQuery && validTabs.includes(tabFromQuery)) {
-      setActiveTab(tabFromQuery as InsightTab);
-    } else if (tabFromQuery && !validTabs.includes(tabFromQuery)) {
-      // Invalid tab in query, redirect to default
-      const { dataRoom, ...restQuery } = router.query;
-      router.replace(
-        {
-          pathname: router.pathname,
-          query: { ...restQuery, tab: "column" },
-        },
-        undefined,
-        { shallow: true }
-      );
-      setActiveTab("column");
-    } else if (!tabFromQuery) {
-      // No tab in query, set default and update URL
-      const { dataRoom, ...restQuery } = router.query;
-      router.replace(
-        {
-          pathname: router.pathname,
-          query: { ...restQuery, tab: "column" },
-        },
-        undefined,
-        { shallow: true }
-      );
+        if (categoryId && !category) {
+          // Migrate categoryId to category
+          newCategory = categoryId;
+        }
+
+        if (tab === "newsletter" && !category) {
+          newCategory = "newsletter";
+        } else if (tab && !category && !categoryId) {
+          // If tab=column/library but no category, use first category from hierarchical data
+          // This will be handled after hierarchical data loads
+        }
+
+        // Remove old params and update URL
+        router.replace(
+          {
+            pathname: router.pathname,
+            query: {
+              ...restQuery,
+              ...(newCategory && { category: newCategory }),
+              ...(newSub && { sub: newSub }),
+            },
+          },
+          undefined,
+          { shallow: true }
+        );
+      }
     }
-  }, [tabFromQuery, router]);
+  }, [router.isReady, router.query, router]);
+
+  // Handle newsletter category - redirect if not exposed
+  useEffect(() => {
+    if (router.isReady && isNewsletterCategory && !newsletterExposed) {
+      // Redirect to first category if newsletter is not exposed
+      if (hierarchicalData.length > 0) {
+        const firstCategory = hierarchicalData[0];
+        router.replace(
+          {
+            pathname: router.pathname,
+            query: { category: firstCategory.category.id },
+          },
+          undefined,
+          { shallow: true }
+        );
+      } else {
+        router.replace("/insights", undefined, { shallow: true });
+      }
+    }
+  }, [router.isReady, isNewsletterCategory, newsletterExposed, hierarchicalData, router]);
 
   // Email validation
   const validateEmail = (email: string) => {
@@ -277,112 +329,229 @@ const InsightsPage: React.FC<InsightsPageProps> = ({
     newsletterEmail.trim() !== '' &&
     validateEmail(newsletterEmail) &&
     privacyAgreed;
-  // 자료실 노출 타입 - API 응답에서 설정
+  // 자료실 노출 타입 - category.type에서 설정
   const [libraryDisplayType, setLibraryDisplayType] =
     useState<LibraryDisplayType>(initialLibraryDisplayType || "gallery");
 
+  // Fetch hierarchical data once on mount (skip for newsletter category)
+  useEffect(() => {
+    const fetchHierarchicalData = async () => {
+      if (isNewsletterCategory) return; // Skip for newsletter category
 
-  // API에서 데이터 가져오기 (CSR for search/filter/pagination)
-  const fetchInsights = async () => {
-    try {
-      setError(null);
+      try {
+        setIsLoadingHierarchical(true);
+        setError(null);
+        const response = await getClient<InsightHierarchicalData>(
+          `${API_ENDPOINTS.INSIGHTS}/hierarchical`
+        );
 
-      const params = new URLSearchParams();
-      params.append("page", currentPage.toString());
-      params.append("limit", "9");
-      if (searchQuery) {
-        params.append("search", searchQuery);
-      }
-      if (categoryFilter !== "all") {
-        params.append("category", categoryFilter);
-      }
-      if (activeTab === "column") {
-        params.append("categoryId", "1");
-      } else if (activeTab === "library") {
-        // Library tab - use default for now (dataRoom handling removed)
-        params.append("dataRoom", "A");
-      }
+        if (response.data && Array.isArray(response.data)) {
+          setHierarchicalData(response.data);
 
-      const response = await getClient<InsightResponse>(
-        `${API_ENDPOINTS.INSIGHTS}?${params.toString()}`
-      );
+          // Initialize selection from URL query or defaults
+          // Always normalize query values to strings for comparison
+          const categoryIdFromQuery = categoryFromQuery && categoryFromQuery !== "newsletter" && categoryFromQuery !== ""
+            ? parseInt(categoryFromQuery, 10)
+            : null;
+          const subcategoryIdFromQuery = subFromQuery && subFromQuery !== ""
+            ? parseInt(subFromQuery, 10)
+            : null;
 
-      if (response.data) {
-        const data = response.data;
-        let filteredItems = data.items || [];
+          if (categoryIdFromQuery && !isNaN(categoryIdFromQuery)) {
+            // Use category from query - explicitly set select state after API load
+            setSelectedCategoryId(categoryIdFromQuery);
+            setSelectValue(String(categoryIdFromQuery)); // Force string type for select
 
-        // 클라이언트 사이드 카테고리 필터링 (API 필터링이 제대로 작동하지 않는 경우를 대비)
-        // subcategory.name을 기준으로 필터링 (실제 데이터 구조에 맞춤)
-        if (categoryFilter !== "all") {
-          filteredItems = filteredItems.filter((item) => {
-            // subcategory가 있으면 subcategory.name을 우선 사용, 없으면 category.name 사용
-            const subcategoryName = item.subcategory?.name?.toLowerCase() || "";
-            const categoryName = item.category?.name?.toLowerCase() || "";
-            const categoryType = item.category?.type?.toLowerCase();
+            // Set subcategory: use query sub if exists, otherwise default to "전체" (0)
+            if (subcategoryIdFromQuery && !isNaN(subcategoryIdFromQuery)) {
+              setSelectedSubcategoryId(subcategoryIdFromQuery);
+            } else {
+              // Default to "전체" (0) when sub is missing
+              setSelectedSubcategoryId(0);
 
-            // 필터링할 이름 결정 (subcategory 우선)
-            const filterName = subcategoryName || categoryName;
+              // Update URL to include sub=0 if not present
+              if (!subFromQuery || subFromQuery === "") {
+                router.replace(
+                  {
+                    pathname: router.pathname,
+                    query: {
+                      ...router.query,
+                      category: String(categoryIdFromQuery),
+                      sub: 0,
+                    },
+                  },
+                  undefined,
+                  { shallow: true }
+                );
+              }
+            }
+          } else if (response.data.length > 0) {
+            // Use defaults: first category, "전체" subcategory
+            const firstCategory = response.data[0];
+            const firstCategoryId = firstCategory.category.id;
+            setSelectedCategoryId(firstCategoryId);
+            setSelectedSubcategoryId(0); // "전체"
+            setSelectValue(String(firstCategoryId)); // Explicitly set select state after API load
 
-            if (categoryFilter === "industry") {
-              // 업종별: subcategory.name 또는 category.name에 업종이 포함되고, 컨설팅이 아닌 경우
-              return (
-                filterName.includes("업종") && !filterName.includes("컨설팅")
-              );
-            } else if (categoryFilter === "consulting") {
-              // 컨설팅: subcategory.name 또는 category.name에 컨설팅이 포함되고, 업종별이 아닌 경우
-              return (
-                filterName.includes("컨설팅") && !filterName.includes("업종")
+            // Update URL with defaults if not present
+            if (!categoryFromQuery || categoryFromQuery === "") {
+              router.replace(
+                {
+                  pathname: router.pathname,
+                  query: {
+                    category: String(firstCategoryId),
+                    sub: 0,
+                  },
+                },
+                undefined,
+                { shallow: true }
               );
             }
-            return true;
-          });
+          }
+        } else {
+          setError("데이터를 불러오는데 실패했습니다.");
+          setHierarchicalData([]);
         }
-
-        // 클라이언트 사이드 검색 필터링 (API가 검색을 지원하지 않는 경우를 대비)
-        if (searchQuery && searchQuery.trim()) {
-          const query = searchQuery.trim().toLowerCase();
-          filteredItems = filteredItems.filter((item) =>
-            item.title.toLowerCase().includes(query)
-          );
-        }
-
-        setInsights(filteredItems);
-        setTotal(filteredItems.length);
-        // totalPages 계산
-        const limit = data.limit || 9;
-        const calculatedTotalPages = Math.ceil(filteredItems.length / limit);
-        setTotalPages(calculatedTotalPages);
-
-        // 자료실 노출 방식 설정 (API 응답에서만 결정)
-        if (activeTab === "library" && data.displayType) {
-          setLibraryDisplayType(data.displayType);
-        }
+      } catch (err) {
+        console.error("Failed to fetch hierarchical data:", err);
+        setError("데이터를 불러오는데 실패했습니다.");
+        setHierarchicalData([]);
+      } finally {
+        setIsLoadingHierarchical(false);
       }
-    } catch (err) {
-      console.error("Failed to fetch insights:", err);
-      setError("데이터를 불러오는데 실패했습니다.");
-      setInsights([]);
-      setTotal(0);
-      setTotalPages(1);
+    };
+
+    if (router.isReady && !isNewsletterCategory) {
+      fetchHierarchicalData();
     }
+  }, [router.isReady, categoryFromQuery, subFromQuery, isNewsletterCategory, router]);
+
+  // Page size map based on category type
+  const pageSizeMap: Record<string, number> = {
+    A: 9,  // Gallery
+    B: 6,  // Snippet
+    C: 10, // List
   };
 
-
-  // Client-side: fetch when filters/search/pagination change
+  // Update insights when selection or filters change
   useEffect(() => {
-    if (router.isReady) {
-      // Only fetch if something changed from initial state
-      if (searchQuery || categoryFilter !== "all" || currentPage !== 1 || activeTab !== initialActiveTab) {
-        fetchInsights();
-      }
+    if (isNewsletterCategory) return; // Skip for newsletter category
+
+    if (!selectedCategoryId || selectedSubcategoryId === null || hierarchicalData.length === 0) {
+      return;
     }
+
+    // Find selected category
+    const selectedCategory = hierarchicalData.find(
+      (item) => item.category.id === selectedCategoryId
+    );
+
+    if (!selectedCategory) return;
+
+    let filteredItems: InsightItem[] = [];
+
+    // Handle virtual "전체" subcategory (id = 0)
+    if (selectedSubcategoryId === 0) {
+      // "전체": combine all items from all subcategories
+      filteredItems = selectedCategory.subcategories.reduce<InsightItem[]>(
+        (acc, subcategory) => {
+          return [...acc, ...(subcategory.items || [])];
+        },
+        []
+      );
+    } else {
+      // Specific subcategory
+      const selectedSubcategory = selectedCategory.subcategories.find(
+        (sub) => sub.id === selectedSubcategoryId
+      );
+
+      if (!selectedSubcategory) return;
+
+      filteredItems = [...(selectedSubcategory.items || [])];
+    }
+
+    // Apply search filter
+    if (searchQuery && searchQuery.trim()) {
+      const query = searchQuery.trim().toLowerCase();
+      filteredItems = filteredItems.filter((item) =>
+        item.title.toLowerCase().includes(query)
+      );
+    }
+
+    // Set display type based on category.type
+    const categoryType = selectedCategory.category.type?.toUpperCase() || "A";
+    let newDisplayType: LibraryDisplayType = "gallery";
+    if (categoryType === "A") {
+      newDisplayType = "gallery";
+    } else if (categoryType === "B") {
+      newDisplayType = "snippet";
+    } else if (categoryType === "C") {
+      newDisplayType = "list";
+    }
+
+    // Reset page if display type changed
+    if (libraryDisplayType !== newDisplayType) {
+      setCurrentPage(1);
+    }
+    setLibraryDisplayType(newDisplayType);
+
+    // Apply sorting ONLY for List type (C) - BEFORE pagination
+    let sortedItems = filteredItems;
+    if (categoryType === "C" && sortField) {
+      sortedItems = [...filteredItems].sort((a, b) => {
+        let aValue: string = "";
+        let bValue: string = "";
+
+        if (sortField === "category") {
+          aValue =
+            typeof a.subcategory?.name === "string"
+              ? a.subcategory.name
+              : typeof a.category?.name === "string"
+                ? a.category.name
+                : "";
+          bValue =
+            typeof b.subcategory?.name === "string"
+              ? b.subcategory.name
+              : typeof b.category?.name === "string"
+                ? b.category.name
+                : "";
+        } else if (sortField === "author") {
+          aValue = a.authorName || "";
+          bValue = b.authorName || "";
+        }
+
+        // Korean locale-aware comparison
+        const comparison = aValue.localeCompare(bValue, "ko-KR", { sensitivity: "base" });
+
+        if (sortOrder === "asc") {
+          return comparison;
+        } else {
+          return -comparison;
+        }
+      });
+    }
+
+    // Get page size based on category type
+    const currentLimit = pageSizeMap[categoryType] || 9;
+
+    // Apply pagination AFTER sorting
+    const startIndex = (currentPage - 1) * currentLimit;
+    const endIndex = startIndex + currentLimit;
+    const paginatedItems = sortedItems.slice(startIndex, endIndex);
+
+    setInsights(paginatedItems);
+    setTotal(sortedItems.length);
+    setTotalPages(Math.ceil(sortedItems.length / currentLimit));
   }, [
-    router.isReady,
-    activeTab,
-    categoryFilter,
-    currentPage,
+    selectedCategoryId,
+    selectedSubcategoryId,
+    hierarchicalData,
     searchQuery,
-    initialActiveTab,
+    currentPage,
+    isNewsletterCategory,
+    sortField,
+    sortOrder,
+    libraryDisplayType,
   ]);
 
   // 검색 핸들러 (Enter 키 또는 검색 버튼 클릭 시)
@@ -400,78 +569,101 @@ const InsightsPage: React.FC<InsightsPageProps> = ({
     }
   };
 
-  // 정렬 핸들러
+  // 정렬 핸들러 (ONLY for List type C)
   const handleSort = (field: SortField) => {
+    // Only allow sorting for List type (C)
+    if (libraryDisplayType !== "list") return;
+
     if (sortField === field) {
-      // 같은 필드를 클릭하면 정렬 순서 변경
-      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+      // Same field clicked: toggle order (asc -> desc -> null)
+      if (sortOrder === "asc") {
+        setSortOrder("desc");
+      } else if (sortOrder === "desc") {
+        // Third click: reset to original order
+        setSortField(null);
+        setSortOrder("asc");
+      }
     } else {
-      // 다른 필드를 클릭하면 해당 필드로 오름차순 정렬
+      // Different field clicked: set new field with asc order
       setSortField(field);
       setSortOrder("asc");
     }
-  };
-
-  // 정렬된 insights 가져오기
-  const getSortedInsights = () => {
-    if (!sortField) return insights;
-
-    return [...insights].sort((a, b) => {
-      let aValue: string = "";
-      let bValue: string = "";
-
-      if (sortField === "category") {
-        aValue =
-          typeof a.subcategory?.name === "string"
-            ? a.subcategory.name
-            : typeof a.category?.name === "string"
-              ? a.category.name
-              : "";
-        bValue =
-          typeof b.subcategory?.name === "string"
-            ? b.subcategory.name
-            : typeof b.category?.name === "string"
-              ? b.category.name
-              : "";
-      } else if (sortField === "author") {
-        // 현재 작성자명이 하드코딩되어 있어서 실제로는 정렬이 안되지만,
-        // API에서 author 정보가 오면 여기서 처리
-        aValue = "작성자명";
-        bValue = "작성자명";
-      }
-
-      if (sortOrder === "asc") {
-        return aValue.localeCompare(bValue);
-      } else {
-        return bValue.localeCompare(aValue);
-      }
-    });
-  };
-
-  // 탭 변경 핸들러 (query-based, like History page)
-  const handleTabChange = (tabId: string) => {
-    const newTab = tabId as InsightTab;
-    setActiveTab(newTab);
+    // Reset to first page when sorting changes
     setCurrentPage(1);
-    setCategoryFilter("all");
-    setSearchQuery("");
+  };
 
-    // URL 업데이트 - only use tab parameter, remove dataRoom
-    const { dataRoom, ...restQuery } = router.query;
+  // getSortedInsights is no longer needed - sorting is applied before pagination in useEffect
+  // This function is kept for backward compatibility with existing UI code
+  const getSortedInsights = () => {
+    // Sorting is already applied in the useEffect before pagination
+    // This just returns the already-sorted-and-paginated insights
+    return insights;
+  };
+
+  // 카테고리 선택 변경 핸들러 (NEW FORMAT: category only)
+  const handleCategorySelectChange = (categoryValue: string | number) => {
+    // Normalize to string for consistent handling
+    const categoryValueStr = String(categoryValue);
+
+    if (categoryValueStr === "newsletter") {
+      // Newsletter category
+      setSelectValue("newsletter"); // Explicitly update select state
+      setCurrentPage(1); // Reset page when category changes
+      setSearchQuery("");
+      setSortField(null); // Reset sorting
+      setSortOrder("asc");
+      router.replace(
+        {
+          pathname: router.pathname,
+          query: { category: "newsletter" },
+        },
+        undefined,
+        { shallow: true }
+      );
+    } else {
+      // Numeric category - always parse from string
+      const categoryId = parseInt(categoryValueStr, 10);
+      if (isNaN(categoryId)) return;
+
+      const category = hierarchicalData.find((item) => item.category.id === categoryId);
+      if (!category) return;
+
+      setSelectedCategoryId(categoryId);
+      setSelectedSubcategoryId(0); // Default to "전체"
+      setSelectValue(String(categoryId)); // Explicitly update select state with string
+      setCurrentPage(1); // Reset page when category changes
+      setSearchQuery("");
+      setSortField(null); // Reset sorting
+      setSortOrder("asc");
+
+      // Update URL query - reset sub to default (전체 = 0), use string for category
+      router.replace(
+        {
+          pathname: router.pathname,
+          query: { category: String(categoryId), sub: 0 },
+        },
+        undefined,
+        { shallow: true }
+      );
+    }
+  };
+
+  // 서브카테고리 선택 변경 핸들러 (NEW FORMAT: sub only)
+  const handleSubcategoryChange = (subcategoryId: number) => {
+    setSelectedSubcategoryId(subcategoryId);
+    setCurrentPage(1); // Reset page when subcategory changes
+    setSortField(null); // Reset sorting
+    setSortOrder("asc");
+
+    // Update URL query - only update sub
     router.replace(
       {
         pathname: router.pathname,
-        query: { ...restQuery, tab: newTab },
+        query: { ...router.query, sub: subcategoryId },
       },
       undefined,
       { shallow: true }
     );
-  };
-
-  // 카테고리 필터 변경 핸들러
-  const handleCategoryChange = (category: CategoryFilter) => {
-    setCategoryFilter(category);
-    setCurrentPage(1);
   };
 
   // 페이지 변경 핸들러
@@ -494,21 +686,119 @@ const InsightsPage: React.FC<InsightsPageProps> = ({
     return `${year}.${month}.${day}`;
   };
 
+const formatDateTime = (dateString?: string) => {
+  if (!dateString) return "";
+
+  const date = new Date(dateString);
+
+  const seoulTime = new Date(
+    date.toLocaleString("en-US", { timeZone: "Asia/Seoul" })
+  );
+
+  const yyyy = seoulTime.getFullYear();
+  const mm = String(seoulTime.getMonth() + 1).padStart(2, "0");
+  const dd = String(seoulTime.getDate()).padStart(2, "0");
+  const hh = String(seoulTime.getHours()).padStart(2, "0");
+  const min = String(seoulTime.getMinutes()).padStart(2, "0");
+
+  return `${yyyy}.${mm}.${dd} ${hh}:${min}`;
+};
+
+
+
+
   // 브레드크럼 아이템
   const breadcrumbs = [{ label: "인사이트" }];
 
-  // 탭 아이템
-  const tabItems = [
-    { id: "column", label: "칼럼" },
-    { id: "library", label: "자료실" },
-    { id: "newsletter", label: "뉴스레터" },
-  ];
+  // Dynamic select items from hierarchical data + newsletter
+  // Always use string values for consistent type matching
+  const getSelectItems = () => {
+    // Guard: prevent uncontrolled state while loading
+    if (hierarchicalData.length === 0) {
+      return [];
+    }
 
-  // 뉴스레터 탭 노출 여부에 따라 탭 필터링
-  const filteredTabItems = tabItems.filter((tab) => {
-    if (tab.id === "newsletter") return newsletterExposed;
-    return true;
+    const dynamicCategories = hierarchicalData
+      .map((item) => ({
+        id: item.category.id,
+        label: item.category.name,
+        value: String(item.category.id), // Force string type
+      }))
+      .filter((item) => item.label); // Filter out empty names
+
+    // Add newsletter as last static option
+    const items = [
+      ...dynamicCategories,
+      { id: "newsletter", label: "뉴스레터", value: "newsletter" },
+    ];
+
+    // Filter newsletter based on exposure
+    return items.filter((item) => {
+      if (item.id === "newsletter") return newsletterExposed;
+      return true;
+    });
+  };
+
+  // Get current selected category for select display
+  // Always use string type for consistent matching with options
+  const [selectValue, setSelectValue] = useState<string>(() => {
+    // Normalize initialCategoryValue to string
+    if (initialCategoryValue === "newsletter") return "newsletter";
+    if (typeof initialCategoryValue === "number") return String(initialCategoryValue);
+    return String(initialCategoryValue || "");
   });
+
+  // Update select value after hydration and API load - ensure controlled state
+  useEffect(() => {
+    if (!router.isReady) return; // Wait for router to be ready
+
+    // Guard: prevent uncontrolled state while categories are loading
+    const selectItems = getSelectItems();
+    if (selectItems.length === 0) return;
+
+    if (isNewsletterCategory) {
+      setSelectValue("newsletter");
+    } else if (selectedCategoryId !== null) {
+      // Explicitly set select state after API load
+      setSelectValue(String(selectedCategoryId));
+    } else {
+      // Fallback to first available item
+      const firstItem = selectItems[0];
+      if (firstItem) {
+        setSelectValue(String(firstItem.value));
+      }
+    }
+  }, [router.isReady, isNewsletterCategory, selectedCategoryId, hierarchicalData, newsletterExposed]);
+
+  const getCurrentSelectValue = (): string => {
+    return selectValue;
+  };
+
+  // Get selected category object
+  const selectedCategory = selectedCategoryId && hierarchicalData.length > 0
+    ? hierarchicalData.find((item) => item.category.id === selectedCategoryId)
+    : null;
+
+  // Get subcategories for current category (including virtual "전체")
+  const getCurrentSubcategories = () => {
+    if (isNewsletterCategory || !selectedCategoryId || hierarchicalData.length === 0) {
+      return [];
+    }
+
+    if (!selectedCategory) return [];
+
+    // Prepend virtual "전체" subcategory
+    const 전체Subcategory = {
+      id: 0,
+      name: "전체",
+      items: selectedCategory.subcategories.reduce<InsightItem[]>(
+        (acc, sub) => [...acc, ...(sub.items || [])],
+        []
+      ),
+    };
+
+    return [전체Subcategory, ...selectedCategory.subcategories];
+  };
 
   return (
     <div className={styles.insightsPage}>
@@ -518,7 +808,7 @@ const InsightsPage: React.FC<InsightsPageProps> = ({
         isFixed={true}
       />
       <Menu isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
-      <div className={activeTab === "newsletter" ? `${styles.headerImageNews} + ${styles.headerImage}` : `${styles.headerImage}`} />
+      <div className={isNewsletterCategory ? `${styles.headerImageNews} + ${styles.headerImage}` : `${styles.headerImage}`} />
 
       <div className={styles.content}>
         <div className="container">
@@ -528,14 +818,15 @@ const InsightsPage: React.FC<InsightsPageProps> = ({
               size="web"
               selects={{
                 level2: {
-                  value: activeTab,
-                  options: filteredTabItems.map((tab) => ({
-                    label: tab.label,
-                    value: tab.id,
+                  value: getCurrentSelectValue(), // Always string type
+                  options: getSelectItems().map((item) => ({
+                    label: item.label,
+                    value: item.value, // Already string from getSelectItems
                   })),
                   onChange: (value) => {
-                    const tabId = String(value);
-                    handleTabChange(tabId);
+                    // Value is already string from PageHeader component
+                    const categoryValue = String(value);
+                    handleCategorySelectChange(categoryValue);
                   },
                 },
               }}
@@ -544,11 +835,11 @@ const InsightsPage: React.FC<InsightsPageProps> = ({
 
           <div className={styles.mainContent}>
 
-            {activeTab === "column" && (
+            {!isNewsletterCategory && (
               <>
                 <div className={styles.columnTitleSection}>
                   <p className={styles.columnSubtitle}>Column</p>
-                  <h2 className={styles.columnTitle}>칼럼</h2>
+                  <h2 className={styles.columnTitle}>{selectedCategory?.category.name}</h2>
                 </div>
 
                 {/* 모바일 검색 섹션 */}
@@ -564,42 +855,21 @@ const InsightsPage: React.FC<InsightsPageProps> = ({
 
                 <div className={styles.columnContent}>
                   <nav className={styles.categoryNav}>
-                    <button
-                      className={`${styles.categoryItem} ${categoryFilter === "all"
-                        ? styles.categoryItemActive
-                        : ""
-                        }`}
-                      onClick={() => handleCategoryChange("all")}
-                    >
-                      {categoryFilter === "all" && (
-                        <span className={styles.activeDot} />
-                      )}
-                      <span>전체</span>
-                    </button>
-                    <button
-                      className={`${styles.categoryItem} ${categoryFilter === "industry"
-                        ? styles.categoryItemActive
-                        : ""
-                        }`}
-                      onClick={() => handleCategoryChange("industry")}
-                    >
-                      {categoryFilter === "industry" && (
-                        <span className={styles.activeDot} />
-                      )}
-                      <span>업종별</span>
-                    </button>
-                    <button
-                      className={`${styles.categoryItem} ${categoryFilter === "consulting"
-                        ? styles.categoryItemActive
-                        : ""
-                        }`}
-                      onClick={() => handleCategoryChange("consulting")}
-                    >
-                      {categoryFilter === "consulting" && (
-                        <span className={styles.activeDot} />
-                      )}
-                      <span>컨설팅</span>
-                    </button>
+                    {getCurrentSubcategories().map((subcategory) => (
+                      <button
+                        key={subcategory.id}
+                        className={`${styles.categoryItem} ${selectedSubcategoryId === subcategory.id
+                          ? styles.categoryItemActive
+                          : ""
+                          }`}
+                        onClick={() => handleSubcategoryChange(subcategory.id)}
+                      >
+                        {selectedSubcategoryId === subcategory.id && (
+                          <span className={styles.activeDot} />
+                        )}
+                        <span>{subcategory.name}</span>
+                      </button>
+                    ))}
                   </nav>
 
                   <div className={styles.mainSection}>
@@ -622,7 +892,11 @@ const InsightsPage: React.FC<InsightsPageProps> = ({
 
                     <div className={styles.divider} />
 
-                    {error ? (
+                    {isLoadingHierarchical ? (
+                      <div className={styles.empty}>
+                        <p>로딩 중...</p>
+                      </div>
+                    ) : error ? (
                       <div className={styles.error}>
                         <div className={styles.errorIcon}>⚠️</div>
                         <p>{error}</p>
@@ -636,9 +910,8 @@ const InsightsPage: React.FC<InsightsPageProps> = ({
                         />
                         <p>등록된 게시글이 없습니다.</p>
                       </div>
-                    ) : (
+                    ) : libraryDisplayType === "gallery" ? (
                       <>
-                        {/* 데스크톱 그리드 */}
                         <div className={styles.desktopGrid}>
                           {insights.map((item) => {
                             const plainContent = item.content
@@ -692,173 +965,28 @@ const InsightsPage: React.FC<InsightsPageProps> = ({
                           />
                         </div>
                       </>
-                    )}
-                  </div>
-                </div>
-              </>
-            )}
 
-            {activeTab === "library" && (
-              <div className={styles.libraryContent}>
-                {/* 모바일 타이틀 섹션 */}
-                <div className={styles.mobileLibraryTitleSection}>
-                  <h2 className={styles.mobileLibraryTitle}>
-                    ARCHIVES A
-                  </h2>
-                  <p className={styles.mobileLibrarySubtitle}>
-                    자료실A
-                  </p>
-                </div>
 
-                {/* 모바일 검색 섹션 */}
-                <div className={styles.mobileSearchSection}>
-                  <SearchField
-                    placeholder="제목을 입력해주세요"
-                    value={searchQuery}
-                    onChange={handleSearchChange}
-                    onSearch={handleSearch}
-                    fullWidth
-                  />
-                </div>
-
-                {/* 모바일 카테고리 탭 */}
-                <div className={styles.mobileCategoryTabs}>
-                  <button
-                    className={`${styles.mobileCategoryTab} ${categoryFilter === "all"
-                      ? styles.mobileCategoryTabActive
-                      : ""
-                      }`}
-                    onClick={() => handleCategoryChange("all")}
-                  >
-                    {categoryFilter === "all" && (
-                      <span className={styles.mobileCategoryDot} />
-                    )}
-                    전체
-                  </button>
-                  <button
-                    className={`${styles.mobileCategoryTab} ${categoryFilter === "industry"
-                      ? styles.mobileCategoryTabActive
-                      : ""
-                      }`}
-                    onClick={() => handleCategoryChange("industry")}
-                  >
-                    {categoryFilter === "industry" && (
-                      <span className={styles.mobileCategoryDot} />
-                    )}
-                    업종별
-                  </button>
-                  <button
-                    className={`${styles.mobileCategoryTab} ${categoryFilter === "consulting"
-                      ? styles.mobileCategoryTabActive
-                      : ""
-                      }`}
-                    onClick={() => handleCategoryChange("consulting")}
-                  >
-                    {categoryFilter === "consulting" && (
-                      <span className={styles.mobileCategoryDot} />
-                    )}
-                    컨설팅
-                  </button>
-                </div>
-
-                {/* 모바일 게시물 수 */}
-                <div className={styles.mobileCount}>
-                  <span>총 </span>
-                  <span className={styles.mobileCountNumber}>{total}</span>
-                  <span>개의 게시물이 있습니다</span>
-                </div>
-
-                <div className={styles.libraryTitleSection}>
-                  <h2 className={styles.libraryTitle}>
-                    ARCHIVES A
-                  </h2>
-                </div>
-                <div className={styles.libraryMainContent}>
-                  <div className={styles.librarySidebar}>
-                    <h2 className={styles.librarySidebarTitle}>
-                      자료실A
-                    </h2>
-                    <nav className={styles.libraryCategoryNav}>
-                      <button
-                        className={`${styles.libraryCategoryItem} ${categoryFilter === "all"
-                          ? styles.libraryCategoryItemActive
-                          : ""
-                          }`}
-                        onClick={() => handleCategoryChange("all")}
-                      >
-                        {categoryFilter === "all" && (
-                          <span className={styles.activeDot} />
-                        )}
-                        <span>전체</span>
-                      </button>
-                      <button
-                        className={`${styles.libraryCategoryItem} ${categoryFilter === "industry"
-                          ? styles.libraryCategoryItemActive
-                          : ""
-                          }`}
-                        onClick={() => handleCategoryChange("industry")}
-                      >
-                        {categoryFilter === "industry" && (
-                          <span className={styles.activeDot} />
-                        )}
-                        <span>업종별</span>
-                      </button>
-                      <button
-                        className={`${styles.libraryCategoryItem} ${categoryFilter === "consulting"
-                          ? styles.libraryCategoryItemActive
-                          : ""
-                          }`}
-                        onClick={() => handleCategoryChange("consulting")}
-                      >
-                        {categoryFilter === "consulting" && (
-                          <span className={styles.activeDot} />
-                        )}
-                        <span>컨설팅</span>
-                      </button>
-                    </nav>
-                  </div>
-
-                  <div className={styles.libraryMainSection}>
-                    <div className={styles.libraryToolbar}>
-                      <div className={styles.count}>
-                        <span>총 </span>
-                        <span className={styles.countNumber}>{total}</span>
-                        <span> 개의 게시물이 있습니다</span>
-                      </div>
-                      <div className={styles.searchWrapper}>
-                        <SearchField
-                          placeholder="제목을 입력해주세요"
-                          value={searchQuery}
-                          onChange={handleSearchChange}
-                          onSearch={handleSearch}
-                          fullWidth
-                        />
-                      </div>
-                    </div>
-
-                    {libraryDisplayType !== "list" && (
-                      <div className={styles.divider} />
-                    )}
-
-                    {error ? (
-                      <div className={styles.error}>
-                        <div className={styles.errorIcon}>⚠️</div>
-                        <p>{error}</p>
-                      </div>
-                    ) : insights.length === 0 ? (
-                      <div className={styles.empty}>
-                        <p>등록된 게시글이 없습니다.</p>
-                      </div>
-                    ) : (
+                    ) : libraryDisplayType === "snippet" ? (
                       <>
-                        {libraryDisplayType === "gallery" && (
-                          <div className={styles.libraryGallery}>
-                            {insights.map((item) => (
+                        <div className={styles.librarySnippet}>
+                          {insights.map((item) => {
+                            // content에서 마크다운 제거하고 텍스트만 추출
+                            const plainContent = item.content
+                              .replace(/```[\s\S]*?```/g, "") // 코드 블록 제거
+                              .replace(/#{1,6}\s+/g, "") // 헤더 제거
+                              .replace(/\*\*([^*]+)\*\*/g, "$1") // 볼드 제거
+                              .replace(/\*([^*]+)\*/g, "$1") // 이탤릭 제거
+                              .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1") // 링크 제거
+                              .trim();
+
+                            return (
                               <div
                                 key={item.id}
-                                className={`${styles.libraryCard} ${item.isMainExposed
-                                  ? styles.libraryCardFeatured
-                                  : ""
+                                className={`${styles.libraryCard} ${styles.libraryCardTransparent
+                                  } ${item.isMainExposed
+                                    ? styles.libraryCardFeatured
+                                    : ""
                                   }`}
                                 onClick={() => handleItemClick(item.id)}
                               >
@@ -869,7 +997,9 @@ const InsightsPage: React.FC<InsightsPageProps> = ({
                                       alt={item.title}
                                     />
                                   ) : (
-                                    <div className={styles.placeholderImage} />
+                                    <div
+                                      className={styles.placeholderImage}
+                                    />
                                   )}
                                 </div>
                                 <div className={styles.libraryCardContent}>
@@ -883,13 +1013,26 @@ const InsightsPage: React.FC<InsightsPageProps> = ({
                                           ? item.category.name
                                           : "카테고리명"}
                                     </p>
-                                    <h3 className={styles.libraryCardTitle}>
+                                    <h3
+                                      className={
+                                        styles.libraryCardTitle
+                                      }
+                                    >
                                       {item.title}
                                     </h3>
+                                    <p
+                                      className={
+                                        styles.libraryCardDescription
+                                      }
+                                    >
+                                      {plainContent}
+                                    </p>
                                   </div>
                                   <div className={styles.libraryCardFooter}>
-                                    <span className={styles.libraryCardAuthor}>
-                                      작성자명
+                                    <span
+                                      className={styles.libraryCardAuthor}
+                                    >
+                                      {item.authorName}
                                     </span>
                                     <span className={styles.cardDivider} />
                                     <span className={styles.libraryCardDate}>
@@ -900,269 +1043,15 @@ const InsightsPage: React.FC<InsightsPageProps> = ({
                                   </div>
                                 </div>
                               </div>
-                            ))}
-                          </div>
-                        )}
 
-                        {libraryDisplayType === "snippet" && (
-                          <div className={styles.libraryGallery}>
-                            {insights.map((item) => {
-                              // content에서 마크다운 제거하고 텍스트만 추출
-                              const plainContent = item.content
-                                .replace(/```[\s\S]*?```/g, "") // 코드 블록 제거
-                                .replace(/#{1,6}\s+/g, "") // 헤더 제거
-                                .replace(/\*\*([^*]+)\*\*/g, "$1") // 볼드 제거
-                                .replace(/\*([^*]+)\*/g, "$1") // 이탤릭 제거
-                                .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1") // 링크 제거
-                                .trim();
 
-                              return (
-                                <div
-                                  key={item.id}
-                                  className={`${styles.libraryCard} ${styles.libraryCardTransparent
-                                    } ${item.isMainExposed
-                                      ? styles.libraryCardFeatured
-                                      : ""
-                                    }`}
-                                  onClick={() => handleItemClick(item.id)}
-                                >
-                                  <div className={styles.libraryCardImage}>
-                                    {item.thumbnail?.url ? (
-                                      <img
-                                        src={item.thumbnail.url}
-                                        alt={item.title}
-                                      />
-                                    ) : (
-                                      <div
-                                        className={styles.placeholderImage}
-                                      />
-                                    )}
-                                  </div>
-                                  <div className={styles.libraryCardContent}>
-                                    <div className={styles.libraryCardHeader}>
-                                      <p className={styles.libraryCardCategory}>
-                                        {typeof item.subcategory?.name ===
-                                          "string"
-                                          ? item.subcategory.name
-                                          : typeof item.category?.name ===
-                                            "string"
-                                            ? item.category.name
-                                            : "카테고리명"}
-                                      </p>
-                                      <h3
-                                        className={
-                                          styles.libraryCardTitleSingle
-                                        }
-                                      >
-                                        {item.title}
-                                      </h3>
-                                      <p
-                                        className={
-                                          styles.libraryCardDescription
-                                        }
-                                      >
-                                        {plainContent}
-                                      </p>
-                                    </div>
-                                    <div className={styles.libraryCardFooter}>
-                                      <span
-                                        className={styles.libraryCardAuthor}
-                                      >
-                                        작성자명
-                                      </span>
-                                      <span className={styles.cardDivider} />
-                                      <span className={styles.libraryCardDate}>
-                                        {item.createdAt
-                                          ? formatDate(item.createdAt)
-                                          : "2026.01.28"}
-                                      </span>
-                                    </div>
-                                  </div>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        )}
 
-                        {libraryDisplayType === "list" && (
-                          <div className={styles.libraryList}>
-                            {/* 데스크톱 헤더 */}
-                            <div className={styles.libraryListHeader}>
-                              <div className={styles.libraryListHeaderRow}>
-                                <div className={styles.libraryListHeaderCell}>
-                                  No.
-                                </div>
-                                <div
-                                  className={`${styles.libraryListHeaderCell} ${styles.sortable}`}
-                                  onClick={() => handleSort("category")}
-                                >
-                                  카테고리
-                                  <Icon
-                                    type={
-                                      sortField === "category" &&
-                                        sortOrder === "asc"
-                                        ? "arrow-up"
-                                        : "arrow-down"
-                                    }
-                                    size={16}
-                                    className={styles.sortIcon}
-                                  />
-                                </div>
-                                <div className={styles.libraryListHeaderCell}>
-                                  제목
-                                </div>
-                                <div
-                                  className={`${styles.libraryListHeaderCell} ${styles.sortable}`}
-                                  onClick={() => handleSort("author")}
-                                >
-                                  작성자
-                                  <Icon
-                                    type={
-                                      sortField === "author" &&
-                                        sortOrder === "asc"
-                                        ? "arrow-up"
-                                        : "arrow-down"
-                                    }
-                                    size={16}
-                                    className={styles.sortIcon}
-                                  />
-                                </div>
-                                <div className={styles.libraryListHeaderCell}>
-                                  작성 일
-                                </div>
-                                <div className={styles.libraryListHeaderCell}>
-                                  조회수
-                                </div>
-                              </div>
-                            </div>
 
-                            {/* 모바일 헤더 */}
-                            <div className={styles.mobileListHeader}>
-                              <div
-                                className={`${styles.mobileListHeaderCell} ${styles.sortable}`}
-                                onClick={() => handleSort("category")}
-                              >
-                                카테고리
-                                <Icon
-                                  type={
-                                    sortField === "category" &&
-                                      sortOrder === "asc"
-                                      ? "arrow-up"
-                                      : "arrow-down"
-                                  }
-                                  size={16}
-                                  className={styles.sortIcon}
-                                />
-                              </div>
-                              <div
-                                className={`${styles.mobileListHeaderCell} ${styles.sortable}`}
-                                onClick={() => handleSort("author")}
-                              >
-                                작성자
-                                <Icon
-                                  type={
-                                    sortField === "author" &&
-                                      sortOrder === "asc"
-                                      ? "arrow-up"
-                                      : "arrow-down"
-                                  }
-                                  size={16}
-                                  className={styles.sortIcon}
-                                />
-                              </div>
-                            </div>
+                            );
+                          })}
 
-                            {/* 데스크톱 바디 */}
-                            <div className={styles.libraryListBody}>
-                              {getSortedInsights().map((item, index) => (
-                                <div
-                                  key={item.id}
-                                  className={styles.libraryListRow}
-                                  onClick={() => handleItemClick(item.id)}
-                                >
-                                  <div className={styles.libraryListCell}>
-                                    {(currentPage - 1) * 9 + index + 1}
-                                  </div>
-                                  <div
-                                    className={`${styles.libraryListCell} ${styles.categoryCell}`}
-                                  >
-                                    {typeof item.subcategory?.name === "string"
-                                      ? item.subcategory.name
-                                      : typeof item.category?.name === "string"
-                                        ? item.category.name
-                                        : "카테고리 명"}
-                                  </div>
-                                  <div
-                                    className={`${styles.libraryListCell} ${styles.titleCell}`}
-                                  >
-                                    <span className={styles.libraryListTitle}>
-                                      {item.title}
-                                    </span>
-                                  </div>
-                                  <div className={styles.libraryListCell}>
-                                    작성자명
-                                  </div>
-                                  <div className={styles.libraryListCell}>
-                                    {item.createdAt
-                                      ? formatDate(item.createdAt)
-                                      : "2025.10.14 13:05"}
-                                  </div>
-                                  <div className={styles.libraryListCell}>
-                                    0
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
 
-                            {/* 모바일 바디 */}
-                            <div className={styles.mobileListBody}>
-                              {getSortedInsights().map((item, index) => (
-                                <div
-                                  key={item.id}
-                                  className={styles.mobileListRow}
-                                  onClick={() => handleItemClick(item.id)}
-                                >
-                                  <div className={styles.mobileListRowTop}>
-                                    <span className={styles.mobileListCategory}>
-                                      {typeof item.subcategory?.name ===
-                                        "string"
-                                        ? item.subcategory.name
-                                        : typeof item.category?.name ===
-                                          "string"
-                                          ? item.category.name
-                                          : "카테고리 명"}
-                                    </span>
-                                    <span className={styles.mobileListDate}>
-                                      {item.createdAt
-                                        ? formatDate(item.createdAt)
-                                        : "2025.06.08"}
-                                    </span>
-                                  </div>
-                                  <div className={styles.mobileListTitle}>
-                                    {item.title}
-                                  </div>
-                                  <div className={styles.mobileListAuthor}>
-                                    작성자명
-                                  </div>
-                                  <div className={styles.mobileListBottom}>
-                                    <span className={styles.mobileListNo}>
-                                      NO.{(currentPage - 1) * 9 + index + 1}
-                                    </span>
-                                    <span className={styles.mobileListViews}>
-                                      <img
-                                        src="/images/insights/icons/eye.svg"
-                                        alt="조회수"
-                                        className={styles.mobileListEyeIcon}
-                                      />
-                                      0
-                                    </span>
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-
+                        </div>
                         <div className={styles.paginationWrapper}>
                           <Pagination
                             currentPage={currentPage}
@@ -1172,13 +1061,206 @@ const InsightsPage: React.FC<InsightsPageProps> = ({
                           />
                         </div>
                       </>
+                    ) : (
+                      <> <div className={styles.libraryList}>
+                        <div className={styles.libraryListHeader}>
+                          <div className={styles.libraryListHeaderRow}>
+                            <div className={styles.libraryListHeaderCell}>
+                              No.
+                            </div>
+                            <div
+                              className={`${styles.libraryListHeaderCell} ${styles.sortable}`}
+                              onClick={() => handleSort("category")}
+                            >
+                              카테고리
+                              {sortField === "category" && (
+                                <Icon
+                                  type={sortOrder === "asc" ? "arrow-up" : "arrow-down"}
+                                  size={16}
+                                  className={styles.sortIcon}
+                                />
+                              )}
+                            </div>
+                            <div className={styles.libraryListHeaderCell}>
+                              제목
+                            </div>
+                            <div
+                              className={`${styles.libraryListHeaderCell} ${styles.sortable}`}
+                              onClick={() => handleSort("author")}
+                            >
+                              작성자
+                              {sortField === "author" && (
+                                <Icon
+                                  type={sortOrder === "asc" ? "arrow-up" : "arrow-down"}
+                                  size={16}
+                                  className={styles.sortIcon}
+                                />
+                              )}
+                            </div>
+                            <div className={styles.libraryListHeaderCell}>
+                              작성 일
+                            </div>
+                            <div className={styles.libraryListHeaderCell}>
+                              조회수
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* 모바일 헤더 */}
+                        <div className={styles.mobileListHeader}>
+                          <div
+                            className={`${styles.mobileListHeaderCell} ${styles.sortable}`}
+                            onClick={() => handleSort("category")}
+                          >
+                            카테고리
+                            {sortField === "category" && (
+                              <Icon
+                                type={sortOrder === "asc" ? "arrow-up" : "arrow-down"}
+                                size={16}
+                                className={styles.sortIcon}
+                              />
+                            )}
+                          </div>
+                          <div
+                            className={`${styles.mobileListHeaderCell} ${styles.sortable}`}
+                            onClick={() => handleSort("author")}
+                          >
+                            작성자
+                            {sortField === "author" && (
+                              <Icon
+                                type={sortOrder === "asc" ? "arrow-up" : "arrow-down"}
+                                size={16}
+                                className={styles.sortIcon}
+                              />
+                            )}
+                          </div>
+                        </div>
+
+                        {/* 데스크톱 바디 */}
+                        <div className={styles.libraryListBody}>
+                          {getSortedInsights().map((item, index) => (
+                            <div
+                              key={item.id}
+                              className={styles.libraryListRow}
+                              onClick={() => handleItemClick(item.id)}
+                            >
+                              <div className={styles.libraryListCell}>
+                                {(currentPage - 1) * 10 + index + 1}
+                              </div>
+                              <div
+                                className={`${styles.libraryListCell} ${styles.categoryCell}`}
+                              >
+                                {typeof item.subcategory?.name === "string"
+                                  ? item.subcategory.name
+                                  : typeof item.category?.name === "string"
+                                    ? item.category.name
+                                    : "카테고리 명"}
+                              </div>
+                              <div
+                                className={`${styles.libraryListCell} ${styles.titleCell}`}
+                              >
+                                <span className={styles.libraryListTitle}>
+                                  {item.title}
+                                  {item?.files?.length > 0  && (
+                                  <img
+                                    src="/images/common/insightFile-icon.svg"
+                                    alt="첨부 파일"
+                                    className={styles.mobileListFileIcon}
+                                  />
+                                )}
+                                </span>
+                              </div>
+                              <div className={styles.libraryListCell}>
+                                {item.authorName || "작성자명"}
+                              </div>
+                              <div className={styles.libraryListCell}>
+                                {item.createdAt
+                                  ? formatDateTime(item.createdAt)
+                                  : "2025.10.14 13:05"}
+                              </div>
+                              <div className={styles.libraryListCell}>
+                                {item.viewCount ? item.viewCount : "0"}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+
+                        {/* 모바일 바디 */}
+                        <div className={styles.mobileListBody}>
+                          {getSortedInsights().map((item, index) => (
+                            <div
+                              key={item.id}
+                              className={styles.mobileListRow}
+                              onClick={() => handleItemClick(item.id)}
+                            >
+                              <div className={styles.mobileListRowTop}>
+                                <span className={styles.mobileListCategory}>
+                                  {typeof item.subcategory?.name ===
+                                    "string"
+                                    ? item.subcategory.name
+                                    : typeof item.category?.name ===
+                                      "string"
+                                      ? item.category.name
+                                      : "카테고리 명"}
+                                </span>
+                                <span className={styles.mobileListDate}>
+                                  {item.createdAt
+                                    ? formatDate(item.createdAt)
+                                    : "2025.06.08"}
+                                </span>
+                              </div>
+                              <div className={styles.mobileListTitle}>
+                                {item.title}
+                                {item?.files?.length > 0  && (
+                                  <img
+                                    src="/images/common/insightFile-icon.svg"
+                                    alt="첨부 파일"
+                                    className={styles.mobileListFileIcon}
+                                  />
+                                )}
+                              </div>
+                              <div className={styles.mobileListAuthor}>
+                                작성자명
+                              </div>
+                              <div className={styles.mobileListBottom}>
+                                    <span className={styles.mobileListNo}>
+                                      NO.{(currentPage - 1) * 10 + index + 1}
+                                    </span>
+                                <span className={styles.mobileListDivider}></span>
+                                <span className={styles.mobileListViews}>
+                                  <img
+                                    src="/images/common/eye-icon.svg"
+                                    alt="조회수"
+                                    className={styles.mobileListEyeIcon}
+                                  />
+                                  {item.viewCount ? item.viewCount : "0"}
+                                </span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                        <div className={styles.paginationWrapper}>
+                          <Pagination
+                            currentPage={currentPage}
+                            totalPages={totalPages}
+                            onPageChange={handlePageChange}
+                            visiblePages={4}
+                          />
+                        </div>
+
+                      </>
+
                     )}
                   </div>
                 </div>
-              </div>
+              </>
             )}
 
-            {activeTab === 'newsletter' && (
+
+
+            {isNewsletterCategory && (
               <div className={styles.newsletterSection}>
                 <div className={styles.newsletterHero}>
                   <p className={styles.newsletterLabel}>NEWSLETTER</p>
@@ -1286,40 +1368,136 @@ const InsightsPage: React.FC<InsightsPageProps> = ({
 };
 
 export const getServerSideProps: GetServerSideProps<InsightsPageProps> = async (context) => {
-  const { tab } = context.query;
-  const activeTab = (tab && ["column", "library", "newsletter"].includes(tab as string))
-    ? (tab as InsightTab)
-    : "column";
+  const { category, sub } = context.query;
+  const isNewsletter = category === "newsletter";
+
+  // For newsletter category, return empty data
+  if (isNewsletter) {
+    return {
+      props: {
+        initialInsights: [],
+        initialTotal: 0,
+        initialTotalPages: 1,
+        initialActiveTab: "newsletter",
+        initialLibraryDisplayType: null,
+        initialCategoryValue: "newsletter",
+        error: null,
+      },
+    };
+  }
 
   try {
-    const params = new URLSearchParams();
-    params.append("page", "1");
-    params.append("limit", "9");
-    if (activeTab === "column") {
-      params.append("categoryId", "1");
-    } else if (activeTab === "library") {
-      params.append("dataRoom", "A");
-    }
-
-    const response = await get<InsightResponse>(
-      `${API_ENDPOINTS.INSIGHTS}?${params.toString()}`
+    // Fetch hierarchical data
+    const hierarchicalResponse = await get<InsightHierarchicalData>(
+      `${API_ENDPOINTS.INSIGHTS}/hierarchical`
     );
 
-    if (response.data) {
-      const data = response.data;
-      let filteredItems = data.items || [];
-      const limit = data.limit || 9;
-      const calculatedTotalPages = Math.ceil(filteredItems.length / limit);
+    if (hierarchicalResponse.data && Array.isArray(hierarchicalResponse.data)) {
+      const hierarchicalData = hierarchicalResponse.data;
 
+      // Determine selected category and subcategory from query or defaults
+      let selectedCategoryId: number | null = null;
+      let selectedSubcategoryId: number | null = null;
+
+      if (category && category !== "newsletter") {
+        const parsedCategory = parseInt(category as string, 10);
+        if (!isNaN(parsedCategory)) {
+          selectedCategoryId = parsedCategory;
+
+          // Handle sub: use query sub if exists, otherwise default to "전체" (0)
+          if (sub) {
+            const parsedSub = parseInt(sub as string, 10);
+            if (!isNaN(parsedSub)) {
+              selectedSubcategoryId = parsedSub;
+            } else {
+              selectedSubcategoryId = 0; // "전체"
+            }
+          } else {
+            selectedSubcategoryId = 0; // "전체" (default)
+          }
+        }
+      }
+
+      // Use defaults if no valid category in query
+      if (!selectedCategoryId && hierarchicalData.length > 0) {
+        const firstCategory = hierarchicalData[0];
+        selectedCategoryId = firstCategory.category.id;
+        selectedSubcategoryId = 0; // "전체" (default)
+      }
+
+      // Get items from selected subcategory
+      let initialItems: InsightItem[] = [];
+      let displayType: LibraryDisplayType | null = null;
+
+      if (selectedCategoryId !== null && selectedSubcategoryId !== null) {
+        const selectedCategory = hierarchicalData.find(
+          (item) => item.category.id === selectedCategoryId
+        );
+
+        if (selectedCategory) {
+          // Handle virtual "전체" subcategory (id = 0)
+          if (selectedSubcategoryId === 0) {
+            // "전체": combine all items from all subcategories
+            initialItems = selectedCategory.subcategories.reduce<InsightItem[]>(
+              (acc, subcategory) => {
+                return [...acc, ...(subcategory.items || [])];
+              },
+              []
+            );
+          } else {
+            // Specific subcategory
+            const selectedSubcategory = selectedCategory.subcategories.find(
+              (sub) => sub.id === selectedSubcategoryId
+            );
+
+            if (selectedSubcategory) {
+              initialItems = selectedSubcategory.items || [];
+            }
+          }
+
+          // Set display type based on category.type
+          const categoryType = selectedCategory.category.type?.toUpperCase() || "A";
+          if (categoryType === "A") {
+            displayType = "gallery";
+          } else if (categoryType === "B") {
+            displayType = "snippet";
+          } else if (categoryType === "C") {
+            displayType = "list";
+          }
+
+          // Use page size based on category type
+          const pageSizeMap: Record<string, number> = {
+            A: 9,  // Gallery
+            B: 6,  // Snippet
+            C: 10, // List
+          };
+          const limit = pageSizeMap[categoryType] || 9;
+          const paginatedItems = initialItems.slice(0, limit);
+          const calculatedTotalPages = Math.ceil(initialItems.length / limit);
+
+          return {
+            props: {
+              initialInsights: paginatedItems,
+              initialTotal: initialItems.length,
+              initialTotalPages: calculatedTotalPages,
+              initialActiveTab: "column", // Legacy prop, not used in new format
+              initialLibraryDisplayType: displayType,
+              initialCategoryValue: selectedCategoryId ?? "",
+              error: null,
+            },
+          };
+        }
+      }
+
+      // Fallback if no category found
       return {
         props: {
-          initialInsights: filteredItems,
-          initialTotal: filteredItems.length,
-          initialTotalPages: calculatedTotalPages,
-          initialActiveTab: activeTab,
-          initialLibraryDisplayType: activeTab === "library" && data.displayType
-            ? data.displayType
-            : null,
+          initialInsights: [],
+          initialTotal: 0,
+          initialTotalPages: 1,
+          initialActiveTab: "column",
+          initialLibraryDisplayType: null,
+          initialCategoryValue: "",
           error: null,
         },
       };
@@ -1329,9 +1507,10 @@ export const getServerSideProps: GetServerSideProps<InsightsPageProps> = async (
           initialInsights: [],
           initialTotal: 0,
           initialTotalPages: 1,
-          initialActiveTab: activeTab,
+          initialActiveTab: "column",
           initialLibraryDisplayType: null,
-          error: response.error || null,
+          initialCategoryValue: "",
+          error: hierarchicalResponse.error || null,
         },
       };
     }
@@ -1342,8 +1521,9 @@ export const getServerSideProps: GetServerSideProps<InsightsPageProps> = async (
         initialInsights: [],
         initialTotal: 0,
         initialTotalPages: 1,
-        initialActiveTab: activeTab,
+        initialActiveTab: "column",
         initialLibraryDisplayType: undefined,
+        initialCategoryValue: "",
         error: "데이터를 불러오는데 실패했습니다.",
       },
     };
