@@ -61,12 +61,15 @@ const EducationPage: React.FC<EducationPageProps> = ({
   //   }
   // }, [tabFromQuery, router]);
 
-  const [educationList, setEducationList] = useState<EducationItem[]>(initialEducationList);
-  const [newEducationList, setNewEducationList] = useState<EducationItem[]>(initialNewEducationList);
+  // Separate states for swiper and list
+  const [swiperItems, setSwiperItems] = useState<EducationItem[]>([]);
+  const [listItems, setListItems] = useState<EducationItem[]>([]);
   const [error, setError] = useState<string | null>(initialError);
   const [selectedType, setSelectedType] = useState<EducationType | 'ALL'>('ALL');
   const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(initialTotalPages);
+  const [totalPages, setTotalPages] = useState(1);
+  const [isLoadingEducationList, setIsLoadingEducationList] = useState(false);
+  const [isLoadingSwiper, setIsLoadingSwiper] = useState(false);
 
   // User profile for visibility filtering
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
@@ -121,71 +124,89 @@ const EducationPage: React.FC<EducationPageProps> = ({
     return userProfile.memberType === item.targetMemberType;
   };
 
-  // Client-side: fetch new education list if needed (for refresh)
-  const fetchNewEducationList = async () => {
-    try {
-      const response = await getClient<EducationListResponse>(
-        `${API_ENDPOINTS.TRAINING_SEMINARS}?page=1&limit=9`
-      );
-      if (response.data) {
-        setNewEducationList(response.data.items);
-      }
-    } catch (err) {
-      console.error('신규 교육 목록 로딩 실패:', err);
-    }
-  };
-
-  // Client-side: fetch when filters/pagination change
+  // Fetch swiper data: ONLY ON PAGE LOAD, static, never refetches
   useEffect(() => {
-    setCurrentPage(1); // 타입 변경 시 첫 페이지로 리셋
-  }, [selectedType]);
-
-  useEffect(() => {
-    // Only fetch if filter or page changed from initial state
-    if (selectedType !== 'ALL' || currentPage !== 1) {
-      fetchEducationList();
-    }
-  }, [selectedType, currentPage]);
-
-  // Client-side: fetch education list when filters/pagination change
-  const fetchEducationList = async () => {
-    setError(null);
-
-    try {
-      const params = new URLSearchParams({
-        page: currentPage.toString(),
-        limit: '9', // 3x3 그리드를 위한 9개
-      });
-
-      if (selectedType !== 'ALL') {
-        params.append('type', selectedType);
-      }
-
-      const response = await getClient<EducationListResponse>(
-        `${API_ENDPOINTS.TRAINING_SEMINARS}?${params.toString()}`
-      );
-
-      if (response.data) {
-        setEducationList(response.data.items);
-        const limit = 9; // 요청한 limit 사용
-        const calculatedTotalPages = Math.ceil(response.data.total / limit);
-        setTotalPages(calculatedTotalPages);
-        console.log('Education pagination:', {
-          total: response.data.total,
-          limit,
-          totalPages: calculatedTotalPages,
-          items: response.data.items.length
+    const fetchSwiperData = async () => {
+      setIsLoadingSwiper(true);
+      setError(null);
+      
+      try {
+        const params = new URLSearchParams({
+          page: '1',
+          limit: '8',
+          sort: 'latest',
         });
-      } else if (response.error) {
-        setError(response.error);
+
+        const response = await getClient<EducationListResponse>(
+          `${API_ENDPOINTS.TRAINING_SEMINARS}?${params.toString()}`
+        );
+
+        if (response.data) {
+          setSwiperItems(response.data.items);
+        } else if (response.error) {
+          setError(response.error);
+        }
+      } catch (err) {
+        console.error('Swiper 데이터 로딩 실패:', err);
+        setError('데이터를 불러오는 중 오류가 발생했습니다.');
+      } finally {
+        setIsLoadingSwiper(false);
       }
-    } catch (err) {
-      setError('데이터를 불러오는 중 오류가 발생했습니다.');
-    }
+    };
+
+    fetchSwiperData();
+  }, []); // Empty dependency array - only runs once on mount
+
+  // Fetch bottom list data: dynamic, refetches on page/tab change
+  useEffect(() => {
+    const fetchListData = async () => {
+      setIsLoadingEducationList(true);
+      setError(null);
+      
+      try {
+        const params = new URLSearchParams({
+          page: currentPage.toString(),
+          limit: '8',
+          sort: 'latest',
+        });
+
+        // Add type filter only if not 'ALL'
+        if (selectedType !== 'ALL') {
+          params.append('type', selectedType);
+        }
+
+        const response = await getClient<EducationListResponse>(
+          `${API_ENDPOINTS.TRAINING_SEMINARS}?${params.toString()}`
+        );
+
+        if (response.data) {
+          setListItems(response.data.items);
+          const limit = 8;
+          const calculatedTotalPages = Math.ceil(response.data.total / limit);
+          setTotalPages(calculatedTotalPages);
+        } else if (response.error) {
+          setError(response.error);
+        }
+      } catch (err) {
+        setError('데이터를 불러오는 중 오류가 발생했습니다.');
+      } finally {
+        setIsLoadingEducationList(false);
+      }
+    };
+
+    fetchListData();
+  }, [selectedType, currentPage]); // Refetches when tab or page changes
+
+  // Handle tab change: reset page and clear list items (swiper unchanged)
+  const handleTabChange = (type: EducationType | 'ALL') => {
+    setSelectedType(type);
+    setCurrentPage(1);
+    setListItems([]); // Clear list items immediately
+    // Swiper data remains unchanged
   };
 
-  // Filter new education list based on search query AND visibility
-  const filteredNewEducationList = newEducationList.filter((item) => {
+  // Filter swiper items based on search query AND visibility
+  const filteredNewEducationList = swiperItems.filter((item) => {
     // First check visibility
     if (!isItemVisible(item)) {
       return false;
@@ -234,8 +255,8 @@ const EducationPage: React.FC<EducationPageProps> = ({
     return dateString.replace(/\./g, '.');
   };
 
-  // Filter education list based on visibility
-  const visibleEducationList = educationList.filter(isItemVisible);
+  // Filter list items based on visibility
+  const visibleEducationList = listItems.filter(isItemVisible);
 
   // 모집 마감일까지 남은 일수 계산
   const getDaysUntilDeadline = (endDate: string) => {
@@ -447,37 +468,41 @@ const EducationPage: React.FC<EducationPageProps> = ({
                     <div className={styles.sidebar}>
                       <div
                         className={`${styles.sidebarTab} ${selectedType === 'ALL' ? styles.sidebarTabActive : ''}`}
-                        onClick={() => setSelectedType('ALL')}
+                        onClick={() => handleTabChange('ALL')}
                       >
                         <span>전체</span>
                       </div>
                       <div
                         className={`${styles.sidebarTab} ${selectedType === 'VOD' ? styles.sidebarTabActive : ''}`}
-                        onClick={() => setSelectedType('VOD')}
+                        onClick={() => handleTabChange('VOD')}
                       >
                         <span>VOD</span>
                       </div>
                       <div
                         className={`${styles.sidebarTab} ${selectedType === 'TRAINING' ? styles.sidebarTabActive : ''}`}
-                        onClick={() => setSelectedType('TRAINING')}
+                        onClick={() => handleTabChange('TRAINING')}
                       >
                         <span>교육</span>
                       </div>
                       <div
                         className={`${styles.sidebarTab} ${selectedType === 'LECTURE' ? styles.sidebarTabActive : ''}`}
-                        onClick={() => setSelectedType('LECTURE')}
+                        onClick={() => handleTabChange('LECTURE')}
                       >
                         <span>강연</span>
                       </div>
                       <div
                         className={`${styles.sidebarTab} ${selectedType === 'SEMINAR' ? styles.sidebarTabActive : ''}`}
-                        onClick={() => setSelectedType('SEMINAR')}
+                        onClick={() => handleTabChange('SEMINAR')}
                       >
                         <span>세미나</span>
                       </div>
                     </div>
                     <div className={styles.mainContent}>
-                      {visibleEducationList.length > 0 ? (
+                      {isLoadingEducationList ? (
+                        <div className={styles.emptyState}>
+                          <p>로딩 중...</p>
+                        </div>
+                      ) : visibleEducationList.length > 0 ? (
                         <>
                           <div className={styles.educationGrid}>
                             {visibleEducationList.map((item) => {
@@ -570,32 +595,17 @@ const EducationPage: React.FC<EducationPageProps> = ({
 
 export const getServerSideProps: GetServerSideProps<EducationPageProps> = async () => {
   try {
-    // Fetch new education list (first 9 items)
-    const newEducationResponse = await get<EducationListResponse>(
-      `${API_ENDPOINTS.TRAINING_SEMINARS}?page=1&limit=9`
-    );
-
-    // Fetch all education list (first page, all types)
-    const allEducationResponse = await get<EducationListResponse>(
-      `${API_ENDPOINTS.TRAINING_SEMINARS}?page=1&limit=9`
-    );
-
-    const newEducationList = newEducationResponse.data?.items || [];
-    const educationList = allEducationResponse.data?.items || [];
-    const total = allEducationResponse.data?.total || 0;
-    const limit = 9;
-    const totalPages = Math.ceil(total / limit);
-
+    // Initial empty state - data will be fetched client-side with proper filters
     return {
       props: {
-        initialEducationList: educationList,
-        initialNewEducationList: newEducationList,
-        initialTotalPages: totalPages,
+        initialEducationList: [],
+        initialNewEducationList: [],
+        initialTotalPages: 1,
         error: null,
       },
     };
   } catch (err) {
-    console.error("Failed to fetch education data:", err);
+    console.error("Failed to initialize education page:", err);
     return {
       props: {
         initialEducationList: [],

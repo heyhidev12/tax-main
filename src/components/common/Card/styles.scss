@@ -85,6 +85,9 @@ $color-card-bg: #1e1e1e;
     text-overflow: ellipsis;
     margin: 0;
     font-size: 25px;
+    @media (max-width: 767px) {
+      font-size: 17px;
+    }
   }
 
   &__description {
@@ -97,7 +100,7 @@ $color-card-bg: #1e1e1e;
     -webkit-box-orient: vertical;
     overflow: hidden;
     text-overflow: ellipsis;
-    margin: 0;
+    margin-top: 12px;
   }
 
   &__meta {
@@ -112,6 +115,9 @@ $color-card-bg: #1e1e1e;
     line-height: 1.5;
     color: $color-gray-30;
     letter-spacing: -0.075px;
+    @media (max-width: 767px) {
+      font-size: 13px;
+    }
   }
 
   &__date {
@@ -122,6 +128,9 @@ $color-card-bg: #1e1e1e;
 
     &--top {
       margin-bottom: 8px;
+    }
+    @media (max-width: 767px) {
+      font-size: 13px;
     }
   }
 
@@ -200,12 +209,16 @@ $color-card-bg: #1e1e1e;
     }
 
     .card__content {
-      padding: 16px 24px 24px;
-      gap: 20px;
+      padding: 24px 24px 32px;
+      gap: 4px;
+
+      @media (max-width: 767px) {
+      padding: 16px 12px 20px;
+      
+    }
     }
 
     .card__title {
-      font-size: 25px;
       letter-spacing: -0.105px;
     }
 
@@ -231,7 +244,7 @@ $color-card-bg: #1e1e1e;
     }
 
     .card__title {
-      font-size: 15px;
+      font-size: 17px;
       letter-spacing: -0.075px;
     }
 
@@ -281,7 +294,7 @@ $color-card-bg: #1e1e1e;
   // ========================================
   &--column3 {
     .card__content {
-      gap: 20px;
+      gap: 4px;
     }
 
     .card__description {

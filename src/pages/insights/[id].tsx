@@ -18,7 +18,7 @@ import styles from "./detail.module.scss";
 // Toast UI Viewer는 클라이언트 사이드에서만 로드
 const Viewer = dynamic(
   () => import("@toast-ui/react-editor").then((mod) => mod.Viewer),
-  { ssr: false }
+  { ssr: false },
 );
 
 interface InsightThumbnail {
@@ -102,16 +102,19 @@ interface InsightDetailPageProps {
   error: string | null;
 }
 
-const InsightDetailPage: React.FC<InsightDetailPageProps> = ({ insight: initialInsight, error: initialError }) => {
+const InsightDetailPage: React.FC<InsightDetailPageProps> = ({
+  insight: initialInsight,
+  error: initialError,
+}) => {
   const router = useRouter();
   const { id } = router.query;
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [insight, setInsight] = useState<InsightDetail | null>(initialInsight);
   const [prevInsight, setPrevInsight] = useState<InsightNavigation | null>(
-    null
+    null,
   );
   const [nextInsight, setNextInsight] = useState<InsightNavigation | null>(
-    null
+    null,
   );
   const [error, setError] = useState<string | null>(initialError);
   const [comments, setComments] = useState<Comment[]>([]);
@@ -167,85 +170,83 @@ const InsightDetailPage: React.FC<InsightDetailPageProps> = ({ insight: initialI
     (async () => {
       try {
         const navResponse = await getClient<{ items: InsightDetail[] }>(
-            `${API_ENDPOINTS.INSIGHTS}?page=1&limit=100`
+          `${API_ENDPOINTS.INSIGHTS}?page=1&limit=100`,
+        );
+
+        if (navResponse.data && navResponse.data.items) {
+          const items = navResponse.data.items;
+          const currentIndex = items.findIndex(
+            (item) => item.id === Number(id),
           );
 
-          if (navResponse.data && navResponse.data.items) {
-            const items = navResponse.data.items;
-            const currentIndex = items.findIndex(
-              (item) => item.id === Number(id)
-            );
+          // 현재 글을 찾았을 때만 처리
+          if (currentIndex >= 0) {
+            // 이전 글 설정
+            if (currentIndex > 0) {
+              setPrevInsight({
+                id: items[currentIndex - 1].id,
+                title: items[currentIndex - 1].title,
+              });
+            }
 
-            // 현재 글을 찾았을 때만 처리
-            if (currentIndex >= 0) {
-              // 이전 글 설정
-              if (currentIndex > 0) {
-                setPrevInsight({
-                  id: items[currentIndex - 1].id,
-                  title: items[currentIndex - 1].title,
-                });
-              }
-
-              // 다음 글 설정
-              if (currentIndex < items.length - 1) {
-                setNextInsight({
-                  id: items[currentIndex + 1].id,
-                  title: items[currentIndex + 1].title,
-                });
-              }
+            // 다음 글 설정
+            if (currentIndex < items.length - 1) {
+              setNextInsight({
+                id: items[currentIndex + 1].id,
+                title: items[currentIndex + 1].title,
+              });
             }
           }
-        } catch (err) {
-          // 네비게이션 실패는 무시
-          console.log("Navigation fetch failed:", err);
         }
+      } catch (err) {
+        // 네비게이션 실패는 무시
+        console.log("Navigation fetch failed:", err);
+      }
     })();
   }, [id, insight]);
 
-const formatDate = (
-  dateString?: string,
-  timeZone: string = Intl.DateTimeFormat().resolvedOptions().timeZone
-) => {
-  if (!dateString) return "";
+  const formatDate = (
+    dateString?: string,
+    timeZone: string = Intl.DateTimeFormat().resolvedOptions().timeZone,
+  ) => {
+    if (!dateString) return "";
 
-  const date = new Date(dateString);
+    const date = new Date(dateString);
 
-  return new Intl.DateTimeFormat("ko-KR", {
-    timeZone,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour12: false,
-  })
-    .format(date)
-    .replace(/\s/g, "")
-    .replace(/\./g, ".")
-    .replace(",", "");
-};
+    return new Intl.DateTimeFormat("ko-KR", {
+      timeZone,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour12: false,
+    })
+      .format(date)
+      .replace(/\s/g, "")
+      .replace(/\./g, ".")
+      .replace(",", "");
+  };
 
-const formatDateTime = (
-  dateString?: string,
-  timeZone: string = "Asia/Seoul"
-) => {
-  if (!dateString) return "";
+  const formatDateTime = (
+    dateString?: string,
+    timeZone: string = "Asia/Seoul",
+  ) => {
+    if (!dateString) return "";
 
-  const parts = new Intl.DateTimeFormat("ko-KR", {
-    timeZone,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-  }).formatToParts(new Date(dateString));
+    const parts = new Intl.DateTimeFormat("ko-KR", {
+      timeZone,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    }).formatToParts(new Date(dateString));
 
-  const get = (type: string) =>
-    parts.find((p) => p.type === type)?.value ?? "";
+    const get = (type: string) =>
+      parts.find((p) => p.type === type)?.value ?? "";
 
-  return `${get("year")}.${get("month")}.${get("day")} ${get("hour")}:${get("minute")}`;
-};
-
-
+    return `${get("year")}.${get("month")}.${get("day")} ${get("hour")}:${get("minute")}`;
+  };
 
   const handleBackToList = () => {
     router.push("/insights");
@@ -327,7 +328,7 @@ const formatDateTime = (
   } | null> => {
     try {
       const response = await get<{ id: number; name: string; loginId: string }>(
-        API_ENDPOINTS.AUTH.ME
+        API_ENDPOINTS.AUTH.ME,
       );
 
       if (response.data) {
@@ -376,7 +377,7 @@ const formatDateTime = (
   };
 
   const fetchComments = async (
-    user?: { id?: number; name?: string; loginId?: string } | null
+    user?: { id?: number; name?: string; loginId?: string } | null,
   ) => {
     if (!id) return;
 
@@ -385,7 +386,7 @@ const formatDateTime = (
 
     try {
       const response = await get<CommentsResponse>(
-        `${API_ENDPOINTS.INSIGHTS}/${id}/comments`
+        `${API_ENDPOINTS.INSIGHTS}/${id}/comments`,
       );
 
       if (response.data) {
@@ -453,7 +454,7 @@ const formatDateTime = (
             }
 
             return { ...comment, isMine: false };
-          }
+          },
         );
 
         setComments(commentsWithIsMine);
@@ -471,7 +472,7 @@ const formatDateTime = (
     if (!isAuthenticated) {
       if (
         confirm(
-          "댓글을 작성하려면 로그인이 필요합니다. 로그인 페이지로 이동하시겠습니까?"
+          "댓글을 작성하려면 로그인이 필요합니다. 로그인 페이지로 이동하시겠습니까?",
         )
       ) {
         router.push("/login");
@@ -483,7 +484,7 @@ const formatDateTime = (
     try {
       const response = await post<Comment>(
         `${API_ENDPOINTS.INSIGHTS}/${id}/comments`,
-        { body: commentText.trim() }
+        { body: commentText.trim() },
       );
 
       if (response.data) {
@@ -526,7 +527,7 @@ const formatDateTime = (
 
     try {
       const response = await del(
-        `${API_ENDPOINTS.INSIGHTS}/${id}/comments/${commentId}`
+        `${API_ENDPOINTS.INSIGHTS}/${id}/comments/${commentId}`,
       );
 
       if (!response.error) {
@@ -555,7 +556,7 @@ const formatDateTime = (
     if (!isAuthenticated) {
       if (
         confirm(
-          "댓글을 신고하려면 로그인이 필요합니다. 로그인 페이지로 이동하시겠습니까?"
+          "댓글을 신고하려면 로그인이 필요합니다. 로그인 페이지로 이동하시겠습니까?",
         )
       ) {
         router.push("/login");
@@ -566,7 +567,7 @@ const formatDateTime = (
     try {
       const response = await post(
         `${API_ENDPOINTS.INSIGHTS}/${id}/comments/${commentId}/report`,
-        {}
+        {},
       );
 
       if (!response.error) {
@@ -609,12 +610,21 @@ const formatDateTime = (
         <title>{insight.title} - 세무법인 함께</title>
         <meta
           name="description"
-          content={insight.content.substring(0, 160).replace(/<[^>]*>/g, '') || `${insight.title} - 세무법인 함께`}
+          content={
+            insight.content.substring(0, 160).replace(/<[^>]*>/g, "") ||
+            `${insight.title} - 세무법인 함께`
+          }
         />
-        <meta property="og:title" content={`${insight.title} - 세무법인 함께`} />
+        <meta
+          property="og:title"
+          content={`${insight.title} - 세무법인 함께`}
+        />
         <meta
           property="og:description"
-          content={insight.content.substring(0, 160).replace(/<[^>]*>/g, '') || `${insight.title}`}
+          content={
+            insight.content.substring(0, 160).replace(/<[^>]*>/g, "") ||
+            `${insight.title}`
+          }
         />
         <meta property="og:type" content="article" />
         {insight.thumbnail?.url && (
@@ -632,276 +642,298 @@ const formatDateTime = (
         />
         <Menu isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
 
-      <div className={styles.floatingButtons}>
-        <FloatingButton
-          variant="consult"
-          label="상담 신청하기"
-          onClick={() => router.push("/consultation/apply")}
-        />
-        <FloatingButton
-          variant="top"
-          onClick={() => {
-            if (typeof window !== "undefined") {
-              window.scrollTo({ top: 0, behavior: "smooth" });
-            }
-          }}
-        />
-      </div>
+        <div className={styles.floatingButtons}>
+          <FloatingButton
+            variant="consult"
+            label="상담 신청하기"
+            onClick={() => router.push("/consultation/apply")}
+          />
+          <FloatingButton
+            variant="top"
+            onClick={() => {
+              if (typeof window !== "undefined") {
+                window.scrollTo({ top: 0, behavior: "smooth" });
+              }
+            }}
+          />
+        </div>
 
-      <div className="container">
-        <div className={styles.content}>
-          <div className={styles.headerSection}>
-            <div className={styles.titleWrapper}>
-              <div className={styles.category}>
-                {typeof insight.subcategory?.name === "string"
-                  ? insight.subcategory.name
-                  : typeof insight.category?.name === "string"
-                  ? insight.category.name
-                  : "카테고리명"}
+        <div className={styles.container}>
+          <div className={styles.content}>
+            <div className={styles.headerSection}>
+              <div className={styles.titleWrapper}>
+                <div className={styles.category}>
+                  {typeof insight.subcategory?.name === "string"
+                    ? insight.subcategory.name
+                    : typeof insight.category?.name === "string"
+                      ? insight.category.name
+                      : "카테고리명"}
+                </div>
+                <h1 className={styles.title}>{insight.title}</h1>
               </div>
-              <h1 className={styles.title}>{insight.title}</h1>
+              <div className={styles.meta}>
+                <div className={styles.metaLeft}>
+                  <span className={styles.author}>{insight.authorName}</span>
+                  <span className={styles.divider}></span>
+                  <span className={styles.date}>
+                    {formatDate(insight.createdAt)}
+                  </span>
+                </div>
+                <div className={styles.metaRight}>
+                  <img
+                    src="/images/common/print-icon.svg"
+                    alt="프린트"
+                    className={styles.icon}
+                    onClick={handlePrint}
+                  />
+                  <span className={styles.iconDivider} />
+                  <img
+                    src="/images/common/share-icon.svg"
+                    alt="공유"
+                    className={styles.icon}
+                    onClick={handleShare}
+                  />
+                </div>
+              </div>
             </div>
-            <div className={styles.meta}>
-              <div className={styles.metaLeft}>
-                <span className={styles.author}>{insight.authorName}</span>
-                <span className={styles.divider}>|</span>
-                <span className={styles.date}>
-                  {formatDate(insight.createdAt)}
-                </span>
-              </div>
-              <div className={styles.metaRight}>
-                <img
-                  src="/images/common/print-icon.svg"
-                  alt="프린트"
-                  className={styles.icon}
-                  onClick={handlePrint}
-                />
-                <span className={styles.iconDivider} />
-                <img
-                  src="/images/common/share-icon.svg"
-                  alt="공유"
-                  className={styles.icon}
-                  onClick={handleShare}
-                />
-              </div>
-            </div>
-          </div>
 
-          <div className={styles.bodySection}>
-            {insight.thumbnail && (
-              <div className={styles.imageSection}>
-                <img src={insight.thumbnail.url} alt={insight.title} />
+            <div className={styles.bodySection}>
+              {insight.thumbnail && (
+                <div className={styles.imageSection}>
+                  <img src={insight.thumbnail.url} alt={insight.title} />
+                </div>
+              )}
+              <div className={styles.bodyContent}>
+                <Viewer initialValue={insight.content.replace(/\*\*\*/g, "")} />
+              </div>
+            </div>
+
+            {insight.files && insight.files.length > 0 && (
+              <div className={styles.attachmentsSection}>
+                <h2 className={styles.attachmentsTitle}>첨부파일</h2>
+                <div className={styles.attachmentsList}>
+                  {insight.files.map((file: any, index: number) => (
+                    <div
+                      key={file.id || index}
+                      className={styles.attachmentItem}
+                    >
+                      <div className={styles.attachmentLeft}>
+                        <div className={styles.attachmentLabel}>
+                          {index + 1}
+                        </div>
+                        <div className={styles.attachmentInfo}>
+                          <Icon
+                            type="document"
+                            size={24}
+                            className={styles.attachmentIcon}
+                          />
+                          <span className={styles.attachmentName}>
+                            {file.name ||
+                              file.originalName ||
+                              file.url?.split("/").pop() ||
+                              "첨부 파일"}
+                          </span>
+                        </div>
+                      </div>
+                      <button
+                        className={styles.downloadButton}
+                        onClick={() => {
+                          if (file.url) {
+                            const fileName =
+                              file.name ||
+                              file.originalName ||
+                              file.url.split("/").pop() ||
+                              "첨부 파일";
+                            handleDownload(file.url, fileName);
+                          }
+                        }}
+                      >
+                        <span className={styles.downloadButtonText}>
+                          다운로드
+                        </span>
+                        <Icon
+                          type="download-white"
+                          size={20}
+                          className={styles.downloadIcon}
+                        />
+                      </button>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
-            <div className={styles.bodyContent}>
-              <Viewer initialValue={insight.content.replace(/\*\*\*/g, "")} />
-            </div>
-          </div>
 
-          {insight.files && insight.files.length > 0 && (
-            <div className={styles.attachmentsSection}>
-              <h2 className={styles.attachmentsTitle}>첨부파일</h2>
-              <div className={styles.attachmentsList}>
-                {insight.files.map((file: any, index: number) => (
-                  <div key={file.id || index} className={styles.attachmentItem}>
-                    <div className={styles.attachmentLeft}>
-                      <div className={styles.attachmentLabel}>{index + 1}</div>
-                      <div className={styles.attachmentInfo}>
-                        <Icon
-                          type="document"
-                          size={24}
-                          className={styles.attachmentIcon}
-                        />
-                        <span className={styles.attachmentName}>
-                          {file.name || file.originalName || file.url?.split("/").pop() || "첨부 파일"}
-                        </span>
-                      </div>
+            {insight.enableComments && (
+              <div className={styles.commentsSection}>
+                <div className={styles.commentsDivider} />
+                <div className={styles.commentsContent}>
+                  <div className={styles.commentsHeader}>
+                    <h2 className={styles.commentsTitle}>댓글</h2>
+                    <p className={styles.commentsDescription}>
+                      칼럼을 읽고 댓글을 남겨주세요.
+                    </p>
+                  </div>
+
+                  <div className={styles.commentForm}>
+                    <div className={styles.commentFormHeader}>
+                      <span className={styles.commentAuthor}>
+                        {currentUser?.name}
+                      </span>
+                    </div>
+                    <div className={styles.commentInputWrapper}>
+                      <textarea
+                        className={styles.commentInput}
+                        placeholder="인물을 배려하는 마음을 담아 게시글을 작성해주세요
+명예훼손, 개인정보 유출, 타인의 권리 침해 등은 이용약관 및 관련 법률에 의해 제재될 수 있습니다"
+                        value={commentText}
+                        onChange={(e) => setCommentText(e.target.value)}
+                        rows={4}
+                      />
                     </div>
                     <button
-                      className={styles.downloadButton}
-                      onClick={() => {
-                        if (file.url) {
-                          const fileName = file.name || file.originalName || file.url.split("/").pop() || "첨부 파일";
-                          handleDownload(file.url, fileName);
-                        }
-                      }}
+                      className={styles.commentSubmitButton}
+                      onClick={handleSubmitComment}
+                      disabled={!commentText.trim() || isSubmittingComment}
                     >
-                      <span className={styles.downloadButtonText}>다운로드</span>
-                      <Icon
-                        type="download-white"
-                        size={20}
-                        className={styles.downloadIcon}
-                      />
+                      등록
                     </button>
                   </div>
-                ))}
-              </div>
-            </div>
-          )}
 
-          {insight.enableComments && (
-            <div className={styles.commentsSection}>
-              <div className={styles.commentsDivider} />
-              <div className={styles.commentsContent}>
-                <div className={styles.commentsHeader}>
-                  <h2 className={styles.commentsTitle}>댓글</h2>
-                  <p className={styles.commentsDescription}>
-                    칼럼을 읽고 댓글을 남겨주세요.
-                  </p>
-                </div>
-
-                <div className={styles.commentForm}>
-                  <div className={styles.commentFormHeader}>
-                    <span className={styles.commentAuthor}>
-                      {currentUser?.name}
-                    </span>
+                  <div className={styles.commentsListHeader}>
+                    <h3 className={styles.commentsTotalTitle}>
+                      총 댓글{" "}
+                      <span className={styles.commentsTotalCount}>
+                        {commentTotal}
+                      </span>
+                    </h3>
                   </div>
-                  <div className={styles.commentInputWrapper}>
-                    <textarea
-                      className={styles.commentInput}
-                      placeholder="인물을 배려하는 마음을 담아 게시글을 작성해주세요
-명예훼손, 개인정보 유출, 타인의 권리 침해 등은 이용약관 및 관련 법률에 의해 제재될 수 있습니다"
-                      value={commentText}
-                      onChange={(e) => setCommentText(e.target.value)}
-                      rows={4}
-                    />
-                  </div>
-                  <button
-                    className={styles.commentSubmitButton}
-                    onClick={handleSubmitComment}
-                    disabled={!commentText.trim() || isSubmittingComment}
-                  >
-                    등록
-                  </button>
-                </div>
 
-                <div className={styles.commentsListHeader}>
-                  <h3 className={styles.commentsTotalTitle}>
-                    총 댓글{" "}
-                    <span className={styles.commentsTotalCount}>
-                      {commentTotal}
-                    </span>
-                  </h3>
-                </div>
-
-                <div className={styles.commentsList}>
-                  {comments.length > 0 ? (
-                    comments.map((comment) => (
-                      <div
-                        key={comment.id}
-                        className={`${styles.commentItem} ${
-                          comment.isHidden ? styles.commentHidden : ""
-                        }`}
-                      >
-                        <div className={styles.commentHeader}>
-                          <span className={styles.commentAuthorName}>
-                            {comment.authorName || ""}
-                          </span>
-                          {isAuthenticated && (
-                            <>
-                              {comment.isMine ? (
-                                <button
-                                  className={styles.commentAction}
-                                  onClick={() =>
-                                    handleDeleteComment(comment.id)
-                                  }
-                                >
-                                  삭제
-                                </button>
-                              ) : (
-                                <button
-                                  className={styles.commentAction}
-                                  onClick={() =>
-                                    handleReportComment(comment.id)
-                                  }
-                                >
-                                  신고
-                                </button>
+                  <div className={styles.commentsList}>
+                    {comments.length > 0 ? (
+                      comments.map((comment) => (
+                        <>
+                          <div
+                            key={comment.id}
+                            className={`${styles.commentItem} ${
+                              comment.isHidden ? styles.commentHidden : ""
+                            }`}
+                          >
+                            <div className={styles.commentHeader}>
+                              <span className={styles.commentAuthorName}>
+                                {comment.authorName || ""}
+                              </span>
+                              {isAuthenticated && (
+                                <>
+                                  {comment.isMine ? (
+                                    <button
+                                      className={styles.commentAction}
+                                      onClick={() =>
+                                        handleDeleteComment(comment.id)
+                                      }
+                                    >
+                                      삭제
+                                    </button>
+                                  ) : (
+                                    <button
+                                      className={styles.commentAction}
+                                      onClick={() =>
+                                        handleReportComment(comment.id)
+                                      }
+                                    >
+                                      신고
+                                    </button>
+                                  )}
+                                </>
                               )}
-                            </>
-                          )}
-                        </div>
-                        <p className={styles.commentContent}>
-                          {comment.isHidden
-                            ? "해당 댓글은 다수 사용자의 신고에 의해 가려졌습니다."
-                            : comment.body}
-                        </p>
-                        <p className={styles.commentDate}>
-                          {formatDateTime(comment.createdAt)}
-                        </p>
-                        <div className={styles.commentDivider} />
-                      </div>
-                    ))
+                            </div>
+                            <p className={styles.commentContent}>
+                              {comment.isHidden
+                                ? "해당 댓글은 다수 사용자의 신고에 의해 가려졌습니다."
+                                : comment.body}
+                            </p>
+                            <p className={styles.commentDate}>
+                              {formatDateTime(comment.createdAt)}
+                            </p>
+                          </div>
+                          <div className={styles.commentDivider} />
+                        </>
+                      ))
+                    ) : (
+                      <p className={styles.noComments}>아직 댓글이 없습니다.</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div className={styles.navigationSection}>
+              <div className={styles.dividerLine} />
+              <div className={styles.navigation}>
+                <div className={styles.navItem} onClick={handlePrevClick}>
+                  {prevInsight ? (
+                    <>
+                      <Icon
+                        type="arrow-left-gray"
+                        size={24}
+                        className={styles.navIcon}
+                      />
+                      <span className={styles.navLabel}>이전 글</span>
+                      <span className={styles.navTitle}>
+                        {prevInsight.title}
+                      </span>
+                    </>
                   ) : (
-                    <p className={styles.noComments}>아직 댓글이 없습니다.</p>
+                    <div className={styles.navEmpty}>이전 글이 없습니다</div>
+                  )}
+                </div>
+                <Button
+                  type="line-white"
+                  size="large"
+                  onClick={handleBackToList}
+                  leftIcon="list-white"
+                  className={styles.backButton}
+                >
+                  목록보기
+                </Button>
+                <div
+                  className={`${styles.navItem} ${styles.navItemNext}`}
+                  onClick={handleNextClick}
+                >
+                  {nextInsight ? (
+                    <>
+                      <span className={styles.navLabel}>다음 글</span>
+                      <span className={styles.navTitle}>
+                        {nextInsight.title}
+                      </span>
+                      <Icon
+                        type="arrow-right-gray"
+                        size={24}
+                        className={styles.navIcon}
+                      />
+                    </>
+                  ) : (
+                    <div className={styles.navEmpty}>다음 글이 없습니다</div>
                   )}
                 </div>
               </div>
             </div>
-          )}
-
-          <div className={styles.navigationSection}>
-            <div className={styles.dividerLine} />
-            <div className={styles.navigation}>
-              <div className={styles.navItem} onClick={handlePrevClick}>
-                {prevInsight ? (
-                  <>
-                    <Icon
-                      type="arrow-left-gray"
-                      size={24}
-                      className={styles.navIcon}
-                    />
-                    <span className={styles.navLabel}>이전 글</span>
-                    <span className={styles.navTitle}>{prevInsight.title}</span>
-                  </>
-                ) : (
-                  <div className={styles.navEmpty}>이전 글이 없습니다</div>
-                )}
-              </div>
-              <Button
-                type="line-white"
-                size="large"
-                onClick={handleBackToList}
-                leftIcon="list-white"
-                className={styles.backButton}
-              >
-                목록보기
-              </Button>
-              <div
-                className={`${styles.navItem} ${styles.navItemNext}`}
-                onClick={handleNextClick}
-              >
-                {nextInsight ? (
-                  <>
-                    <span className={styles.navLabel}>다음 글</span>
-                    <span className={styles.navTitle}>{nextInsight.title}</span>
-                    <Icon
-                      type="arrow-right-gray"
-                      size={24}
-                      className={styles.navIcon}
-                    />
-                  </>
-                ) : (
-                  <div className={styles.navEmpty}>다음 글이 없습니다</div>
-                )}
-              </div>
-            </div>
           </div>
         </div>
-      </div>
 
-      <Footer />
+        <Footer />
       </div>
     </>
   );
 };
 
-export const getServerSideProps: GetServerSideProps<InsightDetailPageProps> = async (context) => {
+export const getServerSideProps: GetServerSideProps<
+  InsightDetailPageProps
+> = async (context) => {
   const { id } = context.params!;
 
   try {
     const response = await get<InsightDetail>(
-      `${API_ENDPOINTS.INSIGHTS}/${id}`
+      `${API_ENDPOINTS.INSIGHTS}/${id}`,
     );
 
     if (response.data) {

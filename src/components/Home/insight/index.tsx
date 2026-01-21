@@ -18,6 +18,9 @@ interface InsightItem {
   thumbnail: InsightThumbnail;
   createdAt: string;
   isMainExposed: boolean;
+  category?: {
+    targetMemberType?: string;
+  };
 }
 
 interface InsightsApiResponse {
@@ -74,7 +77,14 @@ const Insight: React.FC = () => {
           const exposedItems = response.data.items.filter(
             (item) => item.isMainExposed === true
           );
-          setArticles(exposedItems);
+          
+          // Filter only items where category.targetMemberType === "ALL"
+          // Exclude items if category is missing or targetMemberType is undefined
+          const visibleItems = exposedItems.filter(
+            (item) => item.category?.targetMemberType === "ALL"
+          );
+          
+          setArticles(visibleItems);
         }
       } catch (error) {
         console.error("Failed to fetch insights:", error);

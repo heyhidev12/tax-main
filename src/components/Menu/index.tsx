@@ -43,6 +43,7 @@ interface InsightCategory {
   name: string;
   isExposed?: boolean;
   displayOrder?: number;
+  targetMemberType?: string; // "ALL", "GENERAL", "INSURANCE", "OTHER", etc.
 }
 
 interface InsightHierarchicalItem {
@@ -72,12 +73,15 @@ const Menu: React.FC<MenuProps> = ({ isOpen, onClose }) => {
 
   // Insights categories from API
   const [insightCategories, setInsightCategories] = useState<InsightCategory[]>([]);
+  const [newsletterExposed, setNewsletterExposed] = useState(false);
+  const [rawHierarchicalData, setRawHierarchicalData] = useState<InsightHierarchicalData>([]);
 
   // Cache flags to prevent redundant API calls
   const historyFetchedRef = useRef<boolean>(false);
   const dataRoomsFetchedRef = useRef<boolean>(false);
   const businessAreaCategoriesFetchedRef = useRef<boolean>(false);
   const insightCategoriesFetchedRef = useRef<boolean>(false);
+  const newsletterExposedFetchedRef = useRef<boolean>(false);
 
   // 연혁 노출 여부 및 자료실 목록에 따라 메뉴 아이템 동적 생성
   const menuItems: MenuItemConfig[] = MENU_ITEMS.map(item => {
@@ -101,15 +105,20 @@ const Menu: React.FC<MenuProps> = ({ isOpen, onClose }) => {
       };
     }
     if (item.id === 'insight') {
-      // Insights categories from API - use category.name as label
-      const exposedCategories = insightCategories
-        .filter(cat => cat.isExposed !== false) // API already returns only exposed, but filter for safety
-        .sort((a, b) => (a.displayOrder ?? 0) - (b.displayOrder ?? 0));
-      // Add newsletter as last item
+      // Insights categories from API - already filtered by targetMemberType
+      // Add newsletter as last item ONLY if exposed
+      const subItems = [...insightCategories.map(cat => cat.name)];
+      const subItemIds: (string | number)[] = [...insightCategories.map(cat => cat.id)];
+      
+      if (newsletterExposed) {
+        subItems.push('뉴스레터');
+        subItemIds.push('newsletter');
+      }
+      
       return {
         ...item,
-        subItems: [...exposedCategories.map(cat => cat.name), '뉴스레터'],
-        subItemIds: [...exposedCategories.map(cat => cat.id), 'newsletter'],
+        subItems,
+        subItemIds,
       };
     }
     return item;
@@ -331,6 +340,71 @@ const Menu: React.FC<MenuProps> = ({ isOpen, onClose }) => {
     }
   }, [isOpen]);
 
+  // Helper function to check if user is logged in and get memberType
+  const getUserAuthState = () => {
+    if (typeof window === 'undefined') {
+      return { isLoggedIn: false, memberType: null };
+    }
+    
+    const token = localStorage.getItem('accessToken');
+    const userStr = localStorage.getItem('user');
+    
+    if (!token || !userStr) {
+      return { isLoggedIn: false, memberType: null };
+    }
+    
+    try {
+      const user = JSON.parse(userStr);
+      return {
+        isLoggedIn: true,
+        memberType: user.memberType || null,
+      };
+    } catch {
+      return { isLoggedIn: false, memberType: null };
+    }
+  };
+
+  // Filter categories based on targetMemberType and login state
+  const filterCategoriesByVisibility = (categories: InsightCategory[]): InsightCategory[] => {
+    const { isLoggedIn, memberType } = getUserAuthState();
+    
+    return categories.filter((cat) => {
+      // Always show if targetMemberType is "ALL"
+      if (cat.targetMemberType === "ALL") {
+        return true;
+      }
+      
+      // If not logged in, hide non-ALL categories
+      if (!isLoggedIn) {
+        return false;
+      }
+      
+      // If logged in, show if targetMemberType matches user's memberType
+      return cat.targetMemberType === memberType;
+    });
+  };
+
+  // 메뉴가 열릴 때 Newsletter 노출 여부 확인
+  useEffect(() => {
+    if (isOpen && !newsletterExposedFetchedRef.current) {
+      const checkNewsletterExposed = async () => {
+        try {
+          const response = await get<{ isExposed: boolean }>(API_ENDPOINTS.NEWSLETTER.PAGE);
+          if (response.data) {
+            setNewsletterExposed(response.data.isExposed);
+          } else {
+            setNewsletterExposed(false);
+          }
+          newsletterExposedFetchedRef.current = true;
+        } catch {
+          setNewsletterExposed(false);
+          newsletterExposedFetchedRef.current = true;
+        }
+      };
+      checkNewsletterExposed();
+    }
+  }, [isOpen]);
+
   // 메뉴가 열릴 때 Insights categories 확인 (캐시된 경우 재요청하지 않음)
   useEffect(() => {
     if (isOpen && !insightCategoriesFetchedRef.current) {
@@ -341,26 +415,45 @@ const Menu: React.FC<MenuProps> = ({ isOpen, onClose }) => {
             `${API_ENDPOINTS.INSIGHTS}/hierarchical`
           );
           if (response.data && Array.isArray(response.data)) {
+            // Store raw data for re-filtering
+            setRawHierarchicalData(response.data);
+            
             // Extract categories from hierarchical data - use category.name as label
-            const categories = response.data
+            const allCategories = response.data
               .map(item => item.category)
               .filter(cat => cat.isExposed !== false) // API already returns only exposed, but filter for safety
               .sort((a, b) => (a.displayOrder ?? 0) - (b.displayOrder ?? 0));
-            setInsightCategories(categories);
+            
+            // Filter by targetMemberType BEFORE setting state
+            const filteredCategories = filterCategoriesByVisibility(allCategories);
+            setInsightCategories(filteredCategories);
           } else {
             setInsightCategories([]);
+            setRawHierarchicalData([]);
           }
           insightCategoriesFetchedRef.current = true; // 캐시 플래그 설정
         } catch {
           setInsightCategories([]);
+          setRawHierarchicalData([]);
           insightCategoriesFetchedRef.current = true; // 에러가 발생해도 재시도하지 않음
         }
       };
       fetchInsightCategories();
-    } else if (isOpen && insightCategoriesFetchedRef.current) {
-      console.log('[Menu] Insight categories already cached, skipping API call');
     }
   }, [isOpen]);
+
+  // Re-filter categories when auth state changes (login/logout)
+  useEffect(() => {
+    if (insightCategoriesFetchedRef.current && rawHierarchicalData.length > 0) {
+      // Re-filter when auth state might have changed
+      const allCategories = rawHierarchicalData
+        .map(item => item.category)
+        .filter(cat => cat.isExposed !== false)
+        .sort((a, b) => (a.displayOrder ?? 0) - (b.displayOrder ?? 0));
+      const filteredCategories = filterCategoriesByVisibility(allCategories);
+      setInsightCategories(filteredCategories);
+    }
+  }, [isAuthenticated]);
 
   const handleClose = () => {
     setIsClosing(true);
@@ -454,7 +547,7 @@ const Menu: React.FC<MenuProps> = ({ isOpen, onClose }) => {
           if (categoryValue === 'newsletter') {
             setTimeout(() => router.push(`/insights?category=newsletter`), 500);
           } else {
-            setTimeout(() => router.push(`/insights?category=${categoryValue}`), 500);
+            setTimeout(() => router.push(`/insights?category=${categoryValue}&sub=0`), 500);
           }
         }
       }
