@@ -1,30 +1,18 @@
-@import '@/styles/variables';
+@import "@/styles/variables";
 
-.overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
-  z-index: 1000;
-}
-
-.modal {
-  position: fixed;
+.dropdown {
   border-radius: 12px;
-background: #FFF;
-box-shadow: 0 4px 12px 0 rgba(0, 0, 0, 0.25);
-  z-index: 1001;
+  background: #fff;
+  box-shadow: 0 4px 12px 0 rgba(0, 0, 0, 0.25);
+  z-index: 1000;
   padding: 24px 8px 20px;
   width: 323px;
-
+  
+  // Mobile responsive
   @media (max-width: 767px) {
-    top: 50% !important;
-    left: 50% !important;
-    transform: translate(-50%, -50%) !important;
-    right: auto !important;
-    bottom: auto !important;
+    width: calc(100vw - 32px);
+    max-width: 323px;
+    z-index: 10000; // Higher z-index on mobile to ensure visibility
   }
 }
 
@@ -39,6 +27,7 @@ box-shadow: 0 4px 12px 0 rgba(0, 0, 0, 0.25);
   flex-direction: column;
   gap: 8px;
   width: 100%;
+  background-color: #fff;
 }
 
 .monthHeader {
@@ -61,10 +50,9 @@ box-shadow: 0 4px 12px 0 rgba(0, 0, 0, 0.25);
   height: 24px;
   flex-shrink: 0;
 
-  svg{
-    path{
-    stroke: $gray-70;
-
+  svg {
+    path {
+      stroke: $gray-70;
     }
   }
 
@@ -122,7 +110,6 @@ box-shadow: 0 4px 12px 0 rgba(0, 0, 0, 0.25);
 .calendarCell {
   width: 37.403px;
   height: 40px;
-  border-radius: 0;
   border: none;
   background: none;
   cursor: pointer;
@@ -136,49 +123,21 @@ box-shadow: 0 4px 12px 0 rgba(0, 0, 0, 0.25);
   @include pretendard-14-medium;
   color: $gray-90;
 
-  // 기본적으로 활성화된 상태
   &:hover {
     opacity: 0.8;
+
+  }
+  &.inRange {
+    background-color: rgba(0, 168, 158, 0.1);
+    border-radius: 50%;
+
   }
 
-  // 선택된 날짜 (시작 또는 종료)
+
   &.selected {
-    &::before {
-      content: '';
-      position: absolute;
-      width: 32px;
-      height: 32px;
-      border-radius: 50%;
-      background-color: $primary-50;
-      z-index: -1;
-    }
+    background-color: $primary-50;
     color: #fff;
-  }
-
-  &.startDate {
-    &::before {
-      content: '';
-      position: absolute;
-      width: 32px;
-      height: 32px;
-      border-radius: 50%;
-      background-color: white;
-      z-index: -1;
-    }
-    color: $gray-90;
-  }
-
-  &.endDate {
-    &::before {
-      content: '';
-      position: absolute;
-      width: 32px;
-      height: 32px;
-      border-radius: 50%;
-      background-color: white;
-      z-index: -1;
-    }
-    color: $gray-90;
+    border-radius: 50%;
+    font-weight: 600;
   }
 }
-

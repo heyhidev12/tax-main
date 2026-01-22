@@ -7,8 +7,6 @@ interface DateRangePickerModalProps {
   onConfirm: (startDate: string, endDate: string) => void;
   initialStartDate?: string;
   initialEndDate?: string;
-  position?: { top: number; left: number };
-  datePickerType?: 'start' | 'end';
 }
 
 const DateRangePickerModal: React.FC<DateRangePickerModalProps> = ({
@@ -17,28 +15,88 @@ const DateRangePickerModal: React.FC<DateRangePickerModalProps> = ({
   onConfirm,
   initialStartDate,
   initialEndDate,
-  position,
-  datePickerType = 'start',
 }) => {
   const [currentMonth, setCurrentMonth] = useState(new Date());
-  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [startDate, setStartDate] = useState<Date | null>(null);
+  const [endDate, setEndDate] = useState<Date | null>(null);
+  const [tempEndDate, setTempEndDate] = useState<Date | null>(null); // For hover/selection preview
 
+  // Parse date string (YYYY.MM.DD format)
+  const parseDateString = (dateStr: string): Date | null => {
+    if (!dateStr) return null;
+    const parts = dateStr.split('.');
+    if (parts.length === 3) {
+      return new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+    }
+    return null;
+  };
+
+  // Initialize dates from props
   useEffect(() => {
     if (isOpen) {
-      // 초기 날짜 설정 - datePickerType에 따라 start 또는 end 날짜 사용
-      const initialDate = datePickerType === 'start' ? initialStartDate : initialEndDate;
-      if (initialDate) {
-        const parts = initialDate.split('.');
-        if (parts.length === 3) {
-          const date = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
-          setSelectedDate(date);
-          setCurrentMonth(new Date(date.getFullYear(), date.getMonth(), 1));
-        }
+      const parsedStart = parseDateString(initialStartDate || '');
+      const parsedEnd = parseDateString(initialEndDate || '');
+      
+      setStartDate(parsedStart);
+      setEndDate(parsedEnd);
+      setTempEndDate(null);
+      
+      // Set current month to start date if available, otherwise end date, otherwise current month
+      if (parsedStart) {
+        setCurrentMonth(new Date(parsedStart.getFullYear(), parsedStart.getMonth(), 1));
+      } else if (parsedEnd) {
+        setCurrentMonth(new Date(parsedEnd.getFullYear(), parsedEnd.getMonth(), 1));
       } else {
-        setSelectedDate(null);
+        setCurrentMonth(new Date());
       }
     }
-  }, [isOpen, initialStartDate, initialEndDate, datePickerType]);
+  }, [isOpen, initialStartDate, initialEndDate]);
+
+  // Handle click outside to close (without overlay)
+  // Must be before early return to follow Rules of Hooks
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleClickOutside = (event: MouseEvent | TouchEvent) => {
+      const target = event.target as Node;
+      const pickerElement = document.querySelector(`.${styles.dropdown}`);
+      
+      if (pickerElement && !pickerElement.contains(target)) {
+        // Check if click is not on the date input fields (desktop or mobile)
+        const dateInputs = document.querySelectorAll(`.${styles.dateInput}`);
+        const mobileDateInputWrappers = document.querySelectorAll('[class*="mobileDateInputWrapper"]');
+        let clickedOnInput = false;
+        
+        dateInputs.forEach((input) => {
+          if (input.contains(target)) {
+            clickedOnInput = true;
+          }
+        });
+        
+        mobileDateInputWrappers.forEach((wrapper) => {
+          if (wrapper.contains(target)) {
+            clickedOnInput = true;
+          }
+        });
+        
+        if (!clickedOnInput) {
+          onClose();
+        }
+      }
+    };
+
+    // Small delay to avoid immediate close when opening
+    const timeoutId = setTimeout(() => {
+      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('touchstart', handleClickOutside);
+    }, 100);
+
+    return () => {
+      clearTimeout(timeoutId);
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+    };
+  }, [isOpen, onClose]);
 
   if (!isOpen) return null;
 
@@ -67,26 +125,87 @@ const DateRangePickerModal: React.FC<DateRangePickerModalProps> = ({
     return `${y}.${m}.${d}`;
   };
 
-  // 날짜 선택
-  const selectDate = (date: Date) => {
-    const dateStr = formatDate(date);
-    
-    if (datePickerType === 'start') {
-      // 시작 날짜 선택
-      onConfirm(dateStr, initialEndDate || dateStr);
-    } else {
-      // 종료 날짜 선택
-      onConfirm(initialStartDate || dateStr, dateStr);
-    }
-    
-    // 모달 닫기
-    onClose();
+  // 날짜 비교 (날짜만, 시간 제외)
+  const compareDates = (date1: Date, date2: Date): number => {
+    const d1 = new Date(date1.getFullYear(), date1.getMonth(), date1.getDate());
+    const d2 = new Date(date2.getFullYear(), date2.getMonth(), date2.getDate());
+    return d1.getTime() - d2.getTime();
   };
 
-  // 현재 선택된 날짜인지 확인
-  const isSelectedDate = (date: Date): boolean => {
-    if (!selectedDate) return false;
-    return formatDate(date) === formatDate(selectedDate);
+  // 날짜 선택 (Range selection logic)
+  const selectDate = (date: Date) => {
+    if (!startDate) {
+      // First click: set start date
+      setStartDate(date);
+      setEndDate(null);
+      setTempEndDate(null);
+    } else if (!endDate) {
+      // Second click: set end date
+      if (compareDates(date, startDate) < 0) {
+        // If selected date is before start date, swap them
+        setEndDate(startDate);
+        setStartDate(date);
+      } else {
+        setEndDate(date);
+      }
+      setTempEndDate(null);
+      
+      // Auto-close and confirm when both dates are selected
+      const finalStart = compareDates(date, startDate) < 0 ? date : startDate;
+      const finalEnd = compareDates(date, startDate) < 0 ? startDate : date;
+      onConfirm(formatDate(finalStart), formatDate(finalEnd));
+      onClose();
+    } else {
+      // Both dates selected: reset and start new selection
+      setStartDate(date);
+      setEndDate(null);
+      setTempEndDate(null);
+    }
+  };
+
+  // Check if date is in selected range
+  const isInRange = (date: Date): boolean => {
+    if (!startDate) return false;
+    const effectiveEnd = endDate || tempEndDate;
+    if (!effectiveEnd) return false;
+    
+    // Compare dates (date only, ignore time)
+    const dateOnly = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    const startOnly = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
+    const endOnly = new Date(effectiveEnd.getFullYear(), effectiveEnd.getMonth(), effectiveEnd.getDate());
+    
+    const dateTime = dateOnly.getTime();
+    const startTime = startOnly.getTime();
+    const endTime = endOnly.getTime();
+    
+    // Check if date is between start and end (inclusive)
+    return dateTime >= Math.min(startTime, endTime) && dateTime <= Math.max(startTime, endTime);
+  };
+
+  // Check if date is start date
+  const isStartDate = (date: Date): boolean => {
+    if (!startDate) return false;
+    return formatDate(date) === formatDate(startDate);
+  };
+
+  // Check if date is end date
+  const isEndDate = (date: Date): boolean => {
+    if (!endDate) return false;
+    return formatDate(date) === formatDate(endDate);
+  };
+
+  // Handle mouse enter for range preview
+  const handleDateHover = (date: Date) => {
+    if (startDate && !endDate) {
+      setTempEndDate(date);
+    }
+  };
+
+  // Handle mouse leave to clear preview
+  const handleDateLeave = () => {
+    if (startDate && !endDate) {
+      setTempEndDate(null);
+    }
   };
 
   // 확인 버튼 클릭 (더 이상 사용하지 않음, handleDateRangeConfirm 사용)
@@ -108,24 +227,18 @@ const DateRangePickerModal: React.FC<DateRangePickerModalProps> = ({
   const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
   const monthYear = `${monthNames[month]} ${year}`;
 
-  const modalStyle: React.CSSProperties = position
-    ? {
-        top: `${position.top}px`,
-        left: `${position.left}px`,
-        transform: 'none',
-        right: 'auto',
-        bottom: 'auto',
-      }
-    : {
-        top: '50%',
-        left: '50%',
-        transform: 'translate(-50%, -50%)',
-      };
+  // Floating panel positioning - appears below the input field using absolute positioning
+  const panelStyle: React.CSSProperties = {
+    position: 'absolute',
+    top: 'calc(100% + 8px)',
+    left: '0',
+    transform: 'none',
+  };
+
+  if (!isOpen) return null;
 
   return (
-    <>
-      <div className={styles.overlay} onClick={onClose} />
-      <div className={styles.modal} style={modalStyle}>
+    <div className={styles.dropdown} style={panelStyle}>
         <div className={styles.content}>
           <div className={styles.calendar}>
             <div className={styles.monthHeader}>
@@ -178,13 +291,28 @@ const DateRangePickerModal: React.FC<DateRangePickerModalProps> = ({
                         return <div key={`empty-${index}`} className={styles.calendarCellEmpty} />;
                       }
 
-                      const isSelected = isSelectedDate(date);
+                      const isStart = isStartDate(date);
+                      const isEnd = isEndDate(date);
+                      const inRange = isInRange(date);
+                      const isRangeStart = inRange && isStart;
+                      const isRangeEnd = inRange && isEnd;
+                      const isInMiddle = inRange && !isStart && !isEnd;
 
                       return (
                         <button
                           key={formatDate(date)}
-                          className={`${styles.calendarCell} ${isSelected ? styles.selected : ''}`}
+                          className={`${styles.calendarCell} ${
+                            isStart ? styles.startDate : ''
+                          } ${
+                            isEnd ? styles.endDate : ''
+                          } ${
+                            isInMiddle ? styles.inRange : ''
+                          } ${
+                            (isStart || isEnd) ? styles.selected : ''
+                          }`}
                           onClick={() => selectDate(date)}
+                          onMouseEnter={() => handleDateHover(date)}
+                          onMouseLeave={handleDateLeave}
                         >
                           {date.getDate()}
                         </button>
@@ -196,8 +324,7 @@ const DateRangePickerModal: React.FC<DateRangePickerModalProps> = ({
             </div>
           </div>
         </div>
-      </div>
-    </>
+    </div>
   );
 };
 

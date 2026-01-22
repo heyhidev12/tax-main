@@ -67,7 +67,7 @@ const router = useRouter();
         <div className={styles["main-container"]}>
           <p>Tax Accounting Together</p>
           <h1>
-            <span>고객이 걸어갈 길,</span> <br /> 세무법인 함께가 <br className={styles.mobileBr} /> 동행합니다
+            <span>고객이 걸어갈 길,</span> <br /> 세무법인 함께 <span>가 <br className={styles.mobileBr} /> 동행합니다</span>
           </h1>
         </div>
       </main>

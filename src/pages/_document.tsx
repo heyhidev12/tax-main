@@ -28,6 +28,8 @@ export default function Document() {
           href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@200..900&family=Playfair:ital,opsz,wght@0,5..1200,300..900;1,5..1200,300..900&display=swap"
           rel="stylesheet"
         ></link>
+        <link href="https://fonts.cdnfonts.com/css/oregon-ldo" rel="stylesheet">
+        </link>
       </Head>
       <body>
         <Main />

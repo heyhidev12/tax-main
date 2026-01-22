@@ -6,7 +6,7 @@
  */
 
 // API 베이스 URL (환경 변수로 오버라이드 가능)
-export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://13.124.98.132:3000';
+export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 
 // API 엔드포인트
 export const API_ENDPOINTS = {
@@ -77,7 +77,7 @@ export const API_ENDPOINTS = {
   },
 
   // Data Rooms (자료실)
-  DATA_ROOMS: '/data-rooms',
+  // DATA_ROOMS: '/data-rooms',
 } as const;
 
 // API 요청 타임아웃 (ms)

@@ -281,10 +281,10 @@
 
     // Filled state - teal border when value exists (active style)
     &.textfield--filled {
-      .textfield__container {
-        border-color: $primary-50; // #00A89E teal border (active style)
-        background: $gray-5; // Gray background when filled
-      }
+      // .textfield__container {
+        // border-color: $primary-50; // #00A89E teal border (active style)
+        // background: $gray-5; // Gray background when filled
+      // }
       .textfield__input {
         color: $gray-80; // #2D2D2D match login page
       }

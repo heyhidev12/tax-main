@@ -286,29 +286,7 @@ const Menu: React.FC<MenuProps> = ({ isOpen, onClose }) => {
     }
   }, [isOpen]);
 
-  // 메뉴가 열릴 때 자료실 목록 확인 (캐시된 경우 재요청하지 않음)
-  useEffect(() => {
-    if (isOpen && !dataRoomsFetchedRef.current) {
-      console.log('[Menu] Fetching data rooms (first time)');
-      const fetchDataRooms = async () => {
-        try {
-          const response = await get<DataRoomsResponse>(API_ENDPOINTS.DATA_ROOMS);
-          if (response.data?.items) {
-            setDataRooms(response.data.items);
-          } else {
-            setDataRooms([]);
-          }
-          dataRoomsFetchedRef.current = true; // 캐시 플래그 설정
-        } catch {
-          setDataRooms([]);
-          dataRoomsFetchedRef.current = true; // 에러가 발생해도 재시도하지 않음
-        }
-      };
-      fetchDataRooms();
-    } else if (isOpen && dataRoomsFetchedRef.current) {
-      console.log('[Menu] Data rooms already cached, skipping API call');
-    }
-  }, [isOpen]);
+  
 
   // 메뉴가 열릴 때 Business Area categories 확인 (캐시된 경우 재요청하지 않음)
   useEffect(() => {

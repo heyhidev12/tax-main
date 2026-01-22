@@ -2,7 +2,7 @@
  * Style Guide - SCSS Variables
  * Converted from styleGuide.ts
  */
-
+@import url('https://fonts.cdnfonts.com/css/oregon-ldo');
 // ==================== COLORS ====================
 
 // Grayscale
@@ -54,6 +54,7 @@ $font-montserrat: 'Montserrat', sans-serif;
 $font-playfair: 'Playfair', sans-serif;
 $font-pretendard: 'Pretendard', sans-serif;
 $font-noto: 'Noto Serif KR', serif;
+
 // Font Weights
 $font-weight-light: 300;
 $font-weight-regular: 400;

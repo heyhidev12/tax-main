@@ -10,7 +10,7 @@
     z-index: 1;
     margin-top: -92px; // ← header balandligi
     padding: 10% 0;
-    background-image: url("../../../public/images/pages/contact.jpg");
+    background-image: url("../../../public/images/pages/contact_bg.png");
     background-size: cover;
     background-position: center;
     min-height: 220px;
@@ -19,19 +19,33 @@
     color: #fff;
     display: flex;
     flex-direction: column;
-    gap: 40px;
+    gap: 20px;
     align-items: center;
     justify-content: center;
 
     p {
       font-size: 19px;
+      padding-top: 16px;
+      font-weight: 600;
+      font-family: "Oregon LDO DemiBold", sans-serif;
     }
     h1 {
       font-size: 42px;
+      font-family: "Arita Buri KR", sans-serif;
+      font-weight: 500;
     }
 
     @media (max-width: 767px) {
-      margin-top: -52px; // ← header balandligi
+      margin-top: -52px; 
+      gap: 8px;
+
+      p{
+        font-size: 13px;
+        padding-top: 62px;
+      }
+      h1 {
+        font-size: 28px;
+      }
     }
   }
 }
@@ -187,7 +201,6 @@
   overflow-y: auto;
   padding: 5px;
 }
-
 
 .selectOption {
   padding: 10px 12px;
@@ -454,7 +467,7 @@
   padding: 64px 0 40px;
 
   @media (max-width: 767px) {
-    padding:40px 24px 24px;
+    padding: 40px 24px 24px;
   }
 }
 
@@ -474,8 +487,6 @@
   flex-direction: column;
   gap: 32px;
   text-align: center;
-
- 
 }
 
 .successTitle {
@@ -500,8 +511,8 @@
   color: $gray-70;
   margin: 0;
 
-   @media (max-width: 767px) {
-    br{
+  @media (max-width: 767px) {
+    br {
       display: none;
     }
   }
@@ -520,9 +531,7 @@
 
 // Responsive adjustments
 
-
 @media (max-width: 1024px) {
-
   .formSection {
     padding: 40px 60px 80px;
   }
@@ -542,7 +551,7 @@
     padding: 64px 20px 32px;
   }
 
-  .formFields{
+  .formFields {
     gap: 40px;
     padding: 32px 16px;
   }

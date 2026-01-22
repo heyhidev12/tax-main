@@ -8,7 +8,7 @@ export type TargetMemberType = 'ALL' | 'MEMBER' | 'NON_MEMBER';
 export enum MemberType {
   GENERAL = 'GENERAL',       // 일반회원
   OTHER = 'OTHER',   // 기타
-  INSURANCE = 'INSURANCE',   // 보험사 직원
+  INSURANCE = 'INSURANCE',   // 세무사  직원
 }
 export interface EducationImage {
   id: number;

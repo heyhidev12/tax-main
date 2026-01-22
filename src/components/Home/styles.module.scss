@@ -2,7 +2,13 @@
   min-height: 100vh;
   overflow-x: hidden;
 
+  .mobileBr {
+    display: none;
   
+    @media (max-width: 576px) {
+      display: block;
+    }
+  }
 
   main {
     position: relative;
@@ -65,7 +71,7 @@
 
       h1 {
         color: #fff;
-        font-family: "Arita Buri KR";
+        font-family: 'Arita Buri KR', sans-serif;
         font-size: 68px;
         font-style: normal;
         font-weight: 700;
@@ -86,7 +92,7 @@
         }
 
         span {
-          font-weight: 500;
+          font-weight: 300;
         }
         // 0115 고객이 걸어갈 길 폰트두께 수정
       }

@@ -19,6 +19,7 @@ interface UserProfile {
   memberType?: string;
   oauthProvider?: string;
   newsletterSubscribed?: boolean;
+  isApproved?: boolean;
 }
 
 interface ApplicationSummary {
@@ -87,10 +88,10 @@ const MyPage: React.FC = () => {
   const router = useRouter();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<"profile" | "applications">(
-    "profile"
+    "profile",
   );
   const [activeSubTab, setActiveSubTab] = useState<"training" | "member">(
-    "training"
+    "training",
   );
   const [mobileView, setMobileView] = useState<
     "main" | "profile" | "applications"
@@ -106,7 +107,8 @@ const MyPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   // Newsletter subscription status
-  const [newsletterSubscribed, setNewsletterSubscribed] = useState<boolean>(false);
+  const [newsletterSubscribed, setNewsletterSubscribed] =
+    useState<boolean>(false);
   const [isUnsubscribing, setIsUnsubscribing] = useState(false);
 
   // Withdrawal (탈퇴) related state
@@ -129,13 +131,6 @@ const MyPage: React.FC = () => {
   const [trainingPage, setTrainingPage] = useState(1);
   const [trainingTotal, setTrainingTotal] = useState(0);
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
-  const [datePickerType, setDatePickerType] = useState<"start" | "end">(
-    "start"
-  );
-  const [datePickerPosition, setDatePickerPosition] = useState({
-    top: 0,
-    left: 0,
-  });
 
   // Consultation applications
   const [consultationApplications, setConsultationApplications] = useState<
@@ -380,7 +375,7 @@ const MyPage: React.FC = () => {
         API_ENDPOINTS.AUTH.WITHDRAW,
         {
           body: { password: withdrawPassword },
-        }
+        },
       );
 
       if (response.error) {
@@ -388,7 +383,9 @@ const MyPage: React.FC = () => {
         if (response.status === 400 || response.status === 401) {
           setWithdrawPasswordError("비밀번호가 일치하지 않습니다.");
         } else {
-          setWithdrawPasswordError(response.error || "탈퇴 처리 중 오류가 발생했습니다.");
+          setWithdrawPasswordError(
+            response.error || "탈퇴 처리 중 오류가 발생했습니다.",
+          );
         }
         return;
       }
@@ -418,7 +415,7 @@ const MyPage: React.FC = () => {
 
   // API 응답을 UI 형식으로 변환하는 함수
   const mapConsultationResponse = (
-    item: ConsultationApiResponse
+    item: ConsultationApiResponse,
   ): ConsultationApplication => {
     // 날짜 포맷 변환 (ISO -> YYYY.MM.DD)
     const formatDate = (dateStr: string): string => {
@@ -435,7 +432,7 @@ const MyPage: React.FC = () => {
 
     // API status를 UI status로 변환
     const mapStatus = (
-      status: string
+      status: string,
     ): "completed" | "received" | "pending" | "waiting" => {
       const statusMap: Record<
         string,
@@ -478,20 +475,20 @@ const MyPage: React.FC = () => {
     page: number,
     limit: number = 20,
     startDateParam?: string,
-    endDateParam?: string
+    endDateParam?: string,
   ): string => {
     const params = new URLSearchParams();
     params.append("type", type);
     params.append("page", page.toString());
     params.append("limit", limit.toString());
-    
+
     if (startDateParam) {
       params.append("startDate", convertDateToApiFormat(startDateParam));
     }
     if (endDateParam) {
       params.append("endDate", convertDateToApiFormat(endDateParam));
     }
-    
+
     return params.toString();
   };
 
@@ -499,7 +496,7 @@ const MyPage: React.FC = () => {
   const fetchSeminarApplications = async (
     page: number = 1,
     startDateParam?: string,
-    endDateParam?: string
+    endDateParam?: string,
   ) => {
     try {
       setTrainingLoading(true);
@@ -508,10 +505,10 @@ const MyPage: React.FC = () => {
         page,
         20,
         startDateParam,
-        endDateParam
+        endDateParam,
       );
       const response = await get<MyApplicationsResponse>(
-        `${API_ENDPOINTS.AUTH.MY_APPLICATIONS}?${queryString}`
+        `${API_ENDPOINTS.AUTH.MY_APPLICATIONS}?${queryString}`,
       );
 
       if (response.error) {
@@ -542,7 +539,7 @@ const MyPage: React.FC = () => {
   const fetchConsultationApplications = async (
     page: number = 1,
     startDateParam?: string,
-    endDateParam?: string
+    endDateParam?: string,
   ) => {
     try {
       setConsultationLoading(true);
@@ -551,10 +548,10 @@ const MyPage: React.FC = () => {
         page,
         20,
         startDateParam,
-        endDateParam
+        endDateParam,
       );
       const response = await get<MyApplicationsResponse>(
-        `${API_ENDPOINTS.AUTH.MY_APPLICATIONS}?${queryString}`
+        `${API_ENDPOINTS.AUTH.MY_APPLICATIONS}?${queryString}`,
       );
 
       if (response.error) {
@@ -568,7 +565,7 @@ const MyPage: React.FC = () => {
         const { items = [], total = 0 } = response.data;
         const consultationItems = (items as ConsultationApiResponse[]) || [];
         const mappedConsultations = consultationItems.map(
-          mapConsultationResponse
+          mapConsultationResponse,
         );
         setConsultationApplications(mappedConsultations);
         setConsultationTotal(total);
@@ -603,24 +600,32 @@ const MyPage: React.FC = () => {
         // Fetch both seminar and consultation applications separately
         const [seminarResponse, consultationResponse] = await Promise.all([
           get<MyApplicationsResponse>(
-            `${API_ENDPOINTS.AUTH.MY_APPLICATIONS}?type=seminar&page=1&limit=20`
+            `${API_ENDPOINTS.AUTH.MY_APPLICATIONS}?type=seminar&page=1&limit=20`,
           ),
           get<MyApplicationsResponse>(
-            `${API_ENDPOINTS.AUTH.MY_APPLICATIONS}?type=consultation&page=1&limit=20`
+            `${API_ENDPOINTS.AUTH.MY_APPLICATIONS}?type=consultation&page=1&limit=20`,
           ),
         ]);
 
         // Handle seminar response
         if (seminarResponse.error) {
-          if (seminarResponse.status === 401 || seminarResponse.status === 403) {
+          if (
+            seminarResponse.status === 401 ||
+            seminarResponse.status === 403
+          ) {
             setTrainingApplications([]);
             setTrainingTotal(0);
           } else {
-            console.error("세미나 신청 내역을 불러오는 중 오류:", seminarResponse.error);
+            console.error(
+              "세미나 신청 내역을 불러오는 중 오류:",
+              seminarResponse.error,
+            );
           }
         } else if (seminarResponse.data) {
           const { items = [], total = 0 } = seminarResponse.data;
-          setTrainingApplications((items as TrainingSeminarApplication[]) || []);
+          setTrainingApplications(
+            (items as TrainingSeminarApplication[]) || [],
+          );
           setTrainingTotal(total);
         } else {
           setTrainingApplications([]);
@@ -629,17 +634,23 @@ const MyPage: React.FC = () => {
 
         // Handle consultation response
         if (consultationResponse.error) {
-          if (consultationResponse.status === 401 || consultationResponse.status === 403) {
+          if (
+            consultationResponse.status === 401 ||
+            consultationResponse.status === 403
+          ) {
             setConsultationApplications([]);
             setConsultationTotal(0);
           } else {
-            console.error("상담 신청 내역을 불러오는 중 오류:", consultationResponse.error);
+            console.error(
+              "상담 신청 내역을 불러오는 중 오류:",
+              consultationResponse.error,
+            );
           }
         } else if (consultationResponse.data) {
           const { items = [], total = 0 } = consultationResponse.data;
           const consultationItems = (items as ConsultationApiResponse[]) || [];
           const mappedConsultations = consultationItems.map(
-            mapConsultationResponse
+            mapConsultationResponse,
           );
           setConsultationApplications(mappedConsultations);
           setConsultationTotal(total);
@@ -929,7 +940,7 @@ const MyPage: React.FC = () => {
       return `${limited.slice(0, 3)}-${limited.slice(3)}`;
     } else {
       return `${limited.slice(0, 3)}-${limited.slice(3, 7)}-${limited.slice(
-        7
+        7,
       )}`;
     }
   };
@@ -960,7 +971,9 @@ const MyPage: React.FC = () => {
       });
 
       if (response.error) {
-        setPhoneChangeError(response.error || "인증번호 발송에 실패했습니다. 다시 시도해주세요.");
+        setPhoneChangeError(
+          response.error || "인증번호 발송에 실패했습니다. 다시 시도해주세요.",
+        );
         return;
       }
 
@@ -1121,6 +1134,7 @@ const MyPage: React.FC = () => {
     memberType: "세무사 (승인 대기 중)",
     oauthProvider: undefined,
     newsletterSubscribed: false,
+    isApproved: false,
   };
 
   // Mobile back handler
@@ -1155,10 +1169,12 @@ const MyPage: React.FC = () => {
       {/* Mobile Layout */}
 
       <div className="container">
-        <div className={styles.headerInfo}>
-          <p>My page</p>
-          <h2>마이페이지</h2>
-        </div>
+        {mobileView === "main" && (
+          <div className={styles.headerInfo}>
+            <p>My page</p>
+            <h2>마이페이지</h2>
+          </div>
+        )}
 
         <div className={styles.mobileMyPage}>
           {mobileView === "main" && (
@@ -1201,8 +1217,8 @@ const MyPage: React.FC = () => {
                       {displayProfile.memberType == MemberType.GENERAL
                         ? "일반"
                         : displayProfile.memberType == MemberType.INSURANCE
-                        ? "보험사"
-                        : "기타"}
+                          ? "세무사 "
+                          : "기타"}
                     </p>
                   </div>
                 </div>
@@ -1277,10 +1293,10 @@ const MyPage: React.FC = () => {
                   {showChangePasswordForm
                     ? "비밀번호 변경"
                     : showChangePhoneForm
-                    ? "휴대폰 번호 변경"
-                    : showPasswordVerify || isPasswordVerified
-                    ? "회원 정보 수정"
-                    : "회원 정보 관리"}
+                      ? "휴대폰 번호 변경"
+                      : showPasswordVerify || isPasswordVerified
+                        ? "회원 정보 수정"
+                        : "회원 정보 관리"}
                 </h1>
               </div>
 
@@ -1327,10 +1343,10 @@ const MyPage: React.FC = () => {
                             ? displayProfile.oauthProvider === "google"
                               ? "구글(Google)"
                               : displayProfile.oauthProvider === "kakao"
-                              ? "카카오(Kakao)"
-                              : displayProfile.oauthProvider === "naver"
-                              ? "네이버(Naver)"
-                              : displayProfile.oauthProvider
+                                ? "카카오(Kakao)"
+                                : displayProfile.oauthProvider === "naver"
+                                  ? "네이버(Naver)"
+                                  : displayProfile.oauthProvider
                             : "-"}
                         </p>
                       </div>
@@ -1343,9 +1359,7 @@ const MyPage: React.FC = () => {
                               : ""
                           }`}
                         >
-                          <p>
-                            {newsletterSubscribed ? "구독중" : "구독안함"}
-                          </p>
+                          <p>{newsletterSubscribed ? "구독중" : "구독안함"}</p>
                         </div>
                         {newsletterSubscribed && (
                           <button
@@ -1510,7 +1524,7 @@ const MyPage: React.FC = () => {
                             className={styles.mobileEmailDomainSelect}
                             onClick={() =>
                               setIsEmailDomainDropdownOpen(
-                                !isEmailDomainDropdownOpen
+                                !isEmailDomainDropdownOpen,
                               )
                             }
                           >
@@ -1610,7 +1624,7 @@ const MyPage: React.FC = () => {
                                   >
                                     {carrier}
                                   </button>
-                                )
+                                ),
                               )}
                             </div>
                           )}
@@ -1753,7 +1767,7 @@ const MyPage: React.FC = () => {
                           className={styles.mobilePhoneCarrierSelect}
                           onClick={() =>
                             setIsPhoneCarrierDropdownOpen(
-                              !isPhoneCarrierDropdownOpen
+                              !isPhoneCarrierDropdownOpen,
                             )
                           }
                         >
@@ -1842,7 +1856,7 @@ const MyPage: React.FC = () => {
                             <span className={styles.mobileVerificationTimer}>
                               {String(Math.floor(timeLeft / 60)).padStart(
                                 2,
-                                "0"
+                                "0",
                               )}
                               :{String(timeLeft % 60).padStart(2, "0")}
                             </span>
@@ -1915,64 +1929,74 @@ const MyPage: React.FC = () => {
                     <div className={styles.mobilePeriodRow}>
                       <span className={styles.mobilePeriodLabel}>조회기간</span>
                       <div className={styles.mobilePeriodTabs}>
-                                {(
-                                  [
-                                    "today",
-                                    "7days",
-                                    "15days",
-                                    "1month",
-                                    "6months",
-                                  ] as const
-                                ).map((period) => (
-                                  <button
-                                    key={period}
-                                    className={`${styles.mobilePeriodTab} ${
-                                      dateFilter === period
-                                        ? styles.mobilePeriodTabActive
-                                        : ""
-                                    }`}
-                                    onClick={() => setDateFilter(period)}
-                                  >
-                                    {period === "today"
-                                      ? "오늘"
-                                      : period === "7days"
-                                      ? "7일"
-                                      : period === "15days"
-                                      ? "15일"
-                                      : period === "1month"
-                                      ? "1개월"
-                                      : "6개월"}
-                                  </button>
-                                ))}
+                        {(
+                          [
+                            "today",
+                            "7days",
+                            "15days",
+                            "1month",
+                            "6months",
+                          ] as const
+                        ).map((period) => (
+                          <button
+                            key={period}
+                            className={`${styles.mobilePeriodTab} ${
+                              dateFilter === period
+                                ? styles.mobilePeriodTabActive
+                                : ""
+                            }`}
+                            onClick={() => setDateFilter(period)}
+                          >
+                            {period === "today"
+                              ? "오늘"
+                              : period === "7days"
+                                ? "7일"
+                                : period === "15days"
+                                  ? "15일"
+                                  : period === "1month"
+                                    ? "1개월"
+                                    : "6개월"}
+                          </button>
+                        ))}
                       </div>
                     </div>
                     <div className={styles.mobileDateInputRow}>
-                      <div
-                        className={styles.mobileDateInputWrapper}
-                        onClick={() => {
-                          setDatePickerType("start");
-                          setIsDatePickerOpen(true);
-                        }}
-                      >
-                        <input
-                          type="text"
-                          className={styles.mobileDateInput}
-                          value={startDate || "2025. 05. 19"}
-                          readOnly
-                        />
-                        <img
-                          src="/images/common/calendar-icon.svg"
-                          alt=""
-                          className={styles.mobileDateIcon}
-                        />
+                      <div style={{ position: 'relative' }}>
+                        <div
+                          className={styles.mobileDateInputWrapper}
+                          onClick={() => {
+                            setIsDatePickerOpen(true);
+                          }}
+                        >
+                          <input
+                            type="text"
+                            className={styles.mobileDateInput}
+                            value={startDate || "2025. 05. 19"}
+                            readOnly
+                          />
+                          <img
+                            src="/images/common/calendar-icon.svg"
+                            alt=""
+                            className={styles.mobileDateIcon}
+                          />
+                        </div>
+                        {isDatePickerOpen && (
+                          <DateRangePickerModal
+                            isOpen={isDatePickerOpen}
+                            onClose={() => setIsDatePickerOpen(false)}
+                            onConfirm={(start, end) => {
+                              setStartDate(start);
+                              setEndDate(end);
+                              setIsDatePickerOpen(false);
+                            }}
+                            initialStartDate={startDate}
+                            initialEndDate={endDate}
+                          />
+                        )}
                       </div>
                       <span className={styles.mobileDateSeparator}>~</span>
                       <div
-                        className={styles.mobileDateInputWrapper}
-                        onClick={() => {
-                          setDatePickerType("end");
-                          setIsDatePickerOpen(true);
-                        }}
+                        className={`${styles.mobileDateInputWrapper} ${styles.mobileDateInputWrapperDisabled}`}
                       >
                         <input
                           type="text"
@@ -1986,7 +2010,7 @@ const MyPage: React.FC = () => {
                           className={styles.mobileDateIcon}
                         />
                       </div>
-                      <button 
+                      <button
                         className={styles.mobileSearchButton}
                         onClick={() => handleSearch("seminar")}
                       >
@@ -2089,64 +2113,74 @@ const MyPage: React.FC = () => {
                     <div className={styles.mobilePeriodRow}>
                       <span className={styles.mobilePeriodLabel}>조회기간</span>
                       <div className={styles.mobilePeriodTabs}>
-                                {(
-                                  [
-                                    "today",
-                                    "7days",
-                                    "15days",
-                                    "1month",
-                                    "6months",
-                                  ] as const
-                                ).map((period) => (
-                                  <button
-                                    key={period}
-                                    className={`${styles.mobilePeriodTab} ${
-                                      dateFilter === period
-                                        ? styles.mobilePeriodTabActive
-                                        : ""
-                                    }`}
-                                    onClick={() => setDateFilter(period)}
-                                  >
-                                    {period === "today"
-                                      ? "오늘"
-                                      : period === "7days"
-                                      ? "7일"
-                                      : period === "15days"
-                                      ? "15일"
-                                      : period === "1month"
-                                      ? "1개월"
-                                      : "6개월"}
-                                  </button>
-                                ))}
+                        {(
+                          [
+                            "today",
+                            "7days",
+                            "15days",
+                            "1month",
+                            "6months",
+                          ] as const
+                        ).map((period) => (
+                          <button
+                            key={period}
+                            className={`${styles.mobilePeriodTab} ${
+                              dateFilter === period
+                                ? styles.mobilePeriodTabActive
+                                : ""
+                            }`}
+                            onClick={() => setDateFilter(period)}
+                          >
+                            {period === "today"
+                              ? "오늘"
+                              : period === "7days"
+                                ? "7일"
+                                : period === "15days"
+                                  ? "15일"
+                                  : period === "1month"
+                                    ? "1개월"
+                                    : "6개월"}
+                          </button>
+                        ))}
                       </div>
                     </div>
                     <div className={styles.mobileDateInputRow}>
-                      <div
-                        className={styles.mobileDateInputWrapper}
-                        onClick={() => {
-                          setDatePickerType("start");
-                          setIsDatePickerOpen(true);
-                        }}
-                      >
-                        <input
-                          type="text"
-                          className={styles.mobileDateInput}
-                          value={startDate || "2025. 05. 19"}
-                          readOnly
-                        />
-                        <img
-                          src="/images/common/calendar-icon.svg"
-                          alt=""
-                          className={styles.mobileDateIcon}
-                        />
+                      <div style={{ position: 'relative' }}>
+                        <div
+                          className={styles.mobileDateInputWrapper}
+                          onClick={() => {
+                            setIsDatePickerOpen(true);
+                          }}
+                        >
+                          <input
+                            type="text"
+                            className={styles.mobileDateInput}
+                            value={startDate || "2025. 05. 19"}
+                            readOnly
+                          />
+                          <img
+                            src="/images/common/calendar-icon.svg"
+                            alt=""
+                            className={styles.mobileDateIcon}
+                          />
+                        </div>
+                        {isDatePickerOpen && (
+                          <DateRangePickerModal
+                            isOpen={isDatePickerOpen}
+                            onClose={() => setIsDatePickerOpen(false)}
+                            onConfirm={(start, end) => {
+                              setStartDate(start);
+                              setEndDate(end);
+                              setIsDatePickerOpen(false);
+                            }}
+                            initialStartDate={startDate}
+                            initialEndDate={endDate}
+                          />
+                        )}
                       </div>
                       <span className={styles.mobileDateSeparator}>~</span>
                       <div
-                        className={styles.mobileDateInputWrapper}
-                        onClick={() => {
-                          setDatePickerType("end");
-                          setIsDatePickerOpen(true);
-                        }}
+                        className={`${styles.mobileDateInputWrapper} ${styles.mobileDateInputWrapperDisabled}`}
                       >
                         <input
                           type="text"
@@ -2160,7 +2194,7 @@ const MyPage: React.FC = () => {
                           className={styles.mobileDateIcon}
                         />
                       </div>
-                      <button 
+                      <button
                         className={styles.mobileSearchButton}
                         onClick={() => handleSearch("consultation")}
                       >
@@ -2223,9 +2257,9 @@ const MyPage: React.FC = () => {
                                   item.status === "completed"
                                     ? styles.mobileMemberCardStatusCompleted
                                     : item.status === "waiting" ||
-                                      item.status === "pending"
-                                    ? styles.mobileMemberCardStatusWaiting
-                                    : styles.mobileMemberCardStatusReceived
+                                        item.status === "pending"
+                                      ? styles.mobileMemberCardStatusWaiting
+                                      : styles.mobileMemberCardStatusReceived
                                 }`}
                               >
                                 {getStatusLabel(item.status)}
@@ -2241,7 +2275,7 @@ const MyPage: React.FC = () => {
                               <span
                                 className={styles.mobileMemberCardTagDivider}
                               >
-                                |
+                                
                               </span>
                               <span className={styles.mobileMemberCardTagValue}>
                                 {item.consultant}
@@ -2252,14 +2286,13 @@ const MyPage: React.FC = () => {
                                 NO.{index + 1}
                               </span>
                               <span className={styles.mobileMemberCardDivider}>
-                                |
                               </span>
                               <span className={styles.mobileMemberCardDate}>
                                 {item.date}
                               </span>
                             </div>
                           </div>
-                          <div className={styles.mobileMemberCardSeparator} />
+                          {/* <div className={styles.mobileMemberCardSeparator} /> */}
                         </React.Fragment>
                       ))}
                     </div>
@@ -2302,13 +2335,17 @@ const MyPage: React.FC = () => {
                 />
                 <p>회원 유형</p>
               </div>
-              <div className={styles.memberTypeBadge}>
+              <div
+                className={`${styles.memberTypeBadge} ${displayProfile.memberType === MemberType.INSURANCE && !displayProfile.isApproved ? styles.memberTypeBadgePending : ""}`}
+              >
                 <p>
                   {displayProfile.memberType == MemberType.GENERAL
                     ? "일반"
-                    : displayProfile.memberType == MemberType.INSURANCE
-                    ? "보험사"
-                    : "기타"}
+                    : displayProfile.memberType == MemberType.OTHER
+                      ? "기타"
+                      : displayProfile.isApproved
+                        ? "세무사"
+                        : "세무사 (승인 대기 중)"}
                 </p>
               </div>
             </div>
@@ -2482,10 +2519,10 @@ const MyPage: React.FC = () => {
                                 ? displayProfile.oauthProvider === "google"
                                   ? "구글(Google)"
                                   : displayProfile.oauthProvider === "kakao"
-                                  ? "카카오(Kakao)"
-                                  : displayProfile.oauthProvider === "naver"
-                                  ? "네이버(Naver)"
-                                  : displayProfile.oauthProvider
+                                    ? "카카오(Kakao)"
+                                    : displayProfile.oauthProvider === "naver"
+                                      ? "네이버(Naver)"
+                                      : displayProfile.oauthProvider
                                 : "-"}
                             </p>
                           </div>
@@ -2565,18 +2602,17 @@ const MyPage: React.FC = () => {
                           </div>
                         </div>
 
-
-                          <button
-                            className={`${styles.passwordVerifyButton} ${
-                              passwordVerify
-                                ? styles.passwordVerifyButtonActive
-                                : ""
-                            }`}
-                            onClick={handlePasswordVerify}
-                            disabled={!passwordVerify || isVerifying}
-                          >
-                            {isVerifying ? "확인 중..." : "확인"}
-                          </button>
+                        <button
+                          className={`${styles.passwordVerifyButton} ${
+                            passwordVerify
+                              ? styles.passwordVerifyButtonActive
+                              : ""
+                          }`}
+                          onClick={handlePasswordVerify}
+                          disabled={!passwordVerify || isVerifying}
+                        >
+                          {isVerifying ? "확인 중..." : "확인"}
+                        </button>
                       </div>
                     </>
                   )}
@@ -2810,16 +2846,14 @@ const MyPage: React.FC = () => {
                             </button>
                           </div>
                         </div>
-
-                        
                       </div>
                       <button
-                          className={styles.passwordVerifyButton}
-                          onClick={handleSaveProfile}
-                          disabled={isSaving}
-                        >
-                          {isSaving ? "저장 중..." : "확인"}
-                        </button>
+                        className={styles.passwordVerifyButton}
+                        onClick={handleSaveProfile}
+                        disabled={isSaving}
+                      >
+                        {isSaving ? "저장 중..." : "확인"}
+                      </button>
                     </>
                   )}
 
@@ -2911,9 +2945,7 @@ const MyPage: React.FC = () => {
                             />
                             {!isVerificationRequested ? (
                               <button
-                                className={`${
-                                  styles.changePasswordButton
-                                } ${
+                                className={`${styles.changePasswordButton} ${
                                   phoneChangeForm.phoneNumber &&
                                   !phoneChangeError
                                     ? styles.changePasswordButtonActive
@@ -3044,20 +3076,18 @@ const MyPage: React.FC = () => {
                             )}
                           </div>
                         )}
-
-                       
                       </div>
-                       <button
-                          className={`${styles.passwordVerifyButton} ${
-                            isCodeVerified
-                              ? styles.passwordVerifyButtonActive
-                              : ""
-                          }`}
-                          onClick={handleChangePhoneNumber}
-                          disabled={!isCodeVerified || isChangingPhone}
-                        >
-                          {isChangingPhone ? "변경 중..." : "휴대폰 번호 변경"}
-                        </button>
+                      <button
+                        className={`${styles.passwordVerifyButton} ${
+                          isCodeVerified
+                            ? styles.passwordVerifyButtonActive
+                            : ""
+                        }`}
+                        onClick={handleChangePhoneNumber}
+                        disabled={!isCodeVerified || isChangingPhone}
+                      >
+                        {isChangingPhone ? "변경 중..." : "휴대폰 번호 변경"}
+                      </button>
                     </div>
                   </>
                 )}
@@ -3142,26 +3172,25 @@ const MyPage: React.FC = () => {
                             showPasswordToggle
                           />
                         </div>
-                        
                       </div>
                       <button
-                          className={`${styles.passwordVerifyButton} ${
-                            passwordForm.currentPassword &&
-                            passwordForm.newPassword &&
-                            passwordForm.confirmPassword
-                              ? styles.changePasswordSubmitButtonActive
-                              : ""
-                          }`}
-                          onClick={handleChangePassword}
-                          disabled={
-                            !passwordForm.currentPassword ||
-                            !passwordForm.newPassword ||
-                            !passwordForm.confirmPassword ||
-                            isChangingPassword
-                          }
-                        >
-                          {isChangingPassword ? "변경 중..." : "비밀번호 변경"}
-                        </button>
+                        className={`${styles.passwordVerifyButton} ${
+                          passwordForm.currentPassword &&
+                          passwordForm.newPassword &&
+                          passwordForm.confirmPassword
+                            ? styles.changePasswordSubmitButtonActive
+                            : ""
+                        }`}
+                        onClick={handleChangePassword}
+                        disabled={
+                          !passwordForm.currentPassword ||
+                          !passwordForm.newPassword ||
+                          !passwordForm.confirmPassword ||
+                          isChangingPassword
+                        }
+                      >
+                        {isChangingPassword ? "변경 중..." : "비밀번호 변경"}
+                      </button>
                     </div>
                   </>
                 )}
@@ -3219,50 +3248,48 @@ const MyPage: React.FC = () => {
                                     {period === "today"
                                       ? "오늘"
                                       : period === "7days"
-                                      ? "7일"
-                                      : period === "15days"
-                                      ? "15일"
-                                      : period === "1month"
-                                      ? "1개월"
-                                      : "6개월"}
+                                        ? "7일"
+                                        : period === "15days"
+                                          ? "15일"
+                                          : period === "1month"
+                                            ? "1개월"
+                                            : "6개월"}
                                   </button>
                                 ))}
                               </div>
                             </div>
                             <div className={styles.filterRight}>
-                              <div
-                                className={styles.dateInput}
-                                onClick={(e) => {
-                                  const rect =
-                                    e.currentTarget.getBoundingClientRect();
-                                  setDatePickerPosition({
-                                    top: rect.bottom + 8,
-                                    left: rect.left,
-                                  });
-                                  setDatePickerType("start");
-                                  setIsDatePickerOpen(true);
-                                }}
-                              >
-                                <p>{startDate || "2025. 05. 19"}</p>
-                                <img
-                                  src="/images/common/calendar-icon.svg"
-                                  alt="달력"
-                                  className={styles.calendarIcon}
-                                />
+                              <div style={{ position: 'relative' }}>
+                                <div
+                                  className={styles.dateInput}
+                                  onClick={() => {
+                                    setIsDatePickerOpen(true);
+                                  }}
+                                >
+                                  <p>{startDate || "2025. 05. 19"}</p>
+                                  <img
+                                    src="/images/common/calendar-icon.svg"
+                                    alt="달력"
+                                    className={styles.calendarIcon}
+                                  />
+                                </div>
+                                {isDatePickerOpen && (
+                                  <DateRangePickerModal
+                                    isOpen={isDatePickerOpen}
+                                    onClose={() => setIsDatePickerOpen(false)}
+                                    onConfirm={(start, end) => {
+                                      setStartDate(start);
+                                      setEndDate(end);
+                                      setIsDatePickerOpen(false);
+                                    }}
+                                    initialStartDate={startDate}
+                                    initialEndDate={endDate}
+                                  />
+                                )}
                               </div>
                               <p className={styles.dateSeparator}>~</p>
                               <div
-                                className={styles.dateInput}
-                                onClick={(e) => {
-                                  const rect =
-                                    e.currentTarget.getBoundingClientRect();
-                                  setDatePickerPosition({
-                                    top: rect.bottom + 8,
-                                    left: rect.left,
-                                  });
-                                  setDatePickerType("end");
-                                  setIsDatePickerOpen(true);
-                                }}
+                                className={`${styles.dateInput} ${styles.dateInputDisabled}`}
                               >
                                 <p>{endDate || "2025. 05. 26"}</p>
                                 <img
@@ -3271,7 +3298,7 @@ const MyPage: React.FC = () => {
                                   className={styles.calendarIcon}
                                 />
                               </div>
-                              <button 
+                              <button
                                 className={styles.searchButton}
                                 onClick={() => handleSearch("seminar")}
                               >
@@ -3349,17 +3376,35 @@ const MyPage: React.FC = () => {
                                       </p>
                                       <div className={styles.cardDateWrapper}>
                                         <svg
+                                          xmlns="http://www.w3.org/2000/svg"
                                           width="16"
-                                          height="16"
-                                          viewBox="0 0 16 16"
+                                          height="20"
+                                          viewBox="0 0 16 20"
                                           fill="none"
-                                          className={styles.cardDateIcon}
                                         >
                                           <path
-                                            d="M3 2V4M13 2V4M2 6H14M3 2H13C13.5523 2 14 2.44772 14 3V13C14 13.5523 13.5523 14 13 14H3C2.44772 14 2 13.5523 2 13V3C2 2.44772 2.44772 2 3 2Z"
-                                            stroke="#d8d8d8"
-                                            strokeWidth="1"
-                                            strokeLinecap="round"
+                                            d="M2.61621 10.2082V4.3087C2.61621 3.82755 3.00626 3.4375 3.48741 3.4375H12.833C13.3142 3.4375 13.7042 3.82755 13.7042 4.3087V16.1077C13.7042 16.5889 13.3142 16.9789 12.833 16.9789H3.48759C3.00637 16.9789 2.61629 16.5888 2.61639 16.1075L2.61781 9.15537"
+                                            stroke="#555555"
+                                            stroke-width="0.8"
+                                            stroke-miterlimit="10"
+                                          />
+                                          <path
+                                            d="M13.7042 7.53125H2.61621"
+                                            stroke="#555555"
+                                            stroke-width="0.8"
+                                            stroke-miterlimit="10"
+                                          />
+                                          <path
+                                            d="M5.61328 1.57812V5.10393"
+                                            stroke="#555555"
+                                            stroke-width="0.8"
+                                            stroke-miterlimit="10"
+                                          />
+                                          <path
+                                            d="M10.7041 1.57812V5.10393"
+                                            stroke="#555555"
+                                            stroke-width="0.8"
+                                            stroke-miterlimit="10"
                                           />
                                         </svg>
                                         <p className={styles.cardDate}>
@@ -3404,50 +3449,48 @@ const MyPage: React.FC = () => {
                                     {period === "today"
                                       ? "오늘"
                                       : period === "7days"
-                                      ? "7일"
-                                      : period === "15days"
-                                      ? "15일"
-                                      : period === "1month"
-                                      ? "1개월"
-                                      : "6개월"}
+                                        ? "7일"
+                                        : period === "15days"
+                                          ? "15일"
+                                          : period === "1month"
+                                            ? "1개월"
+                                            : "6개월"}
                                   </button>
                                 ))}
                               </div>
                             </div>
                             <div className={styles.filterRight}>
-                              <div
-                                className={styles.dateInput}
-                                onClick={(e) => {
-                                  const rect =
-                                    e.currentTarget.getBoundingClientRect();
-                                  setDatePickerPosition({
-                                    top: rect.bottom + 8,
-                                    left: rect.left,
-                                  });
-                                  setDatePickerType("start");
-                                  setIsDatePickerOpen(true);
-                                }}
-                              >
-                                <p>{startDate || "2025. 05. 19"}</p>
-                                <img
-                                  src="/images/common/calendar-icon.svg"
-                                  alt="달력"
-                                  className={styles.calendarIcon}
-                                />
+                              <div style={{ position: 'relative' }}>
+                                <div
+                                  className={styles.dateInput}
+                                  onClick={() => {
+                                    setIsDatePickerOpen(true);
+                                  }}
+                                >
+                                  <p>{startDate || "2025. 05. 19"}</p>
+                                  <img
+                                    src="/images/common/calendar-icon.svg"
+                                    alt="달력"
+                                    className={styles.calendarIcon}
+                                  />
+                                </div>
+                                {isDatePickerOpen && (
+                                  <DateRangePickerModal
+                                    isOpen={isDatePickerOpen}
+                                    onClose={() => setIsDatePickerOpen(false)}
+                                    onConfirm={(start, end) => {
+                                      setStartDate(start);
+                                      setEndDate(end);
+                                      setIsDatePickerOpen(false);
+                                    }}
+                                    initialStartDate={startDate}
+                                    initialEndDate={endDate}
+                                  />
+                                )}
                               </div>
                               <p className={styles.dateSeparator}>~</p>
                               <div
-                                className={styles.dateInput}
-                                onClick={(e) => {
-                                  const rect =
-                                    e.currentTarget.getBoundingClientRect();
-                                  setDatePickerPosition({
-                                    top: rect.bottom + 8,
-                                    left: rect.left,
-                                  });
-                                  setDatePickerType("end");
-                                  setIsDatePickerOpen(true);
-                                }}
+                                className={`${styles.dateInput} ${styles.dateInputDisabled}`}
                               >
                                 <p>{endDate || "2025. 05. 26"}</p>
                                 <img
@@ -3456,7 +3499,7 @@ const MyPage: React.FC = () => {
                                   className={styles.calendarIcon}
                                 />
                               </div>
-                              <button 
+                              <button
                                 className={styles.searchButton}
                                 onClick={() => handleSearch("consultation")}
                               >
@@ -3480,6 +3523,12 @@ const MyPage: React.FC = () => {
                             </p>
                           </div>
                           <div className={styles.listHeaderRight}>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none">
+  <path d="M2.61621 8.51552V3.73839C2.61621 3.25724 3.00626 2.86719 3.48741 2.86719H12.833C13.3142 2.86719 13.7042 3.25724 13.7042 3.73839V13.2927C13.7042 13.7738 13.3142 14.1639 12.833 14.1639H3.48762C3.00639 14.1639 2.61631 13.7737 2.61643 13.2924L2.61781 7.63721" stroke="#555555" stroke-width="0.8" stroke-miterlimit="10"/>
+  <path d="M13.7042 6.28125H2.61621" stroke="#555555" stroke-width="0.8" stroke-miterlimit="10"/>
+  <path d="M5.61328 1.3125V4.25383" stroke="#555555" stroke-width="0.8" stroke-miterlimit="10"/>
+  <path d="M10.7041 1.3125V4.25383" stroke="#555555" stroke-width="0.8" stroke-miterlimit="10"/>
+</svg>
                             <p>
                               {startDate || "2025. 05. 19"} -{" "}
                               {endDate || "2025. 05. 26"}
@@ -3645,10 +3694,7 @@ const MyPage: React.FC = () => {
 
       {/* 탈퇴 확인 모달 */}
       {showWithdrawConfirm && (
-        <div
-          className={styles.modalOverlay}
-          onClick={handleWithdrawCancel}
-        >
+        <div className={styles.modalOverlay} onClick={handleWithdrawCancel}>
           <div
             className={styles.modalContent}
             onClick={(e) => e.stopPropagation()}
@@ -3662,7 +3708,6 @@ const MyPage: React.FC = () => {
               </button>
             </div>
             <div className={styles.modalBody}>
-
               <p className={styles.withdrawConfirmMessage}>
                 정말로 탈퇴하시겠습니까?
                 <br />
@@ -3689,10 +3734,7 @@ const MyPage: React.FC = () => {
 
       {/* 탈퇴 비밀번호 입력 모달 */}
       {showWithdrawPassword && (
-        <div
-          className={styles.modalOverlay}
-          onClick={handleWithdrawCancel}
-        >
+        <div className={styles.modalOverlay} onClick={handleWithdrawCancel}>
           <div
             className={styles.modalContent}
             onClick={(e) => e.stopPropagation()}
@@ -3707,7 +3749,6 @@ const MyPage: React.FC = () => {
             </div>
 
             <div className={styles.modalBody}>
-
               <div className={styles.withdrawPasswordField}>
                 <TextField
                   variant="line"
@@ -3778,7 +3819,7 @@ const MyPage: React.FC = () => {
 
                 <span
                   className={`${styles.statusBadge} ${getStatusClass(
-                    selectedConsultation.status
+                    selectedConsultation.status,
                   )}`}
                 >
                   {getStatusLabel(selectedConsultation.status)}
@@ -3826,22 +3867,7 @@ const MyPage: React.FC = () => {
         </div>
       )}
 
-      <DateRangePickerModal
-        isOpen={isDatePickerOpen}
-        onClose={() => setIsDatePickerOpen(false)}
-        onConfirm={(start, end) => {
-          if (datePickerType === "start") {
-            setStartDate(start);
-          } else {
-            setEndDate(end);
-          }
-          setIsDatePickerOpen(false);
-        }}
-        initialStartDate={startDate}
-        initialEndDate={endDate}
-        position={datePickerPosition}
-        datePickerType={datePickerType}
-      />
+
     </div>
   );
 };
