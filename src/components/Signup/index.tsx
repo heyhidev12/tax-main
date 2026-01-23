@@ -15,14 +15,6 @@ import Footer from "../Footer";
 type StepType = 1 | 2 | 3;
 type MemberType = "general" | "taxAccountant" | "other";
 
-const CARRIER_OPTIONS = [
-  { value: "", label: "통신사 선택" },
-  { value: "skt", label: "SKT" },
-  { value: "kt", label: "KT" },
-  { value: "lgu", label: "LG U+" },
-  { value: "mvno", label: "알뜰폰" },
-];
-
 const DOMAIN_OPTIONS = [
   { value: "naver.com", label: "naver.com" },
   { value: "google.com", label: "google.com" },
@@ -62,8 +54,28 @@ const Signup: React.FC = () => {
   const [emailLocal, setEmailLocal] = useState("");
   const [emailDomain, setEmailDomain] = useState("");
   const [selectedDomainOption, setSelectedDomainOption] = useState("");
+
+  // Auto-fill email from query params (for OAuth signup)
+  useEffect(() => {
+    if (router.isReady && router.query.email) {
+      const email = router.query.email as string;
+      const emailParts = email.split('@');
+      if (emailParts.length === 2) {
+        setEmailLocal(emailParts[0]);
+        setEmailDomain(emailParts[1]);
+        // Try to match domain with predefined options
+        const matchedDomain = DOMAIN_OPTIONS.find(
+          (opt) => opt.value === emailParts[1]
+        );
+        if (matchedDomain) {
+          setSelectedDomainOption(matchedDomain.value);
+        } else {
+          setSelectedDomainOption("");
+        }
+      }
+    }
+  }, [router.isReady, router.query.email]);
   const [newsletter, setNewsletter] = useState(false);
-  const [carrier, setCarrier] = useState("");
   const [phone, setPhone] = useState("");
   const [verificationCode, setVerificationCode] = useState("");
   const [isPhoneVerified, setIsPhoneVerified] = useState(false);
@@ -219,7 +231,7 @@ const Signup: React.FC = () => {
     setPhoneError("");
     setVerificationCodeError("");
 
-    if (!carrier || !phone) {
+    if (!phone) {
       setPhoneError("휴대폰번호를 입력해주세요");
       return;
     }
@@ -251,7 +263,7 @@ const Signup: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [phone, carrier]);
+  }, [phone]);
 
   
   const handleVerifyCode = useCallback(async () => {
@@ -279,11 +291,7 @@ const Signup: React.FC = () => {
       });
 
       if (response.error) {
-        if (response.status === 400) {
-          setVerificationCodeError("인증번호가 올바르지 않거나 만료되었습니다.");
-        } else {
-          setVerificationCodeError(response.error || "인증에 실패했습니다.");
-        }
+        setVerificationCodeError(response.error);
         return;
       }
 
@@ -444,7 +452,7 @@ const Signup: React.FC = () => {
     }
 
     // 휴대폰 번호 검증
-    if (!carrier || !phone) {
+    if (!phone) {
       setPhoneError("휴대폰번호를 입력해주세요");
       hasError = true;
     }
@@ -464,7 +472,6 @@ const Signup: React.FC = () => {
     name,
     emailLocal,
     emailDomain,
-    carrier,
     phone,
     password,
     passwordConfirm,
@@ -808,42 +815,31 @@ const Signup: React.FC = () => {
               휴대폰 번호<span className="auth-required-mark">*</span>
             </label>
             <div className="signup-phone-input-group">
-              <Select
-                options={CARRIER_OPTIONS}
-                value={carrier}
+              <TextField
+                variant="line"
+                type="tel"
+                placeholder="휴대폰 번호를 입력해주세요"
+                value={phone}
                 onChange={(val) => {
-                  setCarrier(val);
-                  if (val && phone) {
+                  setPhone(val);
+                  if (val) {
                     setPhoneError("");
                   }
                 }}
-                placeholder="통신사 선택"
-                className="signup-carrier-select"
+                readOnly={isPhoneVerified}
+                className="signup-phone-input"
+                error={!!phoneError}
+                fullWidth
               />
-                <TextField
-                  variant="line"
-                  type="tel"
-                  placeholder="휴대폰 번호를 입력해주세요"
-                  value={phone}
-                  onChange={(val) => {
-                    setPhone(val);
-                    if (val && carrier) {
-                      setPhoneError("");
-                    }
-                  }}
-                  readOnly={isPhoneVerified}
-                  className="signup-phone-input"
-                  error={!!phoneError}
-                />
-                <Button
-                  type="line-white"
-                  size="medium"
-                  disabled={!carrier || !phone || isPhoneVerified || isLoading}
-                  onClick={handleRequestVerification}
-                  className="signup-request-verification-button"
-                >
-                  {isLoading ? "발송 중..." : "인증 요청"}
-                </Button>
+              <Button
+                type="line-white"
+                size="medium"
+                disabled={!phone || isPhoneVerified || isLoading}
+                onClick={handleRequestVerification}
+                className="signup-request-verification-button"
+              >
+                {isLoading ? "발송 중..." : "인증 요청"}
+              </Button>
             </div>
             {phoneError && (
               <p className="auth-error-message">

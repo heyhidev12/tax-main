@@ -1,3 +1,4 @@
+import React, { useState } from "react";
 import Navbar from "../common/Navbar/Navbar";
 import Footer from "@/components/Footer";
 import Awards from "./awards";
@@ -13,6 +14,8 @@ import Section2 from "./Section2";
 import styles from "./styles.module.scss";
 import FloatingButton from "../common/FloatingButton";
 import { useRouter } from "next/router";
+import Header from "../common/Header";
+import Menu from "@/components/Menu";
 
 export interface BannerMedia {
   mediaType: "IMAGE" | "VIDEO";
@@ -110,10 +113,17 @@ export default function Home({
   clients,
 }: HomeProps) {
   const router = useRouter();
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   return (
     <div className={`page ${styles["home-page"]}`}>
-      <Navbar />
+      {/* <Navbar  /> */}
+      <Header
+          variant="white"
+          onMenuClick={() => setIsMenuOpen(true)}
+          isFixed={true}
+        />
+        <Menu isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
       <HeroSection heroBanner={heroBanner} />
 
       <Section1 />

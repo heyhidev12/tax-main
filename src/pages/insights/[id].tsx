@@ -305,17 +305,52 @@ const InsightDetailPage: React.FC<InsightDetailPageProps> = ({
     }
   };
 
-  const handleDownload = (fileUrl: string, fileName: string) => {
+  const handleDownload = async (attachmentId: number, fileName: string) => {
     try {
-      // API에서 제공하는 실제 파일 URL을 직접 사용
+      // Prepare headers for authenticated requests
+      const headers: HeadersInit = {};
+      if (typeof window !== 'undefined') {
+        const token = localStorage.getItem('accessToken');
+        if (token) {
+          headers['Authorization'] = `Bearer ${token}`;
+        }
+      }
+      
+      // Use the API endpoint to download the file
+      const downloadUrl = `${API_BASE_URL}/attachments/${attachmentId}/download`;
+      const response = await fetch(downloadUrl, {
+        method: 'GET',
+        headers,
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const blob = await response.blob();
+      
+      // Get the filename from Content-Disposition header if available, otherwise use provided fileName
+      const contentDisposition = response.headers.get('Content-Disposition');
+      let finalFileName = fileName;
+      if (contentDisposition) {
+        const fileNameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+        if (fileNameMatch && fileNameMatch[1]) {
+          finalFileName = fileNameMatch[1].replace(/['"]/g, '');
+        }
+      }
+      
+      // Create a blob URL and trigger download
+      const blobUrl = window.URL.createObjectURL(blob);
       const link = document.createElement("a");
-      link.href = fileUrl;
-      link.download = fileName;
-      link.target = "_blank"; // 새 탭에서 열기
-      link.rel = "noopener noreferrer"; // 보안을 위해
+      link.href = blobUrl;
+      link.download = finalFileName;
+      link.style.display = "none";
       document.body.appendChild(link);
       link.click();
+      
+      // Clean up
       document.body.removeChild(link);
+      window.URL.revokeObjectURL(blobUrl);
     } catch (error) {
       console.error("다운로드 실패:", error);
       alert("파일 다운로드 중 오류가 발생했습니다.");
@@ -719,13 +754,15 @@ const InsightDetailPage: React.FC<InsightDetailPageProps> = ({
                       <button
                         className={styles.downloadButton}
                         onClick={() => {
-                          if (file.url) {
+                          if (file.id) {
                             const fileName =
                               file.name ||
                               file.originalName ||
-                              file.url.split("/").pop() ||
+                              file.url?.split("/").pop() ||
                               "첨부 파일";
-                            handleDownload(file.url, fileName);
+                            handleDownload(file.id, fileName);
+                          } else {
+                            alert("파일 정보를 찾을 수 없습니다.");
                           }
                         }}
                       >

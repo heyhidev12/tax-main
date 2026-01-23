@@ -1889,6 +1889,13 @@
       &:hover {
         background: #fff;
         color: #002c2c;
+
+        svg{
+          stroke: #002c2c;
+          path {
+            stroke: #002c2c;
+          }
+        }
       }
     }
   }

@@ -11,22 +11,29 @@ const AuthCallback = () => {
   const router = useRouter();
 
   useEffect(() => {
-    const { token, error, accessToken } = router.query;
+    if (!router.isReady) return;
 
-    // 토큰이 있으면 저장
-    const tokenValue = (token || accessToken) as string | undefined;
+    const token = router.query.token as string;
+    const error = router.query.error as string;
 
-    if (tokenValue) {
-      localStorage.setItem('accessToken', tokenValue);
+    // Successful SNS login
+    if (token) {
+      localStorage.setItem('accessToken', token);
       router.replace('/');
-    } else if (error) {
-      // 에러가 있으면 로그인 페이지로 이동
-      router.replace(`/login?error=${encodeURIComponent(error as string)}`);
-    } else if (router.isReady) {
-      // 쿼리 파라미터가 없으면 로그인 페이지로
-      router.replace('/login');
+      return;
     }
-  }, [router.query, router.isReady, router]);
+
+    // User does not exist → redirect to signup
+    if (error?.includes('not registered')) {
+      router.replace('/signup');
+      return;
+    }
+
+    // Fallback
+    setTimeout(() => {
+      router.replace('/login');
+    }, 500);
+  }, [router.isReady, router.query.token, router.query.error, router]);
 
   return (
     <div

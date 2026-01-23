@@ -6,9 +6,23 @@ export default function Document() {
       <Head>
         {/* Favicon Links */}
         <link rel="icon" href="/favicon/favicon.ico" />
-        <link rel="icon" type="image/png" sizes="16x16" href="/favicon/favicon-16x16.png" />
-        <link rel="icon" type="image/png" sizes="32x32" href="/favicon/favicon-32x32.png" />
-        <link rel="apple-touch-icon" sizes="180x180" href="/favicon/apple-touch-icon.png" />
+        <link
+          rel="icon"
+          type="image/png"
+          sizes="16x16"
+          href="/favicon/favicon-16x16.png"
+        />
+        <link
+          rel="icon"
+          type="image/png"
+          sizes="32x32"
+          href="/favicon/favicon-32x32.png"
+        />
+        <link
+          rel="apple-touch-icon"
+          sizes="180x180"
+          href="/favicon/apple-touch-icon.png"
+        />
         <link rel="manifest" href="/favicon/site.webmanifest" />
 
         {/* Fonts */}
@@ -36,13 +50,20 @@ export default function Document() {
           href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@200..900&family=Playfair:ital,opsz,wght@0,5..1200,300..900;1,5..1200,300..900&display=swap"
           rel="stylesheet"
         ></link>
-        <link href="https://fonts.cdnfonts.com/css/oregon-ldo" rel="stylesheet">
-        </link>
+        <link
+          href="https://fonts.cdnfonts.com/css/oregon-ldo"
+          rel="stylesheet"
+        ></link>
       </Head>
       <body>
         <Main />
         <NextScript />
       </body>
+      <script
+        src={`https://oapi.map.naver.com/openapi/v3/maps.js?ncpClientId=${process.env.NEXT_PUBLIC_NAVER_MAP_CLIENT_ID}&callback=initNaverMap`}
+        async
+        defer
+      />
     </Html>
   );
 }

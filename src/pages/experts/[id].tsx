@@ -204,7 +204,12 @@ const ExpertDetailPage: React.FC<ExpertDetailPageProps> = ({
       );
 
       if (response.data) {
-        setRelatedNews(response.data.items || []);
+        // Filter news to only show items where authorName matches current expert's name
+        const allNews = response.data.items || [];
+        const filteredNews = allNews.filter(
+          (news) => news.authorName === data?.name
+        );
+        setRelatedNews(filteredNews);
       }
     } catch (err) {
       console.error("관련 소식을 불러오는 중 오류:", err);
@@ -316,25 +321,35 @@ const ExpertDetailPage: React.FC<ExpertDetailPageProps> = ({
   };
 
   const handleShare = async () => {
-    const shareUrl = window.location.href;
-    const shareTitle = `${data?.name} 세무사 - 세무법인 함께`;
+    if (typeof window === "undefined") return;
 
-    if (navigator.share) {
-      try {
+    const url = window.location.href;
+    const title = `${data?.name || "세무사"} - 세무법인 함께`;
+    const text = `${data?.name || "세무사"} 세무사 프로필`;
+
+    try {
+      // Web Share API가 지원되는 경우
+      if (navigator.share) {
         await navigator.share({
-          title: shareTitle,
-          url: shareUrl,
+          title,
+          text,
+          url,
         });
-      } catch (err) {
-        // 사용자가 공유를 취소한 경우
-      }
-    } else {
-      // 공유 API를 지원하지 않는 경우 클립보드에 복사
-      try {
-        await navigator.clipboard.writeText(shareUrl);
+      } else {
+        // Web Share API가 지원되지 않는 경우 클립보드에 복사
+        await navigator.clipboard.writeText(url);
         alert("링크가 클립보드에 복사되었습니다.");
-      } catch (err) {
-        console.error("클립보드 복사 실패:", err);
+      }
+    } catch (error) {
+      // 사용자가 공유를 취소한 경우 등 에러는 무시
+      if (error instanceof Error && error.name !== "AbortError") {
+        // 클립보드 복사로 폴백
+        try {
+          await navigator.clipboard.writeText(url);
+          alert("링크가 클립보드에 복사되었습니다.");
+        } catch (clipboardError) {
+          console.error("공유 실패:", clipboardError);
+        }
       }
     }
   };
@@ -801,6 +816,10 @@ const ExpertDetailPage: React.FC<ExpertDetailPageProps> = ({
                         modules={[Navigation]}
                         grabCursor={true}
                         allowTouchMove={true}
+                        preventClicks={false}
+                        preventClicksPropagation={false}
+  noSwiping
+  noSwipingClass="no-swiping"
                         navigation={{
                           prevEl: "#experts-prev-btn",
                           nextEl: "#experts-next-btn",
@@ -833,12 +852,16 @@ const ExpertDetailPage: React.FC<ExpertDetailPageProps> = ({
                         className={styles.expertsSwiper}
                       >
                         {experts.map((expert, index) => (
-                          <SwiperSlide key={expert.id || index}>
+                          <SwiperSlide key={expert.id || index} >
                             <div
                               className={styles.expertCard}
-                              onClick={() =>
-                                router.push(`/experts/${expert.id}`)
-                              }
+                              onClick={(e) => {
+                                console.log("expert.id", expert.id);
+                                if (expert.id) {
+                                  router.push(`/experts/${expert.id}`);
+                                }
+                              }}
+                              style={{ cursor: 'pointer' }}
                             >
                               <div className={styles.expertImage}>
                                 <img
@@ -934,7 +957,7 @@ const ExpertDetailPage: React.FC<ExpertDetailPageProps> = ({
           )}
 
           {/* Related News Section */}
-          {relatedNews.length > 0 && (
+          {  relatedNews.length > 0 && (
             <div className={styles.fullWidthSection}>
               <div className="container">
                 <div className={styles.fullWidthContainer}>
@@ -974,6 +997,8 @@ const ExpertDetailPage: React.FC<ExpertDetailPageProps> = ({
                         modules={[Navigation]}
                         grabCursor={true}
                         allowTouchMove={true}
+                        preventClicks={false}
+                        preventClicksPropagation={false}
                         navigation={{
                           prevEl: "#news-prev-btn",
                           nextEl: "#news-next-btn",
@@ -1009,9 +1034,13 @@ const ExpertDetailPage: React.FC<ExpertDetailPageProps> = ({
                           <SwiperSlide key={news.id}>
                             <div
                               className={styles.newsCard}
-                              onClick={() =>
-                                router.push(`/insights/${news.id}`)
-                              }
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (news.id) {
+                                  router.push(`/insights/${news.id}`);
+                                }
+                              }}
+                              style={{ cursor: 'pointer' }}
                             >
                               {news.thumbnail && (
                                 <div className={styles.newsThumbnail}>

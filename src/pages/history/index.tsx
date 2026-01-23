@@ -444,17 +444,12 @@ const HistoryPage: React.FC = () => {
     }
   }, [activeTab]);
 
-  // Naver Map 초기화
-  useEffect(() => {
-    // branchesLoading이 true이면 아직 DOM에 지도 요소가 없으므로 대기
-    if (
-      activeTab !== "branches" ||
-      branchesData.length === 0 ||
-      branchesLoading ||
-      typeof window === "undefined"
-    ) {
-      return;
-    }
+// Naver Map 초기화
+useEffect(() => {
+  // branchesLoading이 true이면 아직 DOM에 지도 요소가 없으므로 대기
+  if (activeTab !== "branches") return;
+  if (!(window as any).naver?.maps) return;
+
 
     // 인증 실패 처리 함수 설정 (공식 문서 권장)
     (window as any).navermap_authFailure = function () {
@@ -643,6 +638,7 @@ const HistoryPage: React.FC = () => {
       // 지도 인스턴스는 유지 (탭 전환 시에도 지도가 유지되도록)
     };
   }, [activeTab, branchesData, branchesLoading]);
+  
 
   const formatMonth = (item: HistoryItem): string => {
     // month 값을 사용하여 월만 표시

@@ -122,13 +122,7 @@ const FindUsername: React.FC = () => {
       }
 
       if (response.error) {
-        if (response.status === 400) {
-          setError('인증번호가 올바르지 않거나 만료되었습니다.');
-        } else if (response.status === 404) {
-          setError('해당 정보로 가입된 회원이 없습니다.');
-        } else {
-          setError(response.error || '인증에 실패했습니다.');
-        }
+        setError(response.error);
         return;
       }
 

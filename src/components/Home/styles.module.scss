@@ -15,6 +15,7 @@
     height: 100vh;
     overflow: hidden;
     margin-bottom: 80px;
+    margin-top: -92px; 
 
     .videoTag {
       min-height: 1080px;
@@ -25,6 +26,7 @@
       object-fit: cover;
 
       @media (max-width: 767px) {
+        margin-top: -52px;
         height: 100vh;
         min-height: 500px;
         margin-bottom: 0;

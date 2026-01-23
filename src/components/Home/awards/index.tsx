@@ -147,13 +147,13 @@ const Awards: React.FC<AwardsProps> = ({ awards, isExposed }) => {
                 <SwiperSlide key={award.id}>
                   <div className={styles['award-item']}>
                       <div className={styles['award-item__certificate']}>
-                        <img src={award.image.url} alt={award.name} />
+                        <img src={award?.image?.url} alt={award?.name} />
                       </div>
                     <div className={styles['award-item__info']}>
                       <span className={styles['award-item__year']}>
-                        {award.yearName} {award.source}
+                        {award?.yearName} {award?.source}
                       </span>
-                      <h3 className={styles['award-item__title']}>{award.name}</h3>
+                      <h3 className={styles['award-item__title']}>{award?.name}</h3>
                     </div>
                   </div>
                 </SwiperSlide>

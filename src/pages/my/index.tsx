@@ -154,9 +154,6 @@ const MyPage: React.FC = () => {
   // 모바일 드롭다운 상태
   const [isEmailDomainDropdownOpen, setIsEmailDomainDropdownOpen] =
     useState(false);
-  const [isCarrierDropdownOpen, setIsCarrierDropdownOpen] = useState(false);
-  const [isPhoneCarrierDropdownOpen, setIsPhoneCarrierDropdownOpen] =
-    useState(false);
 
   // 회원정보 수정 폼 상태
   const [editForm, setEditForm] = useState({
@@ -164,10 +161,8 @@ const MyPage: React.FC = () => {
     email: "",
     emailDomain: "",
     phoneNumber: "",
-    phoneCarrier: "SKT",
   });
   const [emailDomainSelect, setEmailDomainSelect] = useState(false);
-  const [phoneCarrierSelect, setPhoneCarrierSelect] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
   // 비밀번호 변경 폼 상태
@@ -186,7 +181,6 @@ const MyPage: React.FC = () => {
   // 휴대폰 번호 변경 관련 상태
   const [showChangePhoneForm, setShowChangePhoneForm] = useState(false);
   const [phoneChangeForm, setPhoneChangeForm] = useState({
-    phoneCarrier: "SKT",
     phoneNumber: "",
   });
   const [phoneChangeError, setPhoneChangeError] = useState("");
@@ -760,21 +754,10 @@ const MyPage: React.FC = () => {
 
       // 현재 사용자 정보로 폼 초기화
       const emailParts = displayProfile.email?.split("@") || ["", ""];
-      let phoneCarrier = "SKT";
       let phoneNumber = "";
 
       if (displayProfile.phoneNumber) {
-        const phoneParts = displayProfile.phoneNumber.split("-");
-        if (phoneParts.length >= 3) {
-          if (["SKT", "KT", "LG U+"].includes(phoneParts[0])) {
-            phoneCarrier = phoneParts[0];
-            phoneNumber = phoneParts.slice(1).join("-");
-          } else {
-            phoneNumber = displayProfile.phoneNumber;
-          }
-        } else {
-          phoneNumber = displayProfile.phoneNumber;
-        }
+        phoneNumber = displayProfile.phoneNumber;
       }
 
       setEditForm({
@@ -782,7 +765,6 @@ const MyPage: React.FC = () => {
         email: emailParts[0] || "",
         emailDomain: emailParts[1] || "",
         phoneNumber: phoneNumber,
-        phoneCarrier: phoneCarrier,
       });
     };
 
@@ -1013,11 +995,7 @@ const MyPage: React.FC = () => {
       });
 
       if (response.error) {
-        if (response.status === 400) {
-          setVerificationError("인증번호가 올바르지 않거나 만료되었습니다.");
-        } else {
-          setVerificationError(response.error || "인증에 실패했습니다.");
-        }
+        setVerificationError(response.error);
         return;
       }
 
@@ -1055,7 +1033,7 @@ const MyPage: React.FC = () => {
       setShowChangePhoneForm(false);
       setIsPasswordVerified(false);
       setShowPasswordVerify(false);
-      setPhoneChangeForm({ phoneCarrier: "SKT", phoneNumber: "" });
+      setPhoneChangeForm({ phoneNumber: "" });
       setVerificationCode("");
       setIsVerificationRequested(false);
       setIsCodeVerified(false);
@@ -1584,54 +1562,6 @@ const MyPage: React.FC = () => {
                           휴대폰 번호{" "}
                           <span style={{ color: "#f35064" }}>*</span>
                         </p>
-                        <div className={styles.mobileDropdownWrapper}>
-                          <button
-                            className={styles.mobileCarrierSelect}
-                            onClick={() =>
-                              setIsCarrierDropdownOpen(!isCarrierDropdownOpen)
-                            }
-                          >
-                            <span>
-                              {editForm.phoneCarrier || "통신사 선택"}
-                            </span>
-                            <img
-                              src="/images/common/arrow-down.svg"
-                              alt=""
-                              style={{
-                                width: 20,
-                                height: 20,
-                                transform: isCarrierDropdownOpen
-                                  ? "rotate(180deg)"
-                                  : "rotate(0deg)",
-                                transition: "transform 0.2s ease",
-                              }}
-                            />
-                          </button>
-                          {isCarrierDropdownOpen && (
-                            <div className={styles.mobileDropdownMenu}>
-                              {["SKT", "KT", "LG U+", "알뜰폰"].map(
-                                (carrier) => (
-                                  <button
-                                    key={carrier}
-                                    className={styles.mobileDropdownItem}
-                                    onClick={() => {
-                                      setEditForm({
-                                        ...editForm,
-                                        phoneCarrier: carrier,
-                                      });
-                                      setIsCarrierDropdownOpen(false);
-                                    }}
-                                  >
-                                    {carrier}
-                                  </button>
-                                ),
-                              )}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-
-                      <div className={styles.mobileEditFormField}>
                         <div className={styles.mobilePhoneRow}>
                           <TextField
                             variant="line"
@@ -1648,7 +1578,6 @@ const MyPage: React.FC = () => {
                             onClick={() => {
                               setShowChangePhoneForm(true);
                               setPhoneChangeForm({
-                                phoneCarrier: editForm.phoneCarrier,
                                 phoneNumber: editForm.phoneNumber,
                               });
                             }}
@@ -1762,53 +1691,6 @@ const MyPage: React.FC = () => {
                       <p className={styles.mobilePhoneChangeLabel}>
                         휴대폰 번호 <span style={{ color: "#f35064" }}>*</span>
                       </p>
-                      <div className={styles.mobileDropdownWrapper}>
-                        <button
-                          className={styles.mobilePhoneCarrierSelect}
-                          onClick={() =>
-                            setIsPhoneCarrierDropdownOpen(
-                              !isPhoneCarrierDropdownOpen,
-                            )
-                          }
-                        >
-                          <span>
-                            {phoneChangeForm.phoneCarrier || "통신사 선택"}
-                          </span>
-                          <img
-                            src="/images/common/arrow-down.svg"
-                            alt=""
-                            style={{
-                              width: 20,
-                              height: 20,
-                              transform: isPhoneCarrierDropdownOpen
-                                ? "rotate(180deg)"
-                                : "rotate(0deg)",
-                              transition: "transform 0.2s ease",
-                            }}
-                          />
-                        </button>
-                        {isPhoneCarrierDropdownOpen && (
-                          <div className={styles.mobileDropdownMenu}>
-                            {["SKT", "KT", "LG U+", "알뜰폰"].map((carrier) => (
-                              <button
-                                key={carrier}
-                                className={styles.mobileDropdownItem}
-                                onClick={() => {
-                                  setPhoneChangeForm({
-                                    ...phoneChangeForm,
-                                    phoneCarrier: carrier,
-                                  });
-                                  setIsPhoneCarrierDropdownOpen(false);
-                                }}
-                              >
-                                {carrier}
-                              </button>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                    <div className={styles.mobilePhoneChangeField}>
                       <div className={styles.mobilePhoneInputRow}>
                         <TextField
                           variant="line"
@@ -2767,55 +2649,6 @@ const MyPage: React.FC = () => {
                             <p className={styles.formRequired}>*</p>
                           </div>
                           <div className={styles.phoneFieldRow}>
-                            <div className={styles.phoneCarrierSelectWrapper}>
-                              <button
-                                className={styles.phoneCarrierSelect}
-                                onClick={() =>
-                                  setPhoneCarrierSelect(!phoneCarrierSelect)
-                                }
-                              >
-                                {editForm.phoneCarrier}
-                                <svg
-                                  width="20"
-                                  height="20"
-                                  viewBox="0 0 20 20"
-                                  fill="none"
-                                  xmlns="http://www.w3.org/2000/svg"
-                                  className={`${styles.selectArrow} ${
-                                    phoneCarrierSelect
-                                      ? styles.selectArrowOpen
-                                      : ""
-                                  }`}
-                                >
-                                  <path
-                                    d="M7.5 5L12.5 10L7.5 15"
-                                    stroke="#F0F0F0"
-                                    strokeWidth="1.5"
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                  />
-                                </svg>
-                              </button>
-                              {phoneCarrierSelect && (
-                                <div className={styles.phoneCarrierDropdown}>
-                                  {["SKT", "KT", "LG U+"].map((carrier) => (
-                                    <button
-                                      key={carrier}
-                                      className={styles.phoneCarrierOption}
-                                      onClick={() => {
-                                        setEditForm({
-                                          ...editForm,
-                                          phoneCarrier: carrier,
-                                        });
-                                        setPhoneCarrierSelect(false);
-                                      }}
-                                    >
-                                      {carrier}
-                                    </button>
-                                  ))}
-                                </div>
-                              )}
-                            </div>
                             <TextField
                               variant="line"
                               type="tel"
@@ -2825,13 +2658,13 @@ const MyPage: React.FC = () => {
                                 setEditForm({ ...editForm, phoneNumber: value })
                               }
                               className={styles.phoneNumberInput}
+                              fullWidth
                             />
                             <button
                               className={styles.changePasswordButton}
                               onClick={() => {
                                 setShowChangePhoneForm(true);
                                 setPhoneChangeForm({
-                                  phoneCarrier: editForm.phoneCarrier,
                                   phoneNumber: editForm.phoneNumber,
                                 });
                                 setPhoneChangeError("");
@@ -2869,62 +2702,6 @@ const MyPage: React.FC = () => {
                             <p className={styles.formRequired}>*</p>
                           </div>
                           <div className={styles.phoneChangeInputRow}>
-                            <div className={styles.phoneCarrierSelectWrapper}>
-                              <button
-                                className={`${styles.phoneCarrierSelect} ${
-                                  isVerificationRequested ? styles.disabled : ""
-                                }`}
-                                onClick={() =>
-                                  !isVerificationRequested &&
-                                  setPhoneCarrierSelect(!phoneCarrierSelect)
-                                }
-                                disabled={isVerificationRequested}
-                              >
-                                {phoneChangeForm.phoneCarrier}
-                                {!isVerificationRequested && (
-                                  <svg
-                                    width="20"
-                                    height="20"
-                                    viewBox="0 0 20 20"
-                                    fill="none"
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    className={`${styles.selectArrow} ${
-                                      phoneCarrierSelect
-                                        ? styles.selectArrowOpen
-                                        : ""
-                                    }`}
-                                  >
-                                    <path
-                                      d="M7.5 5L12.5 10L7.5 15"
-                                      stroke="#F0F0F0"
-                                      strokeWidth="1.5"
-                                      strokeLinecap="round"
-                                      strokeLinejoin="round"
-                                    />
-                                  </svg>
-                                )}
-                              </button>
-                              {phoneCarrierSelect &&
-                                !isVerificationRequested && (
-                                  <div className={styles.phoneCarrierDropdown}>
-                                    {["SKT", "KT", "LG U+"].map((carrier) => (
-                                      <button
-                                        key={carrier}
-                                        className={styles.phoneCarrierOption}
-                                        onClick={() => {
-                                          setPhoneChangeForm({
-                                            ...phoneChangeForm,
-                                            phoneCarrier: carrier,
-                                          });
-                                          setPhoneCarrierSelect(false);
-                                        }}
-                                      >
-                                        {carrier}
-                                      </button>
-                                    ))}
-                                  </div>
-                                )}
-                            </div>
                             <TextField
                               variant="line"
                               type="tel"

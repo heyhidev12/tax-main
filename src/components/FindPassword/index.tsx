@@ -193,13 +193,8 @@ const FindPassword: React.FC = () => {
         const newFailCount = failCount + 1;
         setFailCount(newFailCount);
         
-        if (response.status === 400) {
-          setError('인증번호가 올바르지 않습니다.');
-        } else if (response.status === 404) {
-          setError('해당 정보로 가입된 회원이 없습니다.');
-        } else {
-          setError(response.error || '인증에 실패했습니다.');
-        }
+        // Display backend error message as-is
+        setError(response.error);
         
         // Clear verification code input on error to allow retry
         setVerificationCode('');
