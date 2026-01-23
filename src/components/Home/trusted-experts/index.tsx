@@ -3,7 +3,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/router";
 import { Swiper, SwiperSlide } from "swiper/react";
-import { Navigation } from "swiper/modules";
+import { Autoplay, Navigation } from "swiper/modules";
 import type { Swiper as SwiperType } from "swiper";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/dist/ScrollTrigger";
@@ -38,8 +38,12 @@ const TrustedExperts: React.FC<TrustedExpertsProps> = ({ experts }) => {
     }
 
     const ctx = gsap.context(() => {
-      const headerElement = sectionRef.current?.querySelector(`.${styles["trusted-experts__header"]}`);
-      const sliderElement = sectionRef.current?.querySelector(`.${styles["trusted-experts__slider"]}`);
+      const headerElement = sectionRef.current?.querySelector(
+        `.${styles["trusted-experts__header"]}`,
+      );
+      const sliderElement = sectionRef.current?.querySelector(
+        `.${styles["trusted-experts__slider"]}`,
+      );
 
       if (isMobile) {
         // Mobile: Simple fade up (no horizontal movement)
@@ -143,8 +147,9 @@ const TrustedExperts: React.FC<TrustedExpertsProps> = ({ experts }) => {
 
   return (
     <section ref={sectionRef} className={styles["trusted-experts"]}>
-      <div className={styles["trusted-experts__header"]}>
+      <div className={styles["trusted-experts__square"]}></div>
 
+      <div className={styles["trusted-experts__header"]}>
         <div className={styles["trusted-experts__title-area"]}>
           <span className={styles["trusted-experts__number"]}>02</span>
           <div className={styles["trusted-experts__title-content"]}>
@@ -166,11 +171,15 @@ const TrustedExperts: React.FC<TrustedExpertsProps> = ({ experts }) => {
 
       <div className={styles["trusted-experts__slider"]}>
         <Swiper
-          modules={[Navigation]}
+          modules={[Navigation, Autoplay]}
           spaceBetween={20}
           slidesPerView={4.5}
-          loop={false}
-          speed={600}
+          speed={1500}
+          loop={true}
+          autoplay={{
+            delay: 1000,
+            disableOnInteraction: false,
+          }}
           onSwiper={(swiper) => {
             swiperRef.current = swiper;
           }}
@@ -282,8 +291,6 @@ const TrustedExperts: React.FC<TrustedExpertsProps> = ({ experts }) => {
             style={{ width: `${progress * 100}%` }}
           />
         </div>
-        <div className={styles["trusted-experts__square"]}></div>
-
       </div>
     </section>
   );

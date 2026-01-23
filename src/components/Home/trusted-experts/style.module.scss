@@ -15,6 +15,19 @@ $white: #fff;
   @media (max-width: 767px) {
     padding: 80px 0 100px;
   }
+  &__square {
+    width: 834px;
+    position: absolute;
+    height: 387px;
+    bottom: 0px;
+    right: 0;
+    z-index: 0;
+    background-color: $bg-light;
+
+    @media (max-width: 767px) {
+      display: none;
+    }
+  }
 
   &__header {
     display: flex;
@@ -470,19 +483,6 @@ $white: #fff;
     }
   }
 
-  &__square {
-    width: 834px;
-    position: absolute;
-    height: 387px;
-    bottom: -120px;
-    right: 0;
-    z-index: 0;
-    background-color: $bg-light;
-
-    @media (max-width: 767px) {
-      display: none;
-    }
-  }
 
   &__progress-track {
     width: 100%;
