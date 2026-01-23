@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/router";
 import { GetServerSideProps } from "next";
-import Head from "next/head";
 import dynamic from "next/dynamic";
 import "@toast-ui/editor/dist/toastui-editor-viewer.css";
 import { Swiper, SwiperSlide } from "swiper/react";
@@ -15,6 +14,7 @@ import Footer from "@/components/Footer";
 import FloatingButton from "@/components/common/FloatingButton";
 import ContentBox from "@/components/common/ContentBox";
 import Icon from "@/components/common/Icon";
+import SEO from "@/components/common/SEO";
 import { get as getClient } from "@/lib/api";
 import { get } from "@/lib/api-server";
 import { API_ENDPOINTS } from "@/config/api";
@@ -354,31 +354,29 @@ const ExpertDetailPage: React.FC<ExpertDetailPageProps> = ({
     );
   }
 
+  if (!data) {
+    return (
+      <div>
+        <SEO pageType="menu" menuName="전문가 소개" />
+        <Header variant="white" onMenuClick={() => setIsMenuOpen(true)} isFixed={true} />
+        <Menu isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
+        <div style={{ padding: "100px 20px", textAlign: "center" }}>
+          {error || "전문가 정보를 찾을 수 없습니다."}
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+
   return (
     <>
-      <Head>
-        <title>{data.name} 세무사 - 세무법인 함께</title>
-        <meta
-          name="description"
-          content={
-            data.oneLineIntro || `${data.name} 세무사 - ${data.affiliation}`
-          }
-        />
-        <meta
-          property="og:title"
-          content={`${data.name} 세무사 - 세무법인 함께`}
-        />
-        <meta
-          property="og:description"
-          content={
-            data.oneLineIntro || `${data.name} 세무사 - ${data.affiliation}`
-          }
-        />
-        <meta property="og:type" content="profile" />
-        {data.mainPhoto?.url && (
-          <meta property="og:image" content={data.mainPhoto.url} />
-        )}
-      </Head>
+      <SEO
+        pageType="content"
+        menuName="전문가 소개"
+        postTitle={`${data.name} 세무사`}
+        description={data.oneLineIntro || `${data.name} 세무사 - ${data.affiliation}`}
+        ogImage={data.mainPhoto?.url}
+      />
       <div className={styles.page}>
         <Header
           variant="transparent"

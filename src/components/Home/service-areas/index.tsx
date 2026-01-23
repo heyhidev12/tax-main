@@ -7,9 +7,7 @@ import "swiper/css";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/dist/ScrollTrigger";
 import styles from "./service.module.scss";
-import { get } from "@/lib/api";
-import { API_ENDPOINTS } from "@/config/api";
-
+import type { CategoryGroup } from "../index";
 import type { ServiceCard } from "./data";
 import ViewMore from "../../common/ViewMore";
 
@@ -17,56 +15,18 @@ if (typeof window !== "undefined") {
   gsap.registerPlugin(ScrollTrigger);
 }
 
-interface BusinessItem {
-  id: number;
-  name: string;
-  image?: {
-    id: number;
-    url: string;
-  };
-  isMainExposed?: boolean;
-  isExposed?: boolean;
-  displayOrder?: number;
+interface ServiceAreasProps {
+  initialData: CategoryGroup[];
 }
 
-interface MinorCategory {
-  id: number;
-  name: string;
-  isMainExposed: boolean;
-  image?: {
-    id: number;
-    url: string;
-  };
-  items: BusinessItem[];
-  displayOrder?: number;
-}
-
-interface MajorCategory {
-  id: number;
-  name: string;
-  isExposed: boolean;
-  displayOrder: number;
-}
-
-interface HierarchicalData {
-  majorCategory: MajorCategory;
-  minorCategories: MinorCategory[];
-}
-
-interface CategoryGroup {
-  majorCategory: MajorCategory;
-  cards: ServiceCard[];
-}
-
-export default function ServiceAreas() {
+export default function ServiceAreas({ initialData }: ServiceAreasProps) {
   const [activeTab, setActiveTab] = useState<string | null>(null);
   const [progress, setProgress] = useState(0.5);
   const [hoveredCard, setHoveredCard] = useState<number | null>(null);
   const [isMobile, setIsMobile] = useState(false);
   const [windowWidth, setWindowWidth] = useState<number>(0);
   const swiperRef = useRef<SwiperType | null>(null);
-  const [categoryGroups, setCategoryGroups] = useState<CategoryGroup[]>([]);
-  const [loading, setLoading] = useState(true);
+  const categoryGroups = initialData;
   const sectionRef = useRef<HTMLDivElement>(null);
   const titleRef = useRef<HTMLDivElement>(null);
   const cardsContainerRef = useRef<HTMLDivElement>(null);
@@ -86,75 +46,12 @@ export default function ServiceAreas() {
     }
   }, []);
 
-  // Fetch business areas data from API
+  // Set active tab to first group if available and no tab is selected
   useEffect(() => {
-    const fetchServiceAreas = async () => {
-      try {
-        setLoading(true);
-        const response = await get<HierarchicalData[]>(
-          `${API_ENDPOINTS.BUSINESS_AREAS_HIERARCHICAL}?limit=20&page=1`,
-        );
-
-        if (response.data && Array.isArray(response.data)) {
-          // Group by majorCategory.id - keep API order as-is
-          const groupsMap = new Map<number, CategoryGroup>();
-
-          response.data.forEach((hierarchicalItem) => {
-            const majorCategoryId = hierarchicalItem.majorCategory.id;
-
-            // Initialize group if it doesn't exist
-            if (!groupsMap.has(majorCategoryId)) {
-              groupsMap.set(majorCategoryId, {
-                majorCategory: hierarchicalItem.majorCategory,
-                cards: [],
-              });
-            }
-
-            const group = groupsMap.get(majorCategoryId)!;
-
-            // Process minorCategories - do NOT filter by isExposed (backend already filters)
-            hierarchicalItem.minorCategories.forEach((minorCategory) => {
-              // Only filter items by isMainExposed === true
-              if (minorCategory.isMainExposed === true) {
-                const tags = minorCategory.items.map((item) => item.name);
-
-                const imageUrl =
-                  minorCategory.image?.url ||
-                  minorCategory.items[0]?.image?.url ||
-                  "";
-
-                group.cards.push({
-                  id: minorCategory.id,
-                  title: minorCategory.name,
-                  tags,
-                  image: imageUrl,
-                });
-              }
-            });
-          });
-
-          // Convert map to array - keep API order (first occurrence order)
-          const groups: CategoryGroup[] = Array.from(groupsMap.values());
-
-          setCategoryGroups(groups);
-
-          // Set active tab to first group if available and no tab is selected
-          if (groups.length > 0 && activeTab === null) {
-            setActiveTab(String(groups[0].majorCategory.id));
-          }
-        } else {
-          setCategoryGroups([]);
-        }
-      } catch (err) {
-        console.error("Failed to fetch service areas:", err);
-        setCategoryGroups([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchServiceAreas();
-  }, []);
+    if (categoryGroups.length > 0 && activeTab === null) {
+      setActiveTab(String(categoryGroups[0].majorCategory.id));
+    }
+  }, [categoryGroups, activeTab]);
 
   // Get cards for active tab
   const activeGroup = categoryGroups.find(
@@ -475,7 +372,7 @@ export default function ServiceAreas() {
     );
   };
 
-  if (loading) {
+  if (categoryGroups.length === 0) {
     return (
       <div className={styles["service-section"]}>
         <div className="container">

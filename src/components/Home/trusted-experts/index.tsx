@@ -12,73 +12,23 @@ import styles from "./style.module.scss";
 import "swiper/css";
 import "swiper/css/navigation";
 import ViewMore from "../../common/ViewMore";
-import { get } from "@/lib/api";
-import { API_ENDPOINTS } from "@/config/api";
+import type { Member } from "../index";
 
 if (typeof window !== "undefined") {
   gsap.registerPlugin(ScrollTrigger);
 }
 
-interface SubPhoto {
-  id: number;
-  url: string;
+interface TrustedExpertsProps {
+  experts: Member[];
 }
 
-interface WorkArea {
-  id: number;
-  value: string;
-}
-
-interface Member {
-  id: number;
-  name: string;
-  subPhoto: SubPhoto;
-  workAreas: WorkArea[];
-  oneLineIntro: string;
-  displayOrder: number;
-}
-
-interface MembersApiResponse {
-  items: Member[];
-  total: number;
-  page: number;
-  limit: number;
-}
-
-const TrustedExperts: React.FC = () => {
+const TrustedExperts: React.FC<TrustedExpertsProps> = ({ experts }) => {
   const router = useRouter();
   const [progress, setProgress] = useState(0);
-  const [experts, setExperts] = useState<Member[]>([]);
   const swiperRef = useRef<SwiperType | null>(null);
   const navigationPrevRef = useRef<HTMLButtonElement>(null);
   const navigationNextRef = useRef<HTMLButtonElement>(null);
   const sectionRef = useRef<HTMLElement>(null);
-
-  useEffect(() => {
-    const fetchMembers = async () => {
-      try {
-        const response = await get<MembersApiResponse>(
-          `${API_ENDPOINTS.MEMBERS}?page=1&limit=20`,
-        );
-
-        if (
-          response.data &&
-          response.data.items &&
-          response.data.items.length > 0
-        ) {
-          // Sort by displayOrder (ascending)
-          const sortedMembers = [...response.data.items].sort(
-            (a, b) => (a.displayOrder ?? 0) - (b.displayOrder ?? 0),
-          );
-          setExperts(sortedMembers);
-        }
-      } catch (error) {
-        console.error("Failed to fetch members:", error);
-      }
-    };
-
-    fetchMembers();
-  }, []);
 
   // GSAP Animation - RIGHT → CENTER with scrub
   useEffect(() => {

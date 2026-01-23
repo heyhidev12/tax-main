@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://togethertax.co.kr/sitemap.xml

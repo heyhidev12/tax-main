@@ -26,6 +26,8 @@ export interface TextFieldProps {
   value?: string;
   /** 값 변경 핸들러 */
   onChange?: (value: string) => void;
+  /** 포커스 해제 핸들러 */
+  onBlur?: () => void;
   /** 에러 상태 */
   error?: boolean;
   /** 에러 메시지 */
@@ -186,6 +188,7 @@ export function TextField({
   placeholder = '입력해주세요',
   value = '',
   onChange,
+  onBlur,
   error = false,
   errorMessage,
   successMessage,
@@ -295,7 +298,10 @@ export function TextField({
                 value={internalValue}
                 onChange={handleChange}
                 onFocus={() => setIsFocused(true)}
-                onBlur={() => setIsFocused(false)}
+                onBlur={() => {
+                  setIsFocused(false);
+                  onBlur?.();
+                }}
                 readOnly={readOnly}
                 disabled={disabled}
                 maxLength={maxLength}

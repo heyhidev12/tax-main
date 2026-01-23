@@ -794,6 +794,7 @@ const HistoryPage: React.FC = () => {
               </div>
               <div className={styles.pencilImage}>
                 <img src="/images/about/about4.png" alt="Pencil" />
+                <img src="/images/about/pencil2.png" alt="Pencil" />
               </div>
               <div className={styles.introMessageSection}>
                 <div className={styles.introMessageContent}>

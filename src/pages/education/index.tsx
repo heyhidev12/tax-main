@@ -1,13 +1,13 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/router';
 import { GetServerSideProps } from 'next';
-import Head from 'next/head';
 import Header from '@/components/common/Header';
 import Menu from '@/components/Menu';
 import Footer from '@/components/Footer';
 import PageHeader from '@/components/common/PageHeader';
 import FloatingButton from '@/components/common/FloatingButton';
 import Pagination from '@/components/common/Pagination';
+import SEO from '@/components/common/SEO';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation } from 'swiper/modules';
 import type { Swiper as SwiperType } from 'swiper';
@@ -61,13 +61,13 @@ const EducationPage: React.FC<EducationPageProps> = ({
   //   }
   // }, [tabFromQuery, router]);
 
-  // Separate states for swiper and list
-  const [swiperItems, setSwiperItems] = useState<EducationItem[]>([]);
-  const [listItems, setListItems] = useState<EducationItem[]>([]);
+  // Separate states for swiper and list - initialize with server-side data
+  const [swiperItems, setSwiperItems] = useState<EducationItem[]>(initialNewEducationList);
+  const [listItems, setListItems] = useState<EducationItem[]>(initialEducationList);
   const [error, setError] = useState<string | null>(initialError);
   const [selectedType, setSelectedType] = useState<EducationType | 'ALL'>('ALL');
   const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
+  const [totalPages, setTotalPages] = useState(initialTotalPages);
   const [isLoadingEducationList, setIsLoadingEducationList] = useState(false);
   const [isLoadingSwiper, setIsLoadingSwiper] = useState(false);
 
@@ -124,38 +124,41 @@ const EducationPage: React.FC<EducationPageProps> = ({
     return userProfile.memberType === item.targetMemberType;
   };
 
-  // Fetch swiper data: ONLY ON PAGE LOAD, static, never refetches
+  // Swiper data is now loaded server-side, no need to fetch on mount
+  // Only fetch if initial data is empty (fallback)
   useEffect(() => {
-    const fetchSwiperData = async () => {
-      setIsLoadingSwiper(true);
-      setError(null);
-      
-      try {
-        const params = new URLSearchParams({
-          page: '1',
-          limit: '8',
-          sort: 'latest',
-        });
+    if (initialNewEducationList.length === 0) {
+      const fetchSwiperData = async () => {
+        setIsLoadingSwiper(true);
+        setError(null);
+        
+        try {
+          const params = new URLSearchParams({
+            page: '1',
+            limit: '8',
+            sort: 'latest',
+          });
 
-        const response = await getClient<EducationListResponse>(
-          `${API_ENDPOINTS.TRAINING_SEMINARS}?${params.toString()}`
-        );
+          const response = await getClient<EducationListResponse>(
+            `${API_ENDPOINTS.TRAINING_SEMINARS}?${params.toString()}`
+          );
 
-        if (response.data) {
-          setSwiperItems(response.data.items);
-        } else if (response.error) {
-          setError(response.error);
+          if (response.data) {
+            setSwiperItems(response.data.items);
+          } else if (response.error) {
+            setError(response.error);
+          }
+        } catch (err) {
+          console.error('Swiper 데이터 로딩 실패:', err);
+          setError('데이터를 불러오는 중 오류가 발생했습니다.');
+        } finally {
+          setIsLoadingSwiper(false);
         }
-      } catch (err) {
-        console.error('Swiper 데이터 로딩 실패:', err);
-        setError('데이터를 불러오는 중 오류가 발생했습니다.');
-      } finally {
-        setIsLoadingSwiper(false);
-      }
-    };
+      };
 
-    fetchSwiperData();
-  }, []); // Empty dependency array - only runs once on mount
+      fetchSwiperData();
+    }
+  }, []); // Only fetch if initial data is empty
 
   // Fetch bottom list data: dynamic, refetches on page/tab change
   useEffect(() => {
@@ -269,19 +272,7 @@ const EducationPage: React.FC<EducationPageProps> = ({
 
   return (
     <>
-      <Head>
-        <title>교육/세미나 안내 - 세무법인 함께</title>
-        <meta
-          name="description"
-          content="세무법인 함께의 전문가 교육 프로그램과 세미나 일정을 확인하세요"
-        />
-        <meta property="og:title" content="교육/세미나 안내 - 세무법인 함께" />
-        <meta
-          property="og:description"
-          content="세무법인 함께의 전문가 교육 프로그램과 세미나"
-        />
-        <meta property="og:type" content="website" />
-      </Head>
+      <SEO pageType="menu" menuName="교육/세미나" />
       <div className={styles.page}>
         <Header variant="white" onMenuClick={() => setIsMenuOpen(true)} isFixed={true} />
         <Menu isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
@@ -595,12 +586,39 @@ const EducationPage: React.FC<EducationPageProps> = ({
 
 export const getServerSideProps: GetServerSideProps<EducationPageProps> = async () => {
   try {
-    // Initial empty state - data will be fetched client-side with proper filters
+    // Fetch initial swiper data (new education section) server-side
+    const swiperParams = new URLSearchParams({
+      page: '1',
+      limit: '8',
+      sort: 'latest',
+    });
+
+    const swiperResponse = await get<EducationListResponse>(
+      `${API_ENDPOINTS.TRAINING_SEMINARS}?${swiperParams.toString()}`
+    ).catch(() => ({ data: { items: [], total: 0, page: 1, limit: 8 } }));
+
+    // Fetch initial list data (first page, all types)
+    const listParams = new URLSearchParams({
+      page: '1',
+      limit: '8',
+      sort: 'latest',
+    });
+
+    const listResponse = await get<EducationListResponse>(
+      `${API_ENDPOINTS.TRAINING_SEMINARS}?${listParams.toString()}`
+    ).catch(() => ({ data: { items: [], total: 0, page: 1, limit: 8 } }));
+
+    const initialNewEducationList = swiperResponse.data?.items || [];
+    const initialEducationList = listResponse.data?.items || [];
+    const initialTotalPages = listResponse.data?.total
+      ? Math.ceil(listResponse.data.total / 8)
+      : 1;
+
     return {
       props: {
-        initialEducationList: [],
-        initialNewEducationList: [],
-        initialTotalPages: 1,
+        initialEducationList,
+        initialNewEducationList,
+        initialTotalPages,
         error: null,
       },
     };

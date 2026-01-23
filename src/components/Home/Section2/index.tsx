@@ -42,63 +42,59 @@ export default function Section2() {
         });
       } else {
         // Desktop: Slow scroll-controlled animations with scrub
-        const tl = gsap.timeline({
-          scrollTrigger: {
-            trigger: sectionRef.current,
-            start: "top 75%",
-            end: "top 35%",
-            scrub: true,
-          },
-        });
+        // Desktop: Slow scroll-controlled animations (premium feel)
+const tl = gsap.timeline({
+  scrollTrigger: {
+    trigger: sectionRef.current,
+    start: "top 75%",
+    end: "+=900",     // LONG scroll distance = slower motion
+    scrub: 1.5,       // Smooth dragging
+  },
+});
 
-        // Left image flows from left - SLOW
-        gsap.set(leftImgRef.current, {
-          opacity: 0,
-          x: -80,
-        });
+// INITIAL STATES (bigger offsets = slower visible motion)
+gsap.set(leftImgRef.current, {
+  opacity: 0,
+  x: -200,
+});
 
-        // Background title flows from bottom - SLOW
-        gsap.set(titleRef.current, {
-          opacity: 0,
-          y: 60,
-        });
+gsap.set(titleRef.current, {
+  opacity: 0,
+  y: 120,
+});
 
-        // Text content flows from left - SLOW
-        gsap.set(textRef.current, {
-          opacity: 0,
-          x: -60,
-        });
+gsap.set(textRef.current, {
+  opacity: 0,
+  x: -160,
+});
 
-        // Right image flows from right - SLOW
-        gsap.set(rightImgRef.current, {
-          opacity: 0,
-          x: 80,
-        });
+gsap.set(rightImgRef.current, {
+  opacity: 0,
+  x: 200,
+});
 
-        tl.to(leftImgRef.current, {
-          opacity: 1,
-          x: 0,
-          duration: 1.8,
-          ease: "power2.out",
-        })
-        .to(titleRef.current, {
-          opacity: 1,
-          y: 0,
-          duration: 1.5,
-          ease: "power2.out",
-        }, "-=0.6")
-        .to(textRef.current, {
-          opacity: 1,
-          x: 0,
-          duration: 1.8,
-          ease: "power2.out",
-        }, "-=0.8")
-        .to(rightImgRef.current, {
-          opacity: 1,
-          x: 0,
-          duration: 1.8,
-          ease: "power2.out",
-        }, "-=0.8");
+// TIMELINE (no duration, scroll controls speed)
+tl.to(leftImgRef.current, {
+  opacity: 1,
+  x: 0,
+  ease: "none",
+})
+.to(titleRef.current, {
+  opacity: 1,
+  y: 0,
+  ease: "none",
+}, "<0.1")
+.to(textRef.current, {
+  opacity: 1,
+  x: 0,
+  ease: "none",
+}, "<0.1")
+.to(rightImgRef.current, {
+  opacity: 1,
+  x: 0,
+  ease: "none",
+}, "<0.1");
+
       }
     }, sectionRef);
 

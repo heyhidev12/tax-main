@@ -378,13 +378,26 @@
 .pencilImage {
   margin-left: calc(-50vw + 50%);
   margin-bottom: 80px;
+  img:last-child {
+    display: none;
+  }
 
   @media (max-width: 767px) {
     margin-left: -20px;
     min-height: 200px;
     margin-bottom: 56px;
     img {
-      height: 200px;
+      min-height: 250px;
+    }
+  }
+  @media (max-width: 576px) {
+    img:first-child {
+      display: none;
+    }
+    img:last-child {
+      display: block;
+      width: 100%;
+      max-height: 600px;
     }
   }
 }
@@ -1120,11 +1133,11 @@
   @media (max-width: $breakpoint-tablet) {
     min-width: auto;
     gap: 6px;
-    h3{
+    h3 {
       font-size: 44px;
     }
 
-    p{
+    p {
       font-size: 20px;
       padding-left: 0px;
       &::before {

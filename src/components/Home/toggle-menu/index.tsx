@@ -44,7 +44,7 @@ export default function ToggleMenu({
     menuItems ??
     MENU_ITEMS.concat([
       // 신고 대리 단독 링크 (구 UI 유지용)
-      { id: "agency", title: "신고 대리", subItems: [] },
+      { id: "agency", title: "상담 신청", subItems: [] },
     ]);
 
   const activeId = selectedItemId ?? localActiveId;

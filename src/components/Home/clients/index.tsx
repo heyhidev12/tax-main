@@ -5,65 +5,25 @@ import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/dist/ScrollTrigger';
 import styles from './style.module.scss';
 import ViewMore from '../../common/ViewMore';
-import { get } from '@/lib/api';
-import { API_ENDPOINTS } from '@/config/api';
+import type { KeyCustomer } from '../index';
 
 if (typeof window !== "undefined") {
   gsap.registerPlugin(ScrollTrigger);
 }
 
-interface ClientLogo {
-  id: number;
-  url: string;
+interface ClientsProps {
+  clients: KeyCustomer[];
 }
 
-interface KeyCustomer {
-  id: number;
-  logo: ClientLogo;
-  displayOrder: number;
-  isMainExposed: boolean;
-  isExposed: boolean;
-}
-
-interface KeyCustomersApiResponse {
-  items: KeyCustomer[];
-  total: number;
-  page: number;
-  limit: number;
-}
-
-const Clients: React.FC = () => {
+const Clients: React.FC<ClientsProps> = ({ clients }) => {
   const [direction, setDirection] = useState<'forward' | 'backward'>('forward');
   const [isPaused, setIsPaused] = useState(false);
-  const [clients, setClients] = useState<KeyCustomer[]>([]);
   const row1Ref = useRef<HTMLDivElement>(null);
   const row2Ref = useRef<HTMLDivElement>(null);
   const [row1Offset, setRow1Offset] = useState(0);
   const [row2Offset, setRow2Offset] = useState(0);
   const sectionRef = useRef<HTMLElement>(null);
   const togetherTextRef = useRef<HTMLSpanElement>(null);
-
-  useEffect(() => {
-    const fetchKeyCustomers = async () => {
-      try {
-        const response = await get<KeyCustomersApiResponse>(
-          `${API_ENDPOINTS.KEY_CUSTOMERS}?page=1&limit=20`
-        );
-
-        if (response.data && response.data.items && response.data.items.length > 0) {
-          // Filter only items where isMainExposed === true
-          const exposedCustomers = response.data.items.filter(
-            (item) => item.isMainExposed === true
-          );
-          setClients(exposedCustomers);
-        }
-      } catch (error) {
-        console.error('Failed to fetch key customers:', error);
-      }
-    };
-
-    fetchKeyCustomers();
-  }, []);
 
   // GSAP Animation - Late start (85%), y animation with stagger
   useEffect(() => {

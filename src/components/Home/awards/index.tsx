@@ -11,74 +11,20 @@ import 'swiper/css/navigation';
 import 'swiper/css/pagination';
 import styles from './style.module.scss';
 import { ArrowBack, ArrowForward } from '@mui/icons-material';
-import { get } from '@/lib/api';
-import { API_ENDPOINTS } from '@/config/api';
+import type { Award } from '../index';
 
 if (typeof window !== "undefined") {
   gsap.registerPlugin(ScrollTrigger);
 }
 
-interface AwardImage {
-  id: number;
-  url: string;
-}
-
-interface Award {
-  id: number;
-  name: string;
-  source: string;
-  image: AwardImage;
-  yearName: string;
-  yearId: number;
-  displayOrder: number;
-  isMainExposed: boolean;
-}
-
-interface AwardsApiResponse {
-  items: Award[];
-  total: number;
-  page: number;
-  limit: number;
+interface AwardsProps {
+  awards: Award[];
   isExposed: boolean;
 }
 
-const Awards: React.FC = () => {
+const Awards: React.FC<AwardsProps> = ({ awards, isExposed }) => {
   const [swiperInstance, setSwiperInstance] = useState<SwiperType | null>(null);
-  const [awards, setAwards] = useState<Award[]>([]);
-  const [isExposed, setIsExposed] = useState<boolean>(false);
   const sectionRef = useRef<HTMLElement>(null);
-
-  useEffect(() => {
-    const fetchAwards = async () => {
-      try {
-        const response = await get<AwardsApiResponse>(
-          `${API_ENDPOINTS.AWARDS}?page=1&limit=20`
-        );
-
-        if (response.data) {
-          const { items, isExposed: exposed } = response.data;
-
-          if (exposed === true && items && items.length > 0) {
-            // Sort by displayOrder (ascending)
-            const sortedAwards = [...items].sort(
-              (a, b) => (a.displayOrder ?? 0) - (b.displayOrder ?? 0)
-            );
-            setAwards(sortedAwards);
-            setIsExposed(true);
-          } else {
-            setAwards([]);
-            setIsExposed(false);
-          }
-        }
-      } catch (error) {
-        console.error('Failed to fetch awards:', error);
-        setAwards([]);
-        setIsExposed(false);
-      }
-    };
-
-    fetchAwards();
-  }, []);
 
   // GSAP Animation - RIGHT slide with scale, scrub enabled
   useEffect(() => {

@@ -22,11 +22,93 @@ export interface BannerMedia {
   displayOrder: number;
 }
 
-interface HomeProps {
-  heroBanner: BannerMedia | null;
+export interface CategoryGroup {
+  majorCategory: {
+    id: number;
+    name: string;
+    isExposed: boolean;
+    displayOrder: number;
+  };
+  cards: Array<{
+    id: number;
+    title: string;
+    tags: string[];
+    image: string;
+  }>;
 }
 
-export default function Home({ heroBanner }: HomeProps) {
+export interface Member {
+  id: number;
+  name: string;
+  subPhoto: {
+    id: number;
+    url: string;
+  };
+  workAreas: Array<{
+    id: number;
+    value: string;
+  }>;
+  oneLineIntro: string;
+  displayOrder: number;
+}
+
+export interface Award {
+  id: number;
+  name: string;
+  source: string;
+  image: {
+    id: number;
+    url: string;
+  };
+  yearName: string;
+  yearId: number;
+  displayOrder: number;
+  isMainExposed: boolean;
+}
+
+export interface InsightItem {
+  id: number;
+  title: string;
+  thumbnail: {
+    url: string;
+  };
+  createdAt: string;
+  isMainExposed: boolean;
+  category?: {
+    targetMemberType?: string;
+  };
+}
+
+export interface KeyCustomer {
+  id: number;
+  logo: {
+    id: number;
+    url: string;
+  };
+  displayOrder: number;
+  isMainExposed: boolean;
+  isExposed: boolean;
+}
+
+interface HomeProps {
+  heroBanner: BannerMedia | null;
+  serviceAreas: CategoryGroup[];
+  experts: Member[];
+  awards: Award[];
+  awardsIsExposed: boolean;
+  insights: InsightItem[];
+  clients: KeyCustomer[];
+}
+
+export default function Home({
+  heroBanner,
+  serviceAreas,
+  experts,
+  awards,
+  awardsIsExposed,
+  insights,
+  clients,
+}: HomeProps) {
   const router = useRouter();
 
   return (
@@ -40,15 +122,15 @@ export default function Home({ heroBanner }: HomeProps) {
 
       <VisionSections />
 
-      <ServiceAreas />
+      <ServiceAreas initialData={serviceAreas} />
 
-      <TrustedExperts />
+      <TrustedExperts experts={experts} />
 
-      <Awards />
+      <Awards awards={awards} isExposed={awardsIsExposed} />
 
-      <Insight />
+      <Insight articles={insights} />
 
-      <Clients />
+      <Clients clients={clients} />
 
       <ContactUs />
        <div className={styles.floatingButtons}>

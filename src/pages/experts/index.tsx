@@ -7,6 +7,7 @@ import PageHeader from "@/components/common/PageHeader";
 import FloatingButton from "@/components/common/FloatingButton";
 import Icon from "@/components/common/Icon";
 import Card, { ProfileTag } from "@/components/common/Card";
+import SEO from "@/components/common/SEO";
 import { get } from "@/lib/api";
 import { API_ENDPOINTS } from "@/config/api";
 import styles from "./experts.module.scss";
@@ -231,7 +232,7 @@ const ExpertsPage: React.FC = () => {
 
   return (
     <>
-      {" "}
+      <SEO pageType="menu" menuName="전문가 소개" />
       <div className={styles.expertsPage}>
         <Header
           variant="white"

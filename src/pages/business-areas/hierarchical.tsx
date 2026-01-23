@@ -6,6 +6,7 @@ import Footer from '@/components/Footer';
 import PageHeader from '@/components/common/PageHeader';
 import FloatingButton from '@/components/common/FloatingButton';
 import Icon from '@/components/common/Icon';
+import SEO from '@/components/common/SEO';
 import { get } from '@/lib/api';
 import { API_ENDPOINTS } from '@/config/api';
 import styles from './hierarchical.module.scss';
@@ -178,6 +179,7 @@ const HierarchicalPage: React.FC = () => {
 
   return (
     <div className={styles.page}>
+      <SEO pageType="menu" menuName="업무분야" />
       <Header variant="white" onMenuClick={() => setIsMenuOpen(true)} isFixed={true} />
       <Menu isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
       <div className={styles.headerImage}>

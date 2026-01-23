@@ -48,71 +48,65 @@ export default function Section1() {
           scrollTrigger: {
             trigger: sectionRef.current,
             start: "top 75%",
-            end: "top 35%",
-            scrub: true,
+            end: "+=650",     // GOLDEN RANGE
+            scrub: 0.8,       // NATURAL SMOOTH
           },
         });
-
-        // Line flows from top
+        
+        // Initial positions (not too big, not too small)
         gsap.set(lineRef.current, {
           opacity: 0,
-          y: -30,
+          y: -80,
         });
-
-        // Text flows from bottom
+        
         gsap.set(h3Ref.current, {
           opacity: 0,
-          y: 50,
+          y: 90,
         });
-
-        // Image flows from right - SLOW
+        
         gsap.set(imageRef.current, {
           opacity: 0,
-          x: 80,
+          x: 140,
         });
-
-        // Left title flows from left - SLOW
+        
         gsap.set(leftTitleRef.current, {
           opacity: 0,
-          x: -60,
+          x: -140,
         });
-
-        // Right content flows from right - SLOW
+        
         gsap.set(rightContentRef.current, {
           opacity: 0,
-          x: 60,
+          x: 120,
         });
-
+        
+        // Timeline (scroll driven)
         tl.to(lineRef.current, {
           opacity: 1,
           y: 0,
-          duration: 1.2,
-          ease: "power2.out",
+          ease: "none",
         })
         .to(h3Ref.current, {
           opacity: 1,
           y: 0,
-          duration: 1.5,
-          ease: "power2.out",
-        }, "-=0.5")
+          ease: "none",
+        }, "<0.1")
         .to(imageRef.current, {
           opacity: 1,
           x: 0,
-          duration: 1.8,
-          ease: "power2.out",
-        }, "-=0.6")
+          ease: "none",
+        }, "<0.1")
         .to(leftTitleRef.current, {
           opacity: 1,
           x: 0,
-          duration: 1.8,
-          ease: "power2.out",
-        }, "-=0.8")
+          ease: "none",
+        }, "<0.1")
         .to(rightContentRef.current, {
           opacity: 1,
           x: 0,
-          duration: 1.8,
-          ease: "power2.out",
-        }, "-=0.8");
+          ease: "none",
+        }, "<0.1");
+        
+
       }
     }, sectionRef);
 

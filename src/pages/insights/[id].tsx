@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import { GetServerSideProps } from "next";
-import Head from "next/head";
 import dynamic from "next/dynamic";
 import "@toast-ui/editor/dist/toastui-editor-viewer.css";
 import Header from "@/components/common/Header";
@@ -10,6 +9,8 @@ import Footer from "@/components/Footer";
 import FloatingButton from "@/components/common/FloatingButton";
 import Button from "@/components/common/Button";
 import Icon from "@/components/common/Icon";
+import SEO from "@/components/common/SEO";
+import { SEO_CONFIG } from "@/lib/seo";
 import { get as getClient, post, del } from "@/lib/api";
 import { get } from "@/lib/api-server";
 import { API_ENDPOINTS, API_BASE_URL } from "@/config/api";
@@ -606,34 +607,14 @@ const InsightDetailPage: React.FC<InsightDetailPageProps> = ({
 
   return (
     <>
-      <Head>
-        <title>{insight.title} - 세무법인 함께</title>
-        <meta
-          name="description"
-          content={
-            insight.content.substring(0, 160).replace(/<[^>]*>/g, "") ||
-            `${insight.title} - 세무법인 함께`
-          }
-        />
-        <meta
-          property="og:title"
-          content={`${insight.title} - 세무법인 함께`}
-        />
-        <meta
-          property="og:description"
-          content={
-            insight.content.substring(0, 160).replace(/<[^>]*>/g, "") ||
-            `${insight.title}`
-          }
-        />
-        <meta property="og:type" content="article" />
-        {insight.thumbnail?.url && (
-          <meta property="og:image" content={insight.thumbnail.url} />
-        )}
-        {insight.createdAt && (
-          <meta property="article:published_time" content={insight.createdAt} />
-        )}
-      </Head>
+      <SEO
+        pageType="content"
+        menuName="인사이트"
+        postTitle={insight.title}
+        description={insight.content?.substring(0, 160).replace(/<[^>]*>/g, '') || `${insight.title} - 세무법인 함께`}
+        ogImage={insight.thumbnail?.url}
+        ogType="article"
+      />
       <div className={styles.page}>
         <Header
           variant="transparent"

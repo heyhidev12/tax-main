@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import { GetServerSideProps } from "next";
-import Head from "next/head";
 import Header from "@/components/common/Header";
 import Menu from "@/components/Menu";
 import Footer from "@/components/Footer";
@@ -12,6 +11,7 @@ import FloatingButton from "@/components/common/FloatingButton";
 import Card from "@/components/common/Card";
 import Icon from "@/components/common/Icon";
 import Tab from "@/components/common/Tab";
+import SEO from "@/components/common/SEO";
 import { get as getClient, post } from "@/lib/api";
 import { get } from "@/lib/api-server";
 import { API_ENDPOINTS } from "@/config/api";
@@ -299,6 +299,17 @@ const InsightsPage: React.FC<InsightsPageProps> = ({
   const validateEmail = (email: string) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(email);
+  };
+
+  // Handle email validation on blur
+  const handleEmailBlur = () => {
+    if (newsletterEmail.trim()) {
+      if (!validateEmail(newsletterEmail)) {
+        setEmailError('올바른 이메일 주소를 입력해주세요');
+      } else {
+        setEmailError('');
+      }
+    }
   };
 
   // Handle newsletter subscription
@@ -1030,6 +1041,7 @@ const formatDateTime = (dateString?: string) => {
 
   return (
     <div className={styles.insightsPage}>
+      <SEO pageType="menu" menuName="인사이트" />
       <Header
         variant="white"
         onMenuClick={() => setIsMenuOpen(true)}
@@ -1570,6 +1582,7 @@ const formatDateTime = (dateString?: string) => {
                               setNewsletterEmail(value);
                               if (emailError) setEmailError('');
                             }}
+                            onBlur={handleEmailBlur}
                             error={!!emailError}
                             errorMessage={emailError}
                             fullWidth
