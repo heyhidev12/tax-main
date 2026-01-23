@@ -36,6 +36,8 @@ export interface EducationItem {
   isExposed: boolean;
   exposedLabel: string;
   isRecommended: boolean;
+  // 세무사(보험) 회원용 승인 여부 플래그
+  isApproved?: boolean;
 }
 
 export interface EducationListResponse {

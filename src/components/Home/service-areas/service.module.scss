@@ -80,7 +80,7 @@ $bg-light: #f8f8f8;
 
     .top-id {
       color: #c9e9e7;
-      font-family: "Arita Buri KR", serif;
+      font-family: 'Arita KR', serif;
       font-size: 180px;
       font-weight: 700;
       margin-left: -30px;
@@ -462,12 +462,10 @@ $bg-light: #f8f8f8;
 
   .service-card__arrow {
     transform: rotate(45deg);
-
-
-        @media (max-width: 767px) {
-      display: none;
-    }
-
+    // Ensure arrow remains clickable on all breakpoints
+    pointer-events: auto;
+    position: relative;
+    z-index: 3;
   }
 
   @media (max-width: 767px) {

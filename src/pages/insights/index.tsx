@@ -46,6 +46,8 @@ interface InsightItem {
   enableComments: boolean;
   isExposed: boolean;
   isMainExposed: boolean;
+  // 세무사(INSURANCE) 회원 전용 승인 여부
+  isApproved?: boolean;
   createdAt?: string;
   updatedAt?: string;
   authorName?: string;
@@ -665,12 +667,21 @@ const InsightsPage: React.FC<InsightsPageProps> = ({
     }
 
     // Apply search filter
-        if (searchQuery && searchQuery.trim()) {
-          const query = searchQuery.trim().toLowerCase();
-          filteredItems = filteredItems.filter((item) =>
-            item.title.toLowerCase().includes(query)
-          );
-        }
+    if (searchQuery && searchQuery.trim()) {
+      const query = searchQuery.trim().toLowerCase();
+      filteredItems = filteredItems.filter((item) =>
+        item.title.toLowerCase().includes(query)
+      );
+    }
+
+    // 추가 조건: 세무사(INSURANCE) 회원일 때는 승인된 인사이트만 노출
+    const { memberType } = getUserAuthState();
+    const isInsuranceUser = memberType === "INSURANCE";
+    const categoryTargetMemberType = selectedCategory.category.targetMemberType;
+    if (isInsuranceUser && categoryTargetMemberType === "INSURANCE") {
+      // isApproved가 false인 항목은 숨기고, undefined/true는 노출
+      filteredItems = filteredItems.filter((item) => item.isApproved !== false);
+    }
 
     // Set display type based on category.type
     const categoryType = selectedCategory.category.type?.toUpperCase() || "A";

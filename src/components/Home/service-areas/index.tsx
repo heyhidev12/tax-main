@@ -10,6 +10,7 @@ import styles from "./service.module.scss";
 import type { CategoryGroup } from "../index";
 import type { ServiceCard } from "./data";
 import ViewMore from "../../common/ViewMore";
+import { useRouter } from "next/router";
 
 if (typeof window !== "undefined") {
   gsap.registerPlugin(ScrollTrigger);
@@ -30,6 +31,7 @@ export default function ServiceAreas({ initialData }: ServiceAreasProps) {
   const sectionRef = useRef<HTMLDivElement>(null);
   const titleRef = useRef<HTMLDivElement>(null);
   const cardsContainerRef = useRef<HTMLDivElement>(null);
+  const router = useRouter();
 
   useEffect(() => {
     const checkScreenSize = () => {
@@ -268,6 +270,7 @@ export default function ServiceAreas({ initialData }: ServiceAreasProps) {
 
   const renderCard = (card: ServiceCard) => {
     const isHovered = hoveredCard === card.id;
+    const majorId = activeGroup?.majorCategory?.id;
 
     return (
       <div
@@ -282,7 +285,17 @@ export default function ServiceAreas({ initialData }: ServiceAreasProps) {
         <div className={styles["service-card__overlay"]}>
           <div className={styles["service-card__header"]}>
             <h3 className={styles["service-card__title"]}>{card.title}</h3>
-            <button className={styles["service-card__arrow"]}>
+            <button
+              type="button"
+              className={styles["service-card__arrow"]}
+              onClick={(e) => {
+                e.stopPropagation();
+                if (!majorId) return;
+                router.push(
+                  `/business-areas/hierarchical?tab=${majorId}&subtab=${card.id}`,
+                );
+              }}
+            >
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
                 <path
                   d="M7 17L17 7M17 7H7M17 7V17"

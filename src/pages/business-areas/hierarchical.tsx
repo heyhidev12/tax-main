@@ -70,11 +70,18 @@ const HierarchicalPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // URL 쿼리 파라미터에서 탭 읽기 (대분류 ID 기반)
+  // URL 쿼리 파라미터에서 탭/서브탭 읽기 (대분류/소분류 ID 기반)
   const tabFromQuery = router.query.tab as string | undefined;
-  const [activeTab, setActiveTab] = useState<string | null>(null);
+  const subtabFromQuery = router.query.subtab as string | undefined;
 
-  const [expandedCategories, setExpandedCategories] = useState<Set<number>>(new Set([1])); // 첫 번째 카테고리 기본 펼침
+  // 활성 대분류/소분류 상태 (숫자 ID 기반)
+  const [activeMajorId, setActiveMajorId] = useState<number | null>(null);
+  const [activeMinorId, setActiveMinorId] = useState<number | null>(null);
+
+  // 펼쳐진 소분류 아코디언 (minorCategory.id)
+  const [expandedCategories, setExpandedCategories] = useState<Set<number>>(
+    () => new Set()
+  );
 
   useEffect(() => {
     const fetchData = async () => {
@@ -86,28 +93,101 @@ const HierarchicalPage: React.FC = () => {
 
         if (response.error) {
           setError(response.error);
-        } else if (response.data && Array.isArray(response.data) && response.data.length > 0) {
+        } else if (
+          response.data &&
+          Array.isArray(response.data) &&
+          response.data.length > 0
+        ) {
           const apiData = response.data;
           setData(apiData);
 
-          // 탭 목록에서 기본 활성 탭 결정 (URL 쿼리 우선)
-          const tabIds = apiData.map((item) => String(item.majorCategory.id));
-          let selectedTabId: string;
-          if (tabFromQuery && tabIds.includes(tabFromQuery)) {
-            selectedTabId = tabFromQuery;
-            setActiveTab(tabFromQuery);
-          } else {
-            selectedTabId = tabIds[0];
-            setActiveTab(tabIds[0]);
+          // 전체 대분류 ID 목록
+          const majorIds = apiData.map((item) => item.majorCategory.id);
+          if (majorIds.length === 0) {
+            setError('데이터를 불러올 수 없습니다.');
+            return;
           }
 
-          // 선택된 대분류의 첫 번째 소분류를 기본으로 펼침
+          let targetMajorId: number | null = null;
+          let targetMinorId: number | null = null;
+
+          // subtab(소분류)이 있는 경우: 해당 소분류가 속한 대분류를 우선 사용
+          const subtabId = subtabFromQuery ? Number(subtabFromQuery) : null;
+          if (subtabId) {
+            const groupContainingMinor = apiData.find((group) =>
+              group.minorCategories?.some((minor) => minor.id === subtabId)
+            );
+
+            if (groupContainingMinor) {
+              targetMajorId = groupContainingMinor.majorCategory.id;
+              targetMinorId = subtabId;
+            }
+          }
+
+          // subtab이 없거나, 해당 소분류를 찾지 못한 경우 tab 또는 첫 번째 대분류 사용
+          if (targetMajorId === null) {
+            const tabIdFromQuery = tabFromQuery ? Number(tabFromQuery) : null;
+            if (tabIdFromQuery && majorIds.includes(tabIdFromQuery)) {
+              targetMajorId = tabIdFromQuery;
+            } else {
+              targetMajorId = majorIds[0];
+            }
+          }
+
+          // 소분류가 아직 정해지지 않았다면, 선택된 대분류의 첫 번째 소분류 사용
           const selectedMajor = apiData.find(
-            (item) => String(item.majorCategory.id) === selectedTabId
+            (item) => item.majorCategory.id === targetMajorId
           );
-          const firstMinorId = selectedMajor?.minorCategories?.[0]?.id;
-          if (firstMinorId) {
-            setExpandedCategories(new Set([firstMinorId]));
+          if (!selectedMajor) {
+            setError('데이터를 불러올 수 없습니다.');
+            return;
+          }
+
+          if (targetMinorId === null) {
+            targetMinorId = selectedMajor.minorCategories?.[0]?.id ?? null;
+          }
+
+          // 상태 업데이트
+          setActiveMajorId(targetMajorId);
+          setActiveMinorId(targetMinorId);
+
+          if (targetMinorId) {
+            setExpandedCategories(new Set([targetMinorId]));
+          } else {
+            setExpandedCategories(new Set());
+          }
+
+          // URL 쿼리와 상태 동기화 (tab/subtab)
+          if (router.isReady) {
+            const desiredTab = String(targetMajorId);
+            const desiredSubtab = targetMinorId
+              ? String(targetMinorId)
+              : undefined;
+
+            const currentTab = tabFromQuery;
+            const currentSubtab = subtabFromQuery;
+
+            const nextQuery: Record<string, any> = {
+              ...router.query,
+              tab: desiredTab,
+            };
+            if (desiredSubtab) {
+              nextQuery.subtab = desiredSubtab;
+            } else {
+              delete nextQuery.subtab;
+            }
+
+            const needsUpdate =
+              currentTab !== desiredTab ||
+              (desiredSubtab ?? '') !== (currentSubtab ?? '');
+
+            if (needsUpdate) {
+              router.replace(
+                { pathname: router.pathname, query: nextQuery },
+                undefined,
+                { shallow: true }
+              );
+            }
           }
         } else {
           setError('데이터를 불러올 수 없습니다.');
@@ -120,7 +200,7 @@ const HierarchicalPage: React.FC = () => {
     };
 
     fetchData();
-  }, [tabFromQuery]);
+  }, [tabFromQuery, subtabFromQuery, router.isReady]);
 
   const toggleCategory = (categoryId: number) => {
     setExpandedCategories((prev) => {
@@ -169,7 +249,7 @@ const HierarchicalPage: React.FC = () => {
 
   // 현재 활성 대분류 데이터
   const activeMajor =
-    data.find((item) => String(item.majorCategory.id) === activeTab) ?? data[0];
+    data.find((item) => item.majorCategory.id === activeMajorId) ?? data[0];
 
   // 탭 데이터 (대분류 기준)
   const tabs = data.map((item) => ({
@@ -191,26 +271,46 @@ const HierarchicalPage: React.FC = () => {
             subtitle='Practice Areas'
             breadcrumbs={[{ label: '업무 분야' }]}
             tabs={tabs}
-            activeTabId={activeTab || tabs[0]?.id}
+            activeTabId={
+              activeMajorId !== null ? String(activeMajorId) : tabs[0]?.id
+            }
             onTabChange={(id) => {
-              setActiveTab(id);
+              const majorId = Number(id);
+              setActiveMajorId(majorId);
+
+              // 선택된 대분류의 첫 번째 소분류를 자동으로 선택 + 펼침
+              const selectedMajor = data.find(
+                (item) => item.majorCategory.id === majorId
+              );
+              const firstMinorId = selectedMajor?.minorCategories?.[0]?.id;
+
+              if (firstMinorId) {
+                setActiveMinorId(firstMinorId);
+                setExpandedCategories(new Set([firstMinorId]));
+              } else {
+                setActiveMinorId(null);
+                setExpandedCategories(new Set());
+              }
+
               // URL 쿼리도 함께 업데이트 (히스토리는 유지)
+              const nextQuery: Record<string, any> = {
+                ...router.query,
+                tab: id,
+              };
+              if (firstMinorId) {
+                nextQuery.subtab = String(firstMinorId);
+              } else {
+                delete nextQuery.subtab;
+              }
+
               router.replace(
                 {
                   pathname: router.pathname,
-                  query: { ...router.query, tab: id },
+                  query: nextQuery,
                 },
                 undefined,
                 { shallow: true }
               );
-              // 선택된 대분류의 첫 번째 소분류를 자동으로 펼침
-              const selectedMajor = data.find(
-                (item) => String(item.majorCategory.id) === id
-              );
-              const firstMinorId = selectedMajor?.minorCategories?.[0]?.id;
-              if (firstMinorId) {
-                setExpandedCategories(new Set([firstMinorId]));
-              }
             }}
           />
 

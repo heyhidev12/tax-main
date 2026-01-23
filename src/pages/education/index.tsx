@@ -17,6 +17,7 @@ import { get as getClient } from '@/lib/api';
 import { get } from '@/lib/api-server';
 import { API_ENDPOINTS } from '@/config/api';
 import type { EducationItem, EducationListResponse, EducationType } from '@/types/education';
+import { MemberType as EducationMemberType } from '@/types/education';
 import styles from './education.module.scss';
 
 interface UserProfile {
@@ -107,6 +108,9 @@ const EducationPage: React.FC<EducationPageProps> = ({
     }
   };
 
+  // 현재 로그인 사용자가 세무사(INSURANCE) 회원인지 여부
+  const isInsuranceMember = userProfile?.memberType === EducationMemberType.INSURANCE;
+
   // Visibility filter helper
   const isItemVisible = (item: EducationItem): boolean => {
     // If targetMemberType is "ALL", show to everyone
@@ -121,7 +125,19 @@ const EducationPage: React.FC<EducationPageProps> = ({
     }
 
     // Check if user's memberType matches targetMemberType
-    return userProfile.memberType === item.targetMemberType;
+    if (userProfile.memberType !== item.targetMemberType) {
+      return false;
+    }
+
+    // 추가 조건: 세무사(INSURANCE) 회원일 때는 승인된 교육만 노출
+    if (isInsuranceMember) {
+      // isApproved가 false인 경우만 숨기고, undefined/true는 노출
+      if (item.isApproved === false) {
+        return false;
+      }
+    }
+
+    return true;
   };
 
   // Swiper data is now loaded server-side, no need to fetch on mount

@@ -11,6 +11,7 @@ import Icon from "@/components/common/Icon";
 import { get, post } from "@/lib/api";
 import { API_ENDPOINTS } from "@/config/api";
 import Footer from "../Footer";
+import { MemberType as EducationMemberType } from "@/types/education";
 
 type StepType = 1 | 2 | 3;
 type MemberType = "general" | "taxAccountant" | "other";
@@ -497,11 +498,11 @@ const Signup: React.FC = () => {
     setError("");
 
     try {
-      // memberType 변환 (general -> GENERAL, taxAccountant -> OTHER, other -> INSURANCE)
-      const memberTypeMap: Record<MemberType, string> = {
-        general: "GENERAL",
-        taxAccountant: "OTHER",
-        other: "INSURANCE",
+      // memberType 변환: Signup용 문자열 → 공용 enum 값 (@/types/education.MemberType)
+      const memberTypeMap: Record<MemberType, EducationMemberType> = {
+        general: EducationMemberType.GENERAL,
+        taxAccountant: EducationMemberType.INSURANCE,
+        other: EducationMemberType.OTHER,
       };
 
       const cleanPhone = phone.replace(/[^0-9]/g, "");
