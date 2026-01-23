@@ -69,13 +69,13 @@ export default function ServiceAreas({ initialData }: ServiceAreasProps) {
       // Use requestAnimationFrame for immediate check, then retry if needed
       const setupAnimation = () => {
         // Get all card elements
-        const cardElements = cardsContainerRef.current?.querySelectorAll(`.${styles["service-card"]}`) || [];
+        const cardElements = cardsContainerRef.current?.querySelectorAll(`.${styles["service-card"]}`);
         
-        if (cardElements.length === 0) {
+        if (!cardElements || cardElements.length === 0) {
           // Retry once if cards not ready
           requestAnimationFrame(() => {
-            const retryElements = cardsContainerRef.current?.querySelectorAll(`.${styles["service-card"]}`) || [];
-            if (retryElements.length > 0) {
+            const retryElements = cardsContainerRef.current?.querySelectorAll(`.${styles["service-card"]}`);
+            if (retryElements && retryElements.length > 0) {
               gsap.set(retryElements, {
                 opacity: 0,
                 y: 40,
