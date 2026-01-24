@@ -13,6 +13,7 @@ import { API_ENDPOINTS } from "@/config/api";
 import Footer from "../Footer";
 import { MemberType as EducationMemberType } from "@/types/education";
 import { toast } from "react-toastify";
+
 type StepType = 1 | 2 | 3;
 type MemberType = "general" | "taxAccountant" | "other";
 
@@ -81,7 +82,6 @@ const Signup: React.FC = () => {
     if (!router.isReady) return;
   
     const error = router.query.error as string;
-  
     if (!error) return;
   
     if (error === 'WITHDRAWN') {
@@ -92,10 +92,12 @@ const Signup: React.FC = () => {
       toast.info('회원 가입되지 않은 계정입니다. 회원가입을 진행해 주세요.');
     }
   
-    // URL ni tozalash (signup sahifada qoladi)
-    router.replace('/signup', undefined, { shallow: true });
+    setTimeout(() => {
+      router.replace('/signup', undefined, { shallow: true });
+    }, 300);
   
-  }, [router.isReady]);
+  }, [router.isReady, router.query.error]);
+  
   
 
   
