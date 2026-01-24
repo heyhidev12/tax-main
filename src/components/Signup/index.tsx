@@ -12,7 +12,7 @@ import { get, post } from "@/lib/api";
 import { API_ENDPOINTS } from "@/config/api";
 import Footer from "../Footer";
 import { MemberType as EducationMemberType } from "@/types/education";
-
+import { toast } from "react-toastify";
 type StepType = 1 | 2 | 3;
 type MemberType = "general" | "taxAccountant" | "other";
 
@@ -76,6 +76,26 @@ const Signup: React.FC = () => {
       }
     }
   }, [router.isReady, router.query.email]);
+
+  useEffect(() => {
+    if (!router.isReady) return;
+  
+    const error = router.query.error as string;
+  
+    if (!error) return;
+  
+    if (error === 'WITHDRAWN') {
+      toast.error('회원 탈퇴된 계정입니다. 다시 회원가입해 주세요.');
+    }
+    if(error === 'NOT_REGISTERED') {
+      toast.error('회원 가입되지 않은 계정입니다. 다시 회원가입해 주세요.');
+    }
+  
+    router.replace('/login', undefined, { shallow: true });
+  
+  }, [router.isReady]);
+
+  
   const [newsletter, setNewsletter] = useState(false);
   const [phone, setPhone] = useState("");
   const [verificationCode, setVerificationCode] = useState("");

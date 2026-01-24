@@ -30,21 +30,9 @@ const AuthCallback = () => {
     }
 
     // Fallback
-    const timeoutId = setTimeout(() => {
-      // Don't redirect if we already left the callback page
-      if (router.pathname !== '/auth/callback') return;
-
-      if (error) {
-        router.replace({
-          pathname: '/login',
-          query: { ...router.query, error }
-        });
-      } else {
-        router.replace('/login');
-      }
+    setTimeout(() => {
+      router.replace('/login');
     }, 500);
-
-    return () => clearTimeout(timeoutId);
   }, [router.isReady, router.query.token, router.query.error, router]);
 
   return (
