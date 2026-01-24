@@ -54,7 +54,15 @@ const Login: React.FC = () => {
     }
 
     // Clean up URL so the error param does not persist
-    router.replace('/login', undefined, { shallow: true });
+    const { error: _error, ...restQuery } = router.query;
+    router.replace(
+      {
+        pathname: router.pathname,
+        query: restQuery,
+      },
+      undefined,
+      { shallow: true }
+    );
   }, [router.isReady, router.query]);
 
   const handleLogin = async (e: React.FormEvent) => {
