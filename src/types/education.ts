@@ -48,8 +48,8 @@ export interface EducationListResponse {
   limit: number;
 }
 
-// 사용자 신청 상태
-export type ApplicationStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'COMPLETED' | 'CANCELLED';
+// 사용자 신청 상태 - 백엔드 enum과 일치
+export type ApplicationStatus = 'WAITING' | 'CONFIRMED' | 'CANCELLED';
 
 export interface UserApplication {
   id: number;
@@ -65,6 +65,7 @@ export interface EducationDetail extends EducationItem {
   applications: any[];
   userApplication?: UserApplication | null; // 현재 사용자의 신청 정보
   isRecruitmentClosed?: boolean; // 모집 종료 여부
+  price: number;
 }
 
 

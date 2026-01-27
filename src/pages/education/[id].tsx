@@ -23,6 +23,7 @@ interface UserProfile {
   loginId: string;
   name: string;
   memberType?: string;
+  isApproved?: boolean;
 }
 
 // Toast UI Viewer는 클라이언트 사이드에서만 로드
@@ -48,6 +49,9 @@ const EducationDetailPage: React.FC<EducationDetailPageProps> = ({ education: in
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
   const [visibilityError, setVisibilityError] = useState<string | null>(null);
+  // ✅ Fetch user's application from dedicated endpoint
+  const [myApplication, setMyApplication] = useState<{ id: number; status: ApplicationStatus } | null>(null);
+  const [isLoadingMyApplication, setIsLoadingMyApplication] = useState(false);
 
   // 사용자 정보 가져오기 (CSR - auth-related)
   useEffect(() => {
@@ -57,18 +61,65 @@ const EducationDetailPage: React.FC<EducationDetailPageProps> = ({ education: in
   const fetchUserProfile = async () => {
     try {
       setIsLoadingAuth(true);
+      
+      // ✅ Check for token before calling /me
+      const token = localStorage.getItem('accessToken');
+      if (!token) {
+        // No token: user is not logged in, set to null and proceed as guest
+        setUserProfile(null);
+        setIsLoadingAuth(false);
+        return;
+      }
+      
+      // Token exists: fetch user profile
       const response = await getClient<UserProfile>(API_ENDPOINTS.AUTH.ME);
       if (response.data) {
         setUserProfile(response.data);
+      } else {
+        setUserProfile(null);
       }
     } catch (err) {
       console.error("유저 정보를 불러오는 중 오류:", err);
-      // User is not logged in
+      // User is not logged in or token is invalid
       setUserProfile(null);
     } finally {
       setIsLoadingAuth(false);
     }
   };
+
+  // ✅ Fetch user's application status from dedicated endpoint
+  useEffect(() => {
+    if (!id || isLoadingAuth) return;
+    
+    const fetchMyApplication = async () => {
+      // Only fetch if user is logged in
+      if (!userProfile) {
+        setMyApplication(null);
+        return;
+      }
+      
+      try {
+        setIsLoadingMyApplication(true);
+        const response = await getClient<{ id: number; status: ApplicationStatus } | null>(
+          `${API_ENDPOINTS.TRAINING_SEMINARS}/${id}/my-application`
+        );
+        
+        if (response.data) {
+          // ✅ Use status exactly as returned from backend (no transformations)
+          setMyApplication(response.data);
+        } else {
+          setMyApplication(null);
+        }
+      } catch (err) {
+        console.error("신청 정보를 불러오는 중 오류:", err);
+        setMyApplication(null);
+      } finally {
+        setIsLoadingMyApplication(false);
+      }
+    };
+    
+    fetchMyApplication();
+  }, [id, userProfile, isLoadingAuth]);
 
   // Visibility filtering based on targetMemberType
   useEffect(() => {
@@ -103,7 +154,7 @@ const EducationDetailPage: React.FC<EducationDetailPageProps> = ({ education: in
     const today = new Date();
     const deadline = new Date(endDate);
     const diffTime = deadline.getTime() - today.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
     return diffDays > 0 ? diffDays : 0;
   };
 
@@ -226,66 +277,37 @@ const EducationDetailPage: React.FC<EducationDetailPageProps> = ({ education: in
 
   const daysLeft = getDaysUntilDeadline(education.recruitmentEndDate);
 
-  // 모집 종료 여부 확인 (모달과 동일한 로직)
-  const checkRecruitmentClosed = () => {
-    if (!education.recruitmentEndDate) return false;
-    const today = new Date();
-    const endDate = new Date(education.recruitmentEndDate);
-    return today > endDate;
-  };
-
-  const isRecruitmentClosed = checkRecruitmentClosed();
-
-  // applications 배열에서 현재 사용자의 가장 최근 신청 찾기 (모달과 동일한 로직)
-  const getUserApplication = () => {
-    if (
-      !userProfile ||
-      !education.applications ||
-      education.applications.length === 0
-    ) {
-      return null;
-    }
-    // 현재 유저의 모든 신청 찾기
-    const userApps = education.applications.filter(
-      (app: any) =>
-        app.userId === userProfile.id || app.name === userProfile.name
-    );
-    if (userApps.length === 0) return null;
-    // 가장 최근 신청 반환 (id가 큰 것 또는 appliedAt이 최신인 것)
-    return userApps.sort((a: any, b: any) => {
-      if (a.appliedAt && b.appliedAt) {
-        return (
-          new Date(b.appliedAt).getTime() - new Date(a.appliedAt).getTime()
-        );
-      }
-      return (b.id || 0) - (a.id || 0);
-    })[0];
-  };
-
-  const userApplication = getUserApplication();
+  // ✅ Use myApplication from dedicated API endpoint (not education.applications array)
+  const userApplication = myApplication;
   const hasApplication = !!userApplication;
 
-  // 버튼 상태 결정 (모달과 동일한 로직)
+  // 버튼 상태 결정 - 올바른 ApplicationStatus만 사용 (백엔드 enum과 정확히 일치)
   const getButtonState = () => {
-    if (isRecruitmentClosed) {
-      return "recruitment_closed";
+    // Case A: User never applied
+    if (!userApplication) {
+      return "can_apply";
     }
-    if (hasApplication) {
-      const status = (userApplication?.status || "").toUpperCase();
-      // 취소/거절된 경우 다시 신청 가능
-      if (status === "CANCELLED" || status === "REJECTED") {
+
+    // Case B-D: Check actual status from backend (exact string match, case-sensitive)
+    // ✅ Use exact backend enum values: WAITING, CONFIRMED, CANCELLED
+    // No transformations, no fallbacks to WAITING - only exact matches
+    const status = userApplication.status;
+    
+    switch (status) {
+      case "WAITING":
+        return "waiting";
+      
+      case "CONFIRMED":
+        return "confirmed";
+      
+      case "CANCELLED":
+        // Treat as new user - can apply again
         return "can_apply";
-      }
-      if (status === "COMPLETED") {
-        return "completed";
-      }
-      if (status === "APPROVED" || status === "CONFIRMED") {
-        return "approved";
-      }
-      // WAITING, PENDING 등은 모두 승인 대기중
-      return "pending";
+      
+      default:
+        // Fallback: treat unknown status as can_apply (NOT waiting!)
+        return "can_apply";
     }
-    return "can_apply";
   };
 
   const buttonState = getButtonState();
@@ -293,6 +315,11 @@ const EducationDetailPage: React.FC<EducationDetailPageProps> = ({ education: in
   // 신청 취소 처리
   const handleCancelApplication = async () => {
     if (!userApplication?.id) return;
+    console.log(daysLeft);
+    if(daysLeft <= 1) {
+      alert("교육/세미나 당일에는 취소할 수 없습니다");
+      return;
+    }
 
     const confirmed = window.confirm("신청을 취소하시겠습니까?");
     if (!confirmed) return;
@@ -304,64 +331,70 @@ const EducationDetailPage: React.FC<EducationDetailPageProps> = ({ education: in
       );
 
       if (response.error) {
-        // API 미지원 시 조용히 처리
         console.error("신청 취소 실패:", response.error);
-        alert("신청 취소 기능이 현재 지원되지 않습니다.");
+        // Show backend error message
+        alert(response.error || "신청 취소에 실패했습니다.");
         return;
       }
 
       alert("신청이 취소되었습니다.");
-      // Reload page to refresh data
-      router.reload();
+      // ✅ Refetch my application status from API to ensure accuracy
+      try {
+        const refetchResponse = await getClient<{ id: number; status: ApplicationStatus } | null>(
+          `${API_ENDPOINTS.TRAINING_SEMINARS}/${id}/my-application`
+        );
+        if (refetchResponse.data) {
+          setMyApplication(refetchResponse.data);
+        } else {
+          setMyApplication(null);
+        }
+      } catch (refetchErr) {
+        // If refetch fails, assume application was cancelled (set to null)
+        setMyApplication(null);
+      }
     } catch (err) {
       console.error("신청 취소 중 오류:", err);
-      alert("신청 취소 기능이 현재 지원되지 않습니다.");
+      alert("신청 취소 중 오류가 발생했습니다.");
     }
   };
 
-  // 버튼 렌더링 함수 (모달과 동일한 로직)
+  // 버튼 렌더링 함수 - 올바른 상태만 처리
   const renderActionButton = () => {
-    if (buttonState === "recruitment_closed") {
-      return (
-        <button className={styles.closedButton} disabled>
-          모집 종료
-        </button>
-      );
-    }
-
-    if (buttonState === "completed") {
-      return (
-        <button className={styles.completedButton} disabled>
-          수강 완료
-        </button>
-      );
-    }
-
-    if (buttonState === "approved") {
-      return (
-        <button className={styles.pendingButton} disabled>
-          신청 완료
-        </button>
-      );
-    }
-
-    if (buttonState === "pending") {
+    // State: WAITING - 승인 대기중
+    if (buttonState === "waiting") {
       return (
         <>
           <button className={styles.pendingButton} disabled>
             승인 대기중
           </button>
-          {/* <button
+          <button
             className={styles.cancelLink}
             onClick={handleCancelApplication}
           >
             신청 취소
-          </button> */}
+          </button>
         </>
       );
     }
 
-    // can_apply: 신청하기 버튼
+    // State: CONFIRMED - 신청 완료
+    if (buttonState === "confirmed") {
+      return (
+        <>
+          <button className={styles.pendingButton} disabled>
+            신청 완료
+          </button>
+          <button
+            className={styles.cancelLink}
+            onClick={handleCancelApplication}
+          >
+            신청 취소
+          </button>
+        </>
+      );
+    }
+
+    // State: can_apply - 신청하기 (never applied or CANCELLED)
     return (
       <button
         className={styles.applyButton}
@@ -383,15 +416,15 @@ const EducationDetailPage: React.FC<EducationDetailPageProps> = ({ education: in
     <>
       <Head>
         <title>{education.name} - 세무법인 함께</title>
-        {/* <meta
+        <meta
           name="description"
-          content={education.description || `${education.name} - 세무법인 함께 교육 프로그램`}
+          content={education.instructorName || `${education.name} - 세무법인 함께 교육 프로그램`}
         />
         <meta property="og:title" content={`${education.name} - 세무법인 함께`} />
         <meta
           property="og:description"
-          content={education.description || `${education.name}`}
-        /> */}
+          content={education.instructorName || `${education.name}`}
+        />
         <meta property="og:type" content="article" />
         {education.image?.url && (
           <meta property="og:image" content={education.image.url} />
@@ -530,7 +563,7 @@ const EducationDetailPage: React.FC<EducationDetailPageProps> = ({ education: in
                 </div>
 
                 <div className={styles.price}>
-                  <p>0원</p>
+                  <p> {education.price ? education.price : 0} 원</p>
                 </div>
 
                 <div className={styles.actionButtonDesktop}>
@@ -576,9 +609,22 @@ const EducationDetailPage: React.FC<EducationDetailPageProps> = ({ education: in
             onClose={() => setIsApplicationModalOpen(false)}
             education={education}
             initialDate={selectedDate}
-            onSuccess={() => {
-              // 신청 성공 후 데이터 새로고침
-              router.reload();
+            onSuccess={async () => {
+              // ✅ Refetch my application status from API after successful application
+              if (userProfile && id) {
+                try {
+                  const response = await getClient<{ id: number; status: ApplicationStatus } | null>(
+                    `${API_ENDPOINTS.TRAINING_SEMINARS}/${id}/my-application`
+                  );
+                  if (response.data) {
+                    setMyApplication(response.data);
+                  } else {
+                    setMyApplication(null);
+                  }
+                } catch (err) {
+                  console.error("신청 정보를 불러오는 중 오류:", err);
+                }
+              }
             }}
           />
         )}

@@ -156,6 +156,13 @@
   }
 }
 
+// .yearDivider {
+//   width: 100%;
+//   height: 1px;
+//   background-color: #D8D8D8;
+//   margin: 80px 0;
+// }
+
 .yearTitle {
   font-family: 'Arita KR', serif;
   font-weight: 600;
@@ -165,11 +172,20 @@
   color: $gray-90;
   padding: 100px 80px;
   text-align: left;
+  min-width: 330px;
 
   @media (max-width: $breakpoint-tablet) {
     padding: 0;
     margin-bottom: 40px;
     font-size: 38px;
+    min-width: 0;
+  }
+}
+
+.yearTitleFirst {
+  padding: 65px 80px;
+  @media (max-width: $breakpoint-tablet) {
+    padding: 0;
   }
 }
 
@@ -180,11 +196,11 @@
   gap: 48px;
   border-left: 1px solid $gray-30;
   border-bottom: 1px solid $gray-30;
-  padding: 100px 0 100px 28px;
+  padding: 100px 0 88px 28px;
 
   @media (max-width: $breakpoint-tablet) {
     padding: 0;
-    padding-bottom: 64px;
+    padding-bottom: 40px;
     border-left: none;
   }
 }
@@ -193,6 +209,8 @@
   display: flex;
   gap: 32px;
   @media (max-width: $breakpoint-tablet) {
+    flex-direction: column;
+    gap: 24px;
   }
 }
 
@@ -203,8 +221,7 @@
   align-items: center;
 
   @media (max-width: $breakpoint-tablet) {
-    display: block;
-    margin-bottom: 12px;
+    gap: 8px;
   }
 }
 
@@ -220,7 +237,7 @@
 
   @media (max-width: $breakpoint-tablet) {
     font-size: 17px;
-    margin-bottom: 28px;
+    
   }
 }
 
@@ -240,11 +257,6 @@
   flex-shrink: 0;
   border-radius: 50%;
   background-color: $gray-50;
-
-  @media (max-width: $breakpoint-tablet) {
-    width: 3px;
-    height: 3px;
-  }
 }
 
 .contentText {

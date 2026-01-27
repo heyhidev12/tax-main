@@ -1173,6 +1173,20 @@
   position: relative;
   z-index: $z-modal;
   overflow: hidden;
+  border-radius: 12px;
+
+  // Smaller variant for withdrawal modals
+  &--small {
+    max-width: 480px;
+    min-height: auto;
+    max-height: auto;
+  }
+}
+
+.modalContentSmall {
+  max-width: 480px;
+  min-height: auto;
+  max-height: auto;
 }
 
 .modalHeader {
@@ -1181,6 +1195,12 @@
   justify-content: flex-end;
   padding: 32px;
   height: 88px;
+}
+
+// Smaller header for small modals
+.modalContentSmall .modalHeader {
+  padding: 20px 24px;
+  height: auto;
 }
 
 .modalClose {
@@ -1209,6 +1229,12 @@
   gap: 0;
   overflow-y: auto;
   padding-bottom: 40px;
+}
+
+// Smaller body for small modals
+.modalContentSmall .modalBody {
+  padding: 0 24px;
+  padding-bottom: 24px;
 }
 
 .modalStatusRow {
@@ -1333,6 +1359,12 @@
   gap: 12px;
 }
 
+// Smaller footer for small modals
+.modalContentSmall .modalFooter {
+  padding: 0 24px 24px;
+  gap: 8px;
+}
+
 .modalConfirmButton {
   width: 230px;
   height: 56px;
@@ -1355,6 +1387,14 @@
     opacity: 0.6;
     cursor: not-allowed;
   }
+
+}
+
+// Smaller buttons for small modals
+.modalContentSmall .modalConfirmButton {
+  width: 120px;
+  height: 48px;
+  flex: 1;
 }
 
 .modalCancelButton {
@@ -1381,13 +1421,26 @@
   }
 }
 
+// Smaller buttons for small modals
+.modalContentSmall .modalCancelButton {
+  width: 120px;
+  height: 48px;
+  flex: 1;
+}
+
 .withdrawConfirmMessage {
   color: $gray-90;
-font-size: 20px;  
-text-align: center;
+  font-size: 20px;  
+  text-align: center;
   line-height: 1.6;
   margin: 0;
   padding: 40px 0;
+}
+
+// Smaller message for small modals
+.modalContentSmall .withdrawConfirmMessage {
+  font-size: 18px;
+  padding: 32px 0;
 }
 
 .withdrawPasswordField {
@@ -1592,6 +1645,39 @@ text-align: center;
     padding: 12px 20px;
     background-color: #fff;
     border-top: 1px solid $gray-10;
+  }
+
+  // Small modal styles for mobile - keep it compact
+  .modalContentSmall {
+    max-width: calc(100vw - 32px);
+    min-height: auto;
+    max-height: auto;
+    border-radius: 12px;
+    margin: 20px auto;
+  }
+
+  .modalContentSmall .modalHeader {
+    padding: 16px 20px;
+  }
+
+  .modalContentSmall .modalBody {
+    padding: 20px;
+    padding-bottom: 20px;
+  }
+
+  .modalContentSmall .modalFooter {
+    position: relative;
+    bottom: auto;
+    left: auto;
+    right: auto;
+    padding: 0 20px 20px;
+    border-top: none;
+  }
+
+  .modalContentSmall .modalConfirmButton,
+  .modalContentSmall .modalCancelButton {
+    width: calc(50% - 4px);
+    height: 44px;
   }
 
   .modalConfirmButton {

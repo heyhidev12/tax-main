@@ -318,17 +318,17 @@ const Menu: React.FC<MenuProps> = ({ isOpen, onClose }) => {
     }
   }, [isOpen]);
 
-  // Helper function to check if user is logged in and get memberType
+  // Helper function to check if user is logged in and get memberType & isApproved
   const getUserAuthState = () => {
     if (typeof window === 'undefined') {
-      return { isLoggedIn: false, memberType: null };
+      return { isLoggedIn: false, memberType: null, isApproved: null };
     }
     
     const token = localStorage.getItem('accessToken');
     const userStr = localStorage.getItem('user');
     
     if (!token || !userStr) {
-      return { isLoggedIn: false, memberType: null };
+      return { isLoggedIn: false, memberType: null, isApproved: null };
     }
     
     try {
@@ -336,30 +336,34 @@ const Menu: React.FC<MenuProps> = ({ isOpen, onClose }) => {
       return {
         isLoggedIn: true,
         memberType: user.memberType || null,
+        isApproved: user.memberType === 'INSURANCE' ? user.isApproved : null,
       };
     } catch {
-      return { isLoggedIn: false, memberType: null };
+      return { isLoggedIn: false, memberType: null, isApproved: null };
     }
   };
 
-  // Filter categories based on targetMemberType and login state
-  const filterCategoriesByVisibility = (categories: InsightCategory[]): InsightCategory[] => {
-    const { isLoggedIn, memberType } = getUserAuthState();
+  // Build query params for API calls with user filtering
+  const buildUserFilterParams = () => {
+    const { isLoggedIn, memberType, isApproved } = getUserAuthState();
     
-    return categories.filter((cat) => {
-      // Always show if targetMemberType is "ALL"
-      if (cat.targetMemberType === "ALL") {
-        return true;
-      }
-      
-      // If not logged in, hide non-ALL categories
-      if (!isLoggedIn) {
-        return false;
-      }
-      
-      // If logged in, show if targetMemberType matches user's memberType
-      return cat.targetMemberType === memberType;
-    });
+    const params = new URLSearchParams();
+    
+    if (!isLoggedIn) {
+      // Not logged in: explicitly send memberType=null for guest filtering
+      params.append('memberType', 'null');
+      return `?${params.toString()}`;
+    }
+    
+    // Logged in: send actual user data
+    if (memberType) {
+      params.append('memberType', memberType);
+    }
+    if (isApproved !== null) {
+      params.append('isApproved', String(isApproved));
+    }
+    
+    return params.toString() ? `?${params.toString()}` : '';
   };
 
   // 메뉴가 열릴 때 Newsletter 노출 여부 확인
@@ -389,22 +393,22 @@ const Menu: React.FC<MenuProps> = ({ isOpen, onClose }) => {
       console.log('[Menu] Fetching insight categories (first time)');
       const fetchInsightCategories = async () => {
         try {
+          const userParams = buildUserFilterParams();
           const response = await get<InsightHierarchicalData>(
-            `${API_ENDPOINTS.INSIGHTS}/hierarchical`
+            `${API_ENDPOINTS.INSIGHTS}/hierarchical${userParams}`
           );
           if (response.data && Array.isArray(response.data)) {
             // Store raw data for re-filtering
             setRawHierarchicalData(response.data);
             
+            // Backend already filtered by memberType and isApproved
             // Extract categories from hierarchical data - use category.name as label
             const allCategories = response.data
               .map(item => item.category)
-              .filter(cat => cat.isExposed !== false) // API already returns only exposed, but filter for safety
+              .filter(cat => cat.isExposed !== false) // Filter for safety
               .sort((a, b) => (a.displayOrder ?? 0) - (b.displayOrder ?? 0));
             
-            // Filter by targetMemberType BEFORE setting state
-            const filteredCategories = filterCategoriesByVisibility(allCategories);
-            setInsightCategories(filteredCategories);
+            setInsightCategories(allCategories);
           } else {
             setInsightCategories([]);
             setRawHierarchicalData([]);
@@ -422,16 +426,11 @@ const Menu: React.FC<MenuProps> = ({ isOpen, onClose }) => {
 
   // Re-filter categories when auth state changes (login/logout)
   useEffect(() => {
-    if (insightCategoriesFetchedRef.current && rawHierarchicalData.length > 0) {
-      // Re-filter when auth state might have changed
-      const allCategories = rawHierarchicalData
-        .map(item => item.category)
-        .filter(cat => cat.isExposed !== false)
-        .sort((a, b) => (a.displayOrder ?? 0) - (b.displayOrder ?? 0));
-      const filteredCategories = filterCategoriesByVisibility(allCategories);
-      setInsightCategories(filteredCategories);
+    // When auth state changes, refetch categories with new user params
+    if (isOpen && insightCategoriesFetchedRef.current) {
+      insightCategoriesFetchedRef.current = false; // Reset cache to force refetch
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, isOpen]);
 
   const handleClose = () => {
     setIsClosing(true);

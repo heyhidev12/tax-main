@@ -212,6 +212,20 @@ const HierarchicalPage: React.FC = () => {
       }
       return newSet;
     });
+    
+    // Update URL when toggling category
+    setActiveMinorId(categoryId);
+    const nextQuery: Record<string, any> = {
+      ...router.query,
+      tab: String(activeMajorId),
+      subtab: String(categoryId),
+    };
+    
+    router.replace(
+      { pathname: router.pathname, query: nextQuery },
+      undefined,
+      { shallow: true }
+    );
   };
 
   const handleItemClick = (item: BusinessItem) => {

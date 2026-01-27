@@ -6,6 +6,7 @@ import Footer from "@/components/Footer";
 import PageHeader from "@/components/common/PageHeader";
 import FloatingButton from "@/components/common/FloatingButton";
 import BranchDetailModal from "@/components/history/BranchDetailModal";
+import SEO from "@/components/common/SEO";
 import { get } from "@/lib/api";
 import { API_ENDPOINTS } from "@/config/api";
 import styles from "./history.module.scss";
@@ -142,6 +143,7 @@ const HistoryPage: React.FC = () => {
   const [branchesError, setBranchesError] = useState<string | null>(null);
   const [selectedBranch, setSelectedBranch] = useState<BranchItem | null>(null);
   const [isBranchModalOpen, setIsBranchModalOpen] = useState(false);
+  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
 
   // Swipe handling for mobile philosophy cards
   const touchStartX = useRef<number>(0);
@@ -320,6 +322,20 @@ const HistoryPage: React.FC = () => {
     return true;
   });
 
+  // Get SEO title based on active tab
+  const getSEOTitle = (tabId: string): string => {
+    const titleMap: Record<string, string> = {
+      intro: "함께소개",
+      history: "연혁",
+      awards: "수상/인증",
+      branches: "본점/지점 안내",
+      customers: "주요 고객",
+      ci: "CI 가이드",
+    };
+    const tabTitle = titleMap[tabId] || "함께소개";
+    return `${tabTitle} | 세무법인 함께`;
+  };
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -414,6 +430,47 @@ const HistoryPage: React.FC = () => {
     }
   }, [activeTab]);
 
+  // Haversine formula to calculate distance between two coordinates in km
+  const calculateDistance = (
+    lat1: number,
+    lon1: number,
+    lat2: number,
+    lon2: number
+  ): number => {
+    const R = 6371; // Radius of Earth in kilometers
+    const dLat = ((lat2 - lat1) * Math.PI) / 180;
+    const dLon = ((lon2 - lon1) * Math.PI) / 180;
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos((lat1 * Math.PI) / 180) *
+        Math.cos((lat2 * Math.PI) / 180) *
+        Math.sin(dLon / 2) *
+        Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    const distance = R * c;
+    return distance;
+  };
+
+  // Request user location on page load (branches tab)
+  useEffect(() => {
+    if (activeTab === "branches" && !userLocation) {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            setUserLocation({
+              lat: position.coords.latitude,
+              lng: position.coords.longitude,
+            });
+          },
+          (error) => {
+            // Silently fail - will use displayOrder fallback
+            console.log("Geolocation permission denied or failed:", error.message);
+          }
+        );
+      }
+    }
+  }, [activeTab, userLocation]);
+
   useEffect(() => {
     const fetchBranches = async () => {
       try {
@@ -425,10 +482,38 @@ const HistoryPage: React.FC = () => {
         if (response.error) {
           setBranchesError(response.error);
         } else if (response.data && response.data.items) {
-          // displayOrder로 정렬하고 isExposed가 true인 것만 필터링
-          const sorted = response.data.items
-            .filter((item) => item.isExposed)
-            .sort((a, b) => a.displayOrder - b.displayOrder);
+          // Filter isExposed branches
+          const filtered = response.data.items.filter((item) => item.isExposed);
+          
+          // Sort by distance if user location is available, otherwise by displayOrder
+          let sorted: BranchItem[];
+          if (userLocation) {
+            // Sort by distance (nearest first)
+            sorted = [...filtered].sort((a, b) => {
+              // If branch doesn't have coordinates, put it at the end
+              if (!a.latitude || !a.longitude) return 1;
+              if (!b.latitude || !b.longitude) return -1;
+              
+              const distanceA = calculateDistance(
+                userLocation.lat,
+                userLocation.lng,
+                Number(a.latitude),
+                Number(a.longitude)
+              );
+              const distanceB = calculateDistance(
+                userLocation.lat,
+                userLocation.lng,
+                Number(b.latitude),
+                Number(b.longitude)
+              );
+              
+              return distanceA - distanceB;
+            });
+          } else {
+            // Fallback to displayOrder
+            sorted = [...filtered].sort((a, b) => a.displayOrder - b.displayOrder);
+          }
+          
           setBranchesData(sorted);
         } else {
           setBranchesError("데이터를 불러올 수 없습니다.");
@@ -443,7 +528,7 @@ const HistoryPage: React.FC = () => {
     if (activeTab === "branches") {
       fetchBranches();
     }
-  }, [activeTab]);
+  }, [activeTab, userLocation]);
 
   // Naver Map 초기화
   useEffect(() => {
@@ -540,7 +625,7 @@ const HistoryPage: React.FC = () => {
               justify-content: center;
               width: 32px;
               height: 32px;
-              padding: 6px;
+              padding: 6px 16px 6px 6px;
               background: #00A89E;
               border-radius: 100px;
             ">
@@ -697,13 +782,15 @@ const HistoryPage: React.FC = () => {
     data.length > 0 ? [...data].sort((a, b) => b.year - a.year) : [];
 
   return (
-    <div className={styles.page}>
-      <Header
-        variant="white"
-        onMenuClick={() => setIsMenuOpen(true)}
-        isFixed={true}
-      />
-      <Menu isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
+    <>
+      <SEO title={getSEOTitle(activeTab)} />
+      <div className={styles.page}>
+        <Header
+          variant="white"
+          onMenuClick={() => setIsMenuOpen(true)}
+          isFixed={true}
+        />
+        <Menu isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
       <div className={styles.headerImage}></div>
       <div className="container">
         <div className={styles.pageHeaderWrapper}>
@@ -935,8 +1022,8 @@ const HistoryPage: React.FC = () => {
               const monthGroups = Object.entries(groupedByMonth);
 
               return (
-                <div key={yearData.year} className={styles.yearGroup}>
-                  <h3 className={styles.yearTitle}>{yearData.year}</h3>
+                <><div key={yearData.year} className={styles.yearGroup}>
+                  <h3 className={`${styles.yearTitle} ${monthGroups.length === 1 ? styles.yearTitleFirst : ""}`}>{yearData.year}</h3>
                   <div className={styles.monthsWrapper}>
                     {monthGroups.map(([month, items], monthIndex) => {
                       // 해당 월의 모든 content를 \n으로 분리하여 평탄화
@@ -979,6 +1066,9 @@ const HistoryPage: React.FC = () => {
                     })}
                   </div>
                 </div>
+                <div className={styles.yearDivider} />
+                </>
+                
               );
             })}
           </div>
@@ -1477,7 +1567,8 @@ const HistoryPage: React.FC = () => {
         }}
         branch={selectedBranch}
       />
-    </div>
+      </div>
+    </>
   );
 };
 

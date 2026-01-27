@@ -25,6 +25,7 @@ interface UserProfile {
   loginId: string;
   name: string;
   memberType?: string;
+  isApproved?: boolean;
 }
 
 interface EducationPageProps {
@@ -95,17 +96,52 @@ const EducationPage: React.FC<EducationPageProps> = ({
   const fetchUserProfile = async () => {
     try {
       setIsLoadingAuth(true);
+      
+      // Check for token before calling /me
+      const token = localStorage.getItem('accessToken');
+      if (!token) {
+        // No token: user is not logged in, set to null and proceed as guest
+        setUserProfile(null);
+        setIsLoadingAuth(false);
+        return;
+      }
+      
+      // Token exists: fetch user profile
       const response = await getClient<UserProfile>(API_ENDPOINTS.AUTH.ME);
       if (response.data) {
         setUserProfile(response.data);
+      } else {
+        setUserProfile(null);
       }
     } catch (err) {
       console.error('유저 정보를 불러오는 중 오류:', err);
-      // User is not logged in
+      // User is not logged in or token is invalid
       setUserProfile(null);
     } finally {
       setIsLoadingAuth(false);
     }
+  };
+
+  // Build query params for API calls with user filtering
+  const buildUserFilterParams = () => {
+    const params = new URLSearchParams();
+    
+    if (!userProfile) {
+      // Not logged in: explicitly send memberType=null for guest filtering
+      params.append('memberType', 'null');
+      return `&${params.toString()}`;
+    }
+    
+    // Logged in: send actual user data
+    if (userProfile.memberType) {
+      params.append('memberType', userProfile.memberType);
+    }
+    // Only add isApproved for INSURANCE users
+    if (userProfile.memberType === 'INSURANCE' && 'isApproved' in userProfile) {
+      params.append('isApproved', String((userProfile as any).isApproved));
+    }
+    
+    return params.toString() ? `&${params.toString()}` : '';
   };
 
   // 현재 로그인 사용자가 세무사(INSURANCE) 회원인지 여부
@@ -142,7 +178,11 @@ const EducationPage: React.FC<EducationPageProps> = ({
 
   // Swiper data is now loaded server-side, no need to fetch on mount
   // Only fetch if initial data is empty (fallback)
+  // ✅ Wait for auth to be ready before fetching
   useEffect(() => {
+    // Don't fetch until auth is initialized
+    if (isLoadingAuth) return;
+    
     if (initialNewEducationList.length === 0) {
       const fetchSwiperData = async () => {
         setIsLoadingSwiper(true);
@@ -154,9 +194,10 @@ const EducationPage: React.FC<EducationPageProps> = ({
             limit: '8',
             sort: 'latest',
           });
+          const userParams = buildUserFilterParams();
 
           const response = await getClient<EducationListResponse>(
-            `${API_ENDPOINTS.TRAINING_SEMINARS}?${params.toString()}`
+            `${API_ENDPOINTS.TRAINING_SEMINARS}?${params.toString()}${userParams}`
           );
 
           if (response.data) {
@@ -174,10 +215,14 @@ const EducationPage: React.FC<EducationPageProps> = ({
 
       fetchSwiperData();
     }
-  }, []); // Only fetch if initial data is empty
+  }, [isLoadingAuth, userProfile]); // ✅ Refetch when auth state changes
 
   // Fetch bottom list data: dynamic, refetches on page/tab change
+  // ✅ Wait for auth to be ready before fetching
   useEffect(() => {
+    // Don't fetch until auth is initialized
+    if (isLoadingAuth) return;
+    
     const fetchListData = async () => {
       setIsLoadingEducationList(true);
       setError(null);
@@ -193,9 +238,10 @@ const EducationPage: React.FC<EducationPageProps> = ({
         if (selectedType !== 'ALL') {
           params.append('type', selectedType);
         }
+        const userParams = buildUserFilterParams();
 
         const response = await getClient<EducationListResponse>(
-          `${API_ENDPOINTS.TRAINING_SEMINARS}?${params.toString()}`
+          `${API_ENDPOINTS.TRAINING_SEMINARS}?${params.toString()}${userParams}`
         );
 
         if (response.data) {
@@ -214,7 +260,7 @@ const EducationPage: React.FC<EducationPageProps> = ({
     };
 
     fetchListData();
-  }, [selectedType, currentPage]); // Refetches when tab or page changes
+  }, [isLoadingAuth, userProfile, selectedType, currentPage]); // ✅ Refetch when auth state or filters change
 
   // Handle tab change: reset page and clear list items (swiper unchanged)
   const handleTabChange = (type: EducationType | 'ALL') => {
@@ -304,7 +350,7 @@ const EducationPage: React.FC<EducationPageProps> = ({
     const today = new Date();
     const deadline = new Date(endDate);
     const diffTime = deadline.getTime() - today.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
     return diffDays > 0 ? diffDays : 0;
   };
 
@@ -451,11 +497,15 @@ const EducationPage: React.FC<EducationPageProps> = ({
                                 </div>
                                 <div className={styles.cardContent}>
                                   <div className={styles.cardLabels}>
-                                    {daysLeft > 0 && (
-                                      <span className={styles.labelRed}>
-                                        신청마감 D-{daysLeft}
-                                      </span>
-                                    )}
+                                  {daysLeft > 0 ? (
+                                        <span className={styles.labelRed}>
+                                          신청마감 D-{daysLeft}
+                                        </span>
+                                      ) : (
+                                        <span className={styles.labelGray}>
+                                          신청마감
+                                        </span>
+                                      )}
                                     <span className={styles.labelWhite}>
                                       {item.typeLabel}
                                     </span>

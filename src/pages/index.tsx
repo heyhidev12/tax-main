@@ -149,13 +149,13 @@ export const getServerSideProps: GetServerSideProps<HomePageProps> = async () =>
       get<HierarchicalData[]>(
         `${API_ENDPOINTS.BUSINESS_AREAS_HIERARCHICAL}?limit=20&page=1`
       ).catch(() => ({ data: [] })),
-      get<{ items: Member[] }>(`${API_ENDPOINTS.MEMBERS}?page=1&limit=20`).catch(() => ({
+      get<{ items: Member[] }>(`${API_ENDPOINTS.MEMBERS_RANDOM}`).catch(() => ({
         data: { items: [] },
       })),
-      get<{ items: Award[]; isExposed: boolean }>(`${API_ENDPOINTS.AWARDS}?page=1&limit=20`).catch(
-        () => ({ data: { items: [], isExposed: false } })
-      ),
-      get<{ items: InsightItem[] }>(`${API_ENDPOINTS.INSIGHTS}?page=1&limit=20`).catch(() => ({
+      get<{ items: Award[]; isExposed: boolean }>(
+        `${API_ENDPOINTS.AWARDS}?page=1&limit=10&isMainExposed=true`
+      ).catch(() => ({ data: { items: [], isExposed: false } })),
+      get<{ items: InsightItem[] }>(`${API_ENDPOINTS.INSIGHTS}?page=1&limit=10`).catch(() => ({
         data: { items: [] },
       })),
       get<{ items: KeyCustomer[] }>(`${API_ENDPOINTS.KEY_CUSTOMERS}?page=1&limit=20`).catch(() => ({
@@ -216,7 +216,7 @@ export const getServerSideProps: GetServerSideProps<HomePageProps> = async () =>
       );
     }
 
-    // Process awards
+    // Process awards - backend filters by isMainExposed=true and isExposed=true
     let awards: Award[] = [];
     let awardsIsExposed = false;
     if (
@@ -224,6 +224,7 @@ export const getServerSideProps: GetServerSideProps<HomePageProps> = async () =>
       Array.isArray(awardsResponse.data.items) &&
       awardsResponse.data.isExposed === true
     ) {
+      // Backend already filtered by isMainExposed=true, just sort by displayOrder
       awards = [...awardsResponse.data.items].sort(
         (a, b) => (a.displayOrder ?? 0) - (b.displayOrder ?? 0)
       );

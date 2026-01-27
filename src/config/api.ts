@@ -52,6 +52,7 @@ export const API_ENDPOINTS = {
 
   // Content (Public)
   MEMBERS: '/members',
+  MEMBERS_RANDOM: '/members/random',
   HISTORY: '/history/all',
   AWARDS: '/awards',
   AWARDS_ALL: '/awards/all',

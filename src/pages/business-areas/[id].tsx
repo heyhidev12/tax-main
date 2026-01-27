@@ -16,6 +16,7 @@ import FloatingButton from "@/components/common/FloatingButton";
 import PageHeader from "@/components/common/PageHeader";
 import ContentBox from "@/components/common/ContentBox";
 import Icon from "@/components/common/Icon";
+import SEO from "@/components/common/SEO";
 import { get as getClient } from "@/lib/api";
 import { get } from "@/lib/api-server";
 import { API_ENDPOINTS } from "@/config/api";
@@ -588,8 +589,14 @@ const BusinessAreaDetailPage: React.FC<BusinessAreaDetailPageProps> = ({
   // Breadcrumb 생성 (fallback for mobile)
   const breadcrumbs = [
     { label: "업무 분야", href: "/business-areas/hierarchical" },
-    { label: data.majorCategory.name, href: "/business-areas/hierarchical" },
-    { label: data.minorCategory.name, href: "/business-areas/hierarchical" },
+    { 
+      label: data.majorCategory.name, 
+      href: `/business-areas/hierarchical?tab=${data.majorCategory.id}` 
+    },
+    { 
+      label: data.minorCategory.name, 
+      href: `/business-areas/hierarchical?tab=${data.majorCategory.id}&subtab=${data.minorCategory.id}` 
+    },
     { label: data.name }, // 현재 페이지는 링크 없음
   ];
 
@@ -616,46 +623,11 @@ const BusinessAreaDetailPage: React.FC<BusinessAreaDetailPageProps> = ({
               label: cat.name,
               value: cat.id,
             })),
-            onChange: async (value: string | number) => {
-              // Navigate to the first item in the selected minor category
-              try {
-                const response = await getClient<
-                  Array<{
-                    majorCategory: { id: number; name: string };
-                    minorCategories: Array<{
-                      id: number;
-                      name: string;
-                      items?: Array<{ id: number; name: string }>;
-                    }>;
-                  }>
-                >(
-                  `${API_ENDPOINTS.BUSINESS_AREAS_HIERARCHICAL}?limit=20&page=1`,
-                );
-
-                if (response.data && Array.isArray(response.data)) {
-                  // Find the selected minor category and its first item
-                  for (const item of response.data) {
-                    const minorCategory = item.minorCategories.find(
-                      (cat) => cat.id === value,
-                    );
-                    if (
-                      minorCategory &&
-                      minorCategory.items &&
-                      minorCategory.items.length > 0
-                    ) {
-                      router.push(
-                        `/business-areas/${minorCategory.items[0].id}`,
-                      );
-                      return;
-                    }
-                  }
-                }
-                // Fallback: navigate to hierarchical page if no item found
-                router.push(`/business-areas/hierarchical`);
-              } catch (err) {
-                console.error("Failed to navigate to minor category:", err);
-                router.push(`/business-areas/hierarchical`);
-              }
+            onChange: (value: string | number) => {
+              // Navigate to hierarchical page with selected minor category expanded
+              router.push(
+                `/business-areas/hierarchical?tab=${data.majorCategory.id}&subtab=${value}`
+              );
             },
           }
         : undefined,
@@ -675,13 +647,18 @@ const BusinessAreaDetailPage: React.FC<BusinessAreaDetailPageProps> = ({
   };
 
   return (
-    <div className={styles.page}>
-      <Header
-        variant="white"
-        onMenuClick={() => setIsMenuOpen(true)}
-        isFixed={true}
+    <>
+      <SEO
+        title={data.name ? `${data.name} | 세무법인 함께` : "업무 분야 | 세무법인 함께"}
+        description={data.subDescription || `${data.name} 관련 세무 서비스 제공`}
       />
-      <Menu isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
+      <div className={styles.page}>
+        <Header
+          variant="white"
+          onMenuClick={() => setIsMenuOpen(true)}
+          isFixed={true}
+        />
+        <Menu isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
 
       <div className={styles.headerImage}></div>
       <div className="container">
@@ -1518,8 +1495,8 @@ const BusinessAreaDetailPage: React.FC<BusinessAreaDetailPageProps> = ({
       <ContactUs categoryId={data?.minorCategory?.id} />
     
       <Footer />
-    </div>
-    // </>
+      </div>
+    </>
   );
 };
 

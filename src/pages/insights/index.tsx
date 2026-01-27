@@ -393,17 +393,17 @@ const InsightsPage: React.FC<InsightsPageProps> = ({
   const [libraryDisplayType, setLibraryDisplayType] =
     useState<LibraryDisplayType>(initialLibraryDisplayType || "gallery");
 
-  // Helper function to check if user is logged in and get memberType
+  // Helper function to check if user is logged in and get memberType & isApproved
   const getUserAuthState = () => {
     if (typeof window === 'undefined') {
-      return { isLoggedIn: false, memberType: null };
+      return { isLoggedIn: false, memberType: null, isApproved: null };
     }
     
     const token = localStorage.getItem('accessToken');
     const userStr = localStorage.getItem('user');
     
     if (!token || !userStr) {
-      return { isLoggedIn: false, memberType: null };
+      return { isLoggedIn: false, memberType: null, isApproved: null };
     }
     
     try {
@@ -411,30 +411,34 @@ const InsightsPage: React.FC<InsightsPageProps> = ({
       return {
         isLoggedIn: true,
         memberType: user.memberType || null,
+        isApproved: user.memberType === 'INSURANCE' ? user.isApproved : null,
       };
     } catch {
-      return { isLoggedIn: false, memberType: null };
+      return { isLoggedIn: false, memberType: null, isApproved: null };
     }
   };
 
-  // Filter categories based on targetMemberType and login state
-  const filterCategoriesByVisibility = (categories: InsightCategory[]): InsightCategory[] => {
-    const { isLoggedIn, memberType } = getUserAuthState();
+  // Build query params for API calls with user filtering
+  const buildUserFilterParams = () => {
+    const { isLoggedIn, memberType, isApproved } = getUserAuthState();
     
-    return categories.filter((cat) => {
-      // Always show if targetMemberType is "ALL"
-      if (cat.targetMemberType === "ALL") {
-        return true;
-      }
-      
-      // If not logged in, hide non-ALL categories
-      if (!isLoggedIn) {
-        return false;
-      }
-      
-      // If logged in, show if targetMemberType matches user's memberType
-      return cat.targetMemberType === memberType;
-    });
+    const params = new URLSearchParams();
+    
+    if (!isLoggedIn) {
+      // Not logged in: explicitly send memberType=null for guest filtering
+      params.append('memberType', 'null');
+      return `&${params.toString()}`;
+    }
+    
+    // Logged in: send actual user data
+    if (memberType) {
+      params.append('memberType', memberType);
+    }
+    if (isApproved !== null) {
+      params.append('isApproved', String(isApproved));
+    }
+    
+    return params.toString() ? `&${params.toString()}` : '';
   };
 
   // Fetch hierarchical data once on mount
@@ -447,21 +451,18 @@ const InsightsPage: React.FC<InsightsPageProps> = ({
     try {
         setIsLoadingHierarchical(true);
       setError(null);
+        const userParams = buildUserFilterParams();
         const response = await getClient<InsightHierarchicalData>(
-          `${API_ENDPOINTS.INSIGHTS}/hierarchical`
+          `${API_ENDPOINTS.INSIGHTS}/hierarchical?${userParams.replace(/^&/, '')}`
         );
 
         if (response.data && Array.isArray(response.data)) {
-          // Filter categories by visibility BEFORE setting state
-          const allCategories = response.data.map(item => item.category);
-          const visibleCategories = filterCategoriesByVisibility(allCategories);
-          
-          // Filter hierarchical data to only include visible categories
-          const filteredHierarchicalData = response.data.filter((item) =>
-            visibleCategories.some((cat) => cat.id === item.category.id)
-          );
-          
-          setHierarchicalData(filteredHierarchicalData);
+          // Backend already filtered by memberType and isApproved
+          // No need for frontend filtering, just set the data
+          setHierarchicalData(response.data);
+
+          // Extract categories from backend-filtered data
+          const backendCategories = response.data.map(item => item.category);
 
           // Initialize selection from URL query or defaults
           // Always normalize query values to strings for comparison
@@ -475,7 +476,7 @@ const InsightsPage: React.FC<InsightsPageProps> = ({
           // Check if query category is visible
           let validCategoryId: number | null = null;
           if (categoryIdFromQuery && !isNaN(categoryIdFromQuery)) {
-            const queryCategory = visibleCategories.find((cat) => cat.id === categoryIdFromQuery);
+            const queryCategory = backendCategories.find((cat) => cat.id === categoryIdFromQuery);
             if (queryCategory) {
               validCategoryId = categoryIdFromQuery;
             }
@@ -509,9 +510,9 @@ const InsightsPage: React.FC<InsightsPageProps> = ({
                 );
               }
             }
-          } else if (filteredHierarchicalData.length > 0) {
-            // Use defaults: first VISIBLE category, "전체" subcategory
-            const firstCategory = filteredHierarchicalData[0];
+          } else if (response.data.length > 0) {
+            // Use defaults: first category from backend-filtered data, "전체" subcategory
+            const firstCategory = response.data[0];
             const firstCategoryId = firstCategory.category.id;
             setSelectedCategoryId(firstCategoryId);
             setSelectedSubcategoryId(0); // "전체"
@@ -569,8 +570,8 @@ const InsightsPage: React.FC<InsightsPageProps> = ({
     const checkCategoryVisibility = () => {
       if (isNewsletterCategory) return; // Skip for newsletter
       
-      const allCategories = hierarchicalData.map(item => item.category);
-      const visibleCategories = filterCategoriesByVisibility(allCategories);
+      // Backend already filters categories, hierarchicalData contains only visible ones
+      const visibleCategories = hierarchicalData.map(item => item.category);
       
       // If current selected category is not visible, redirect
       if (selectedCategoryId) {
@@ -578,9 +579,7 @@ const InsightsPage: React.FC<InsightsPageProps> = ({
         if (!isCurrentCategoryVisible) {
           // Redirect to first visible category or newsletter
           if (visibleCategories.length > 0) {
-            const firstVisible = hierarchicalData.find((item) => 
-              visibleCategories[0].id === item.category.id
-            );
+            const firstVisible = hierarchicalData[0];
             if (firstVisible) {
               setSelectedCategoryId(firstVisible.category.id);
               setSelectedSubcategoryId(0);

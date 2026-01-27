@@ -105,7 +105,7 @@ const BranchDetailModal: React.FC<BranchDetailModalProps> = ({
               align-items: center;
               gap: 10px;
               background: white;
-              border: 1px solid #c6c6c6;
+              border: 1px solid  #00A89E;
               border-radius: 100px;
               padding: 6px 16px 6px 6px;
               box-shadow: 0 2px 2px rgba(0, 0, 0, 0.2);
@@ -114,7 +114,7 @@ const BranchDetailModal: React.FC<BranchDetailModalProps> = ({
               <div style="
                 width: 32px;
                 height: 32px;
-                background: #bd2625;
+                background: #00A89E;
                 border-radius: 100px;
                 display: flex;
                 align-items: center;

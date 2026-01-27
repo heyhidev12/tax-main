@@ -5,6 +5,7 @@ import Menu from "@/components/Menu";
 import Footer from "@/components/Footer";
 import DateRangePickerModal from "@/components/common/DateRangePickerModal";
 import { TextField } from "@/components/common/TextField";
+import SEO from "@/components/common/SEO";
 import { get, post, patch, del } from "@/lib/api";
 import { API_ENDPOINTS } from "@/config/api";
 import styles from "./my.module.scss";
@@ -46,7 +47,7 @@ interface TrainingSeminarApplication {
   deadlineLabel: string;
   deadlineDays: number;
   recruitmentEndDate?: string; // Server-provided recruitment end date
-  status: "CONFIRMED" | "CANCELLED" | "PENDING";
+  status: "CONFIRMED" | "CANCELLED" | "WAITING"; // ✅ Correct backend enum
   statusLabel: string;
   participationDate: string;
   participationTime: string;
@@ -423,8 +424,9 @@ const MyPage: React.FC = () => {
       > = {
         COMPLETED: "completed",
         RECEIVED: "received",
-        PENDING: "pending",
-        WAITING: "waiting",
+        WAITING: "waiting", // ✅ Backend uses WAITING, not PENDING
+        CONFIRMED: "completed", // ✅ CONFIRMED maps to completed for UI
+        CANCELLED: "pending", // ✅ CANCELLED shows as pending for UI
         // 소문자 버전도 지원
         completed: "completed",
         received: "received",
@@ -480,7 +482,7 @@ const MyPage: React.FC = () => {
     const today = new Date();
     const deadline = new Date(endDate);
     const diffTime = deadline.getTime() - today.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
     return diffDays > 0 ? diffDays : 0;
   };
 
@@ -1119,18 +1121,26 @@ const MyPage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className={styles.page}>
-        <Header variant="transparent" onMenuClick={() => setIsMenuOpen(true)} />
-        <Menu isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
-        <div className={styles.loading}>Loading...</div>
-      </div>
+      <>
+        <SEO title="마이페이지 | 세무법인 함께" />
+        <div className={styles.page}>
+          <Header variant="transparent" onMenuClick={() => setIsMenuOpen(true)} />
+          <Menu isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
+          <div className={styles.loading}>Loading...</div>
+        </div>
+      </>
     );
   }
 
   // userProfile이 없으면 로그인 페이지로 리다이렉트 (loading 중이 아닐 때만)
   if (!loading && !userProfile) {
     router.push("/login");
-    return null;
+    return (
+      <>
+        <SEO title="마이페이지 | 세무법인 함께" />
+        {null}
+      </>
+    );
   }
 
   const displayProfile = userProfile || {
@@ -1170,9 +1180,11 @@ const MyPage: React.FC = () => {
   };
 
   return (
-    <div className={styles.page}>
-      <Header variant="transparent" onMenuClick={() => setIsMenuOpen(true)} />
-      <Menu isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
+    <>
+      <SEO title="마이페이지 | 세무법인 함께" />
+      <div className={styles.page}>
+        <Header variant="transparent" onMenuClick={() => setIsMenuOpen(true)} />
+        <Menu isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
 
       {/* Mobile Layout */}
 
@@ -1222,11 +1234,13 @@ const MyPage: React.FC = () => {
                   </div>
                   <div className={styles.mobileMemberTypeBadge}>
                     <p>
-                      {displayProfile.memberType == MemberType.GENERAL
-                        ? "일반"
-                        : displayProfile.memberType == MemberType.INSURANCE
-                          ? "세무사 "
-                          : "기타"}
+                    {displayProfile.memberType == MemberType.GENERAL
+                    ? "일반"
+                    : displayProfile.memberType == MemberType.OTHER
+                      ? "기타"
+                      : displayProfile.isApproved
+                        ? "세무사"
+                        : "세무사 (승인 대기 중)"}
                     </p>
                   </div>
                 </div>
@@ -3505,7 +3519,7 @@ const MyPage: React.FC = () => {
       {showWithdrawConfirm && (
         <div className={styles.modalOverlay} onClick={handleWithdrawCancel}>
           <div
-            className={styles.modalContent}
+            className={`${styles.modalContent} ${styles.modalContentSmall}`}
             onClick={(e) => e.stopPropagation()}
           >
             <div className={styles.modalHeader}>
@@ -3545,7 +3559,7 @@ const MyPage: React.FC = () => {
       {showWithdrawPassword && (
         <div className={styles.modalOverlay} onClick={handleWithdrawCancel}>
           <div
-            className={styles.modalContent}
+            className={`${styles.modalContent} ${styles.modalContentSmall}`}
             onClick={(e) => e.stopPropagation()}
           >
             <div className={styles.modalHeader}>
@@ -3677,7 +3691,8 @@ const MyPage: React.FC = () => {
       )}
 
 
-    </div>
+      </div>
+    </>
   );
 };
 

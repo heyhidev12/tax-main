@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import DatePickerModal from "./DatePickerModal";
-import type { EducationDetail } from "@/types/education";
+import type { EducationDetail, ApplicationStatus } from "@/types/education";
 import { get, post, del } from "@/lib/api";
 import { API_ENDPOINTS } from "@/config/api";
 import styles from "./ApplicationModal.module.scss";
@@ -40,6 +40,9 @@ const ApplicationModal: React.FC<ApplicationModalProps> = ({
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingUser, setIsLoadingUser] = useState(false);
+  // ✅ Fetch user's application from dedicated endpoint
+  const [myApplication, setMyApplication] = useState<{ id: number; status: ApplicationStatus } | null>(null);
+  const [isLoadingMyApplication, setIsLoadingMyApplication] = useState(false);
 
   // 유저 정보 가져오기
   useEffect(() => {
@@ -47,6 +50,39 @@ const ApplicationModal: React.FC<ApplicationModalProps> = ({
       fetchUserProfile();
     }
   }, [isOpen]);
+
+  // ✅ Fetch user's application status from dedicated endpoint
+  useEffect(() => {
+    if (!isOpen || isLoadingUser) return;
+    
+    const fetchMyApplication = async () => {
+      // Only fetch if user is logged in
+      if (!userProfile) {
+        setMyApplication(null);
+        return;
+      }
+      
+      try {
+        setIsLoadingMyApplication(true);
+        const response = await get<{ id: number; status: ApplicationStatus } | null>(
+          `${API_ENDPOINTS.TRAINING_SEMINARS}/${education.id}/my-application`
+        );
+        
+        if (response.data) {
+          setMyApplication(response.data);
+        } else {
+          setMyApplication(null);
+        }
+      } catch (err) {
+        console.error("신청 정보를 불러오는 중 오류:", err);
+        setMyApplication(null);
+      } finally {
+        setIsLoadingMyApplication(false);
+      }
+    };
+    
+    fetchMyApplication();
+  }, [isOpen, userProfile, isLoadingUser, education.id]);
 
   // initialDate가 변경되면 selectedDate 업데이트
   useEffect(() => {
@@ -219,6 +255,14 @@ const ApplicationModal: React.FC<ApplicationModalProps> = ({
         });
       }
 
+      // ✅ Refetch my application status after successful application
+      const myAppResponse = await get<{ id: number; status: ApplicationStatus } | null>(
+        `${API_ENDPOINTS.TRAINING_SEMINARS}/${education.id}/my-application`
+      );
+      if (myAppResponse.data) {
+        setMyApplication(myAppResponse.data);
+      }
+
       if (onSuccess) {
         onSuccess();
       }
@@ -234,65 +278,38 @@ const ApplicationModal: React.FC<ApplicationModalProps> = ({
 
   const canApply = selectedDate && selectedTime && isAgreed;
 
-  // 모집 종료 여부 확인
-  const isRecruitmentClosed = () => {
-    if (!education.recruitmentEndDate) return false;
-    const today = new Date();
-    const endDate = new Date(education.recruitmentEndDate);
-    return today > endDate;
-  };
-
-  // 현재 유저의 가장 최근 신청 내역 찾기
-  const getUserApplication = () => {
-    if (
-      !userProfile ||
-      !education.applications ||
-      education.applications.length === 0
-    ) {
-      return null;
-    }
-    // 현재 유저의 모든 신청 찾기
-    const userApps = education.applications.filter(
-      (app: any) =>
-        app.userId === userProfile.id || app.name === userProfile.name
-    );
-    if (userApps.length === 0) return null;
-    // 가장 최근 신청 반환 (id가 큰 것 또는 appliedAt이 최신인 것)
-    return userApps.sort((a: any, b: any) => {
-      if (a.appliedAt && b.appliedAt) {
-        return (
-          new Date(b.appliedAt).getTime() - new Date(a.appliedAt).getTime()
-        );
-      }
-      return (b.id || 0) - (a.id || 0);
-    })[0];
-  };
-
-  const userApplication = getUserApplication();
-  const isRecruitmentEnded = isRecruitmentClosed();
+  // ✅ Use myApplication from dedicated API endpoint (not education.applications array)
+  const userApplication = myApplication;
   const hasApplication = !!userApplication;
 
-  // 버튼 상태 결정
+  // 버튼 상태 결정 - 올바른 ApplicationStatus만 사용 (백엔드 enum과 정확히 일치)
   const getButtonState = () => {
-    if (isRecruitmentEnded) {
-      return "recruitment_closed"; // 모집 종료
+    // Case A: User never applied
+    if (!userApplication) {
+      return "can_apply";
     }
-    if (hasApplication) {
-      const status = (userApplication?.status || "").toUpperCase();
-      // 취소/거절된 경우 다시 신청 가능
-      if (status === "CANCELLED" || status === "REJECTED") {
+
+    // Case B-D: Check actual status from backend (exact string match, case-sensitive)
+    const status = userApplication.status;
+    
+    // ✅ Use exact backend enum values: WAITING, CONFIRMED, CANCELLED
+    // No transformations, no fallbacks to WAITING - only exact matches
+    switch (status) {
+      case "WAITING":
+        return "waiting";
+      
+      case "CONFIRMED":
+        return "confirmed";
+      
+      case "CANCELLED":
+        // Treat as new user - can apply again
         return "can_apply";
-      }
-      if (status === "COMPLETED") {
-        return "completed"; // 수강 완료
-      }
-      if (status === "APPROVED" || status === "CONFIRMED") {
-        return "approved"; // 승인 완료
-      }
-      // WAITING, PENDING 등은 모두 승인 대기중
-      return "pending";
+      
+      default:
+        // Fallback: treat unknown status as can_apply (NOT waiting!)
+        console.warn(`Unknown application status: "${status}", defaulting to can_apply`);
+        return "can_apply";
     }
-    return "can_apply"; // 신청 가능
   };
 
   const buttonState = getButtonState();
@@ -311,18 +328,21 @@ const ApplicationModal: React.FC<ApplicationModalProps> = ({
 
       if (response.error) {
         console.error("신청 취소 실패:", response.error);
-        alert("신청 취소 기능이 현재 지원되지 않습니다.");
+        // Show backend error message
+        alert(response.error || "신청 취소에 실패했습니다.");
         return;
       }
 
       alert("신청이 취소되었습니다.");
+      // ✅ Clear application status after cancellation
+      setMyApplication(null);
       if (onSuccess) {
         onSuccess();
       }
       onClose();
     } catch (err) {
       console.error("신청 취소 중 오류:", err);
-      alert("신청 취소 기능이 현재 지원되지 않습니다.");
+      alert("신청 취소 중 오류가 발생했습니다.");
     } finally {
       setIsLoading(false);
     }
@@ -649,25 +669,8 @@ const ApplicationModal: React.FC<ApplicationModalProps> = ({
 
               {/* 데스크톱 버튼 */}
               <div className={styles.buttonWrapper}>
-                {buttonState === "recruitment_closed" && (
-                  <button
-                    className={`${styles.applyButton} ${styles.applyButtonDisabled}`}
-                    disabled
-                  >
-                    모집 종료
-                  </button>
-                )}
-
-                {buttonState === "completed" && (
-                  <button
-                    className={`${styles.applyButton} ${styles.applyButtonDisabled}`}
-                    disabled
-                  >
-                    수강 완료
-                  </button>
-                )}
-
-                {buttonState === "pending" && (
+                {/* State: WAITING - 승인 대기중 */}
+                {buttonState === "waiting" && (
                   <>
                     <button
                       className={`${styles.applyButton} ${styles.applyButtonDisabled}`}
@@ -685,6 +688,26 @@ const ApplicationModal: React.FC<ApplicationModalProps> = ({
                   </>
                 )}
 
+                {/* State: CONFIRMED - 신청 완료 */}
+                {buttonState === "confirmed" && (
+                  <>
+                    <button
+                      className={`${styles.applyButton} ${styles.applyButtonDisabled}`}
+                      disabled
+                    >
+                      신청 완료
+                    </button>
+                    <button
+                      className={styles.cancelButton}
+                      onClick={handleCancelApplication}
+                      disabled={isLoading}
+                    >
+                      신청 취소
+                    </button>
+                  </>
+                )}
+
+                {/* State: can_apply - 신청하기 (never applied or CANCELLED) */}
                 {buttonState === "can_apply" && (
                   <button
                     className={`${styles.applyButton} ${
@@ -711,25 +734,8 @@ const ApplicationModal: React.FC<ApplicationModalProps> = ({
 
         {/* 모바일 하단 고정 버튼 */}
         <div className={styles.footer}>
-          {buttonState === "recruitment_closed" && (
-            <button
-              className={`${styles.applyButton} ${styles.applyButtonDisabled}`}
-              disabled
-            >
-              모집 종료
-            </button>
-          )}
-
-          {buttonState === "completed" && (
-            <button
-              className={`${styles.applyButton} ${styles.applyButtonDisabled}`}
-              disabled
-            >
-              수강 완료
-            </button>
-          )}
-
-          {buttonState === "pending" && (
+          {/* State: WAITING - 승인 대기중 */}
+          {buttonState === "waiting" && (
             <button
               className={`${styles.applyButton} ${styles.applyButtonDisabled}`}
               disabled
@@ -738,6 +744,17 @@ const ApplicationModal: React.FC<ApplicationModalProps> = ({
             </button>
           )}
 
+          {/* State: CONFIRMED - 신청 완료 */}
+          {buttonState === "confirmed" && (
+            <button
+              className={`${styles.applyButton} ${styles.applyButtonDisabled}`}
+              disabled
+            >
+              신청 완료
+            </button>
+          )}
+
+          {/* State: can_apply - 신청하기 (never applied or CANCELLED) */}
           {buttonState === "can_apply" && (
             <button
               className={`${styles.applyButton} ${
@@ -751,7 +768,7 @@ const ApplicationModal: React.FC<ApplicationModalProps> = ({
               {isLoading
                 ? "신청 중..."
                 : isLoadingUser
-                ? "정보 불러오는 중..."
+                ? "정보 불로는 중..."
                 : "신청하기"}
             </button>
           )}

@@ -6,6 +6,7 @@ import Footer from '@/components/Footer';
 import PageHeader from '@/components/common/PageHeader';
 import Checkbox from '@/components/common/Checkbox';
 import Button from '@/components/common/Button';
+import SEO from '@/components/common/SEO';
 import { get, post } from '@/lib/api';
 import { API_ENDPOINTS } from '@/config/api';
 import styles from './apply.module.scss';
@@ -746,13 +747,15 @@ const ConsultationApplyPage: React.FC = () => {
   const selectedAccountantLabel = taxAccountants.find(a => a.value === formData.taxAccountant)?.label || '담당 세무사를 선택해주세요';
 
   return (
-    <div className={styles.consultationPage}>
-      <Header
-        variant="white"
-        onMenuClick={() => setIsMenuOpen(true)}
-        onLogoClick={() => router.push('/')}
-      />
-      <Menu isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
+    <>
+      <SEO title="상담 신청 | 세무법인 함께" />
+      <div className={styles.consultationPage}>
+        <Header
+          variant="white"
+          onMenuClick={() => setIsMenuOpen(true)}
+          onLogoClick={() => router.push('/')}
+        />
+        <Menu isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
       <div className={styles.headerImage}>
         <p>CONTACT</p>
         <h1>세무법인 함께 상담 신청</h1>
@@ -1218,7 +1221,8 @@ const ConsultationApplyPage: React.FC = () => {
           </div>
         </div>
       )}
-    </div>
+      </div>
+    </>
   );
 };
 
