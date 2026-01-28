@@ -62,7 +62,7 @@ $bg-light: #f5f5f5;
     left: 0;
     pointer-events: none;
     user-select: none;
-  
+
     // 0115
     opacity: 0.5;
     letter-spacing: -7px;
@@ -121,7 +121,7 @@ $bg-light: #f5f5f5;
     margin-left: 18px;
     letter-spacing: -.5px;
 
-    
+
 
     @media (max-width: 767px) {
       font-size: 15px;
@@ -137,7 +137,7 @@ $bg-light: #f5f5f5;
     border-radius: 50%;
     margin-top: 15px;
 
-    
+
 
     @media (max-width: 767px) {
       width: 8px;
@@ -164,10 +164,9 @@ $bg-light: #f5f5f5;
 
 
 .insight-swiper {
-  width: calc(100vw - 305px);
-  padding-left: 305px;
-  // padding-right: 50px;
-  overflow: visible;
+  width: calc(100vw - 610px);
+  margin-left: 305px;
+  overflow: hidden;
 
 
   .swiper-slide {
@@ -176,24 +175,18 @@ $bg-light: #f5f5f5;
   }
 
   @media (max-width: 1680px) {
-    width: calc(100vw - 105px);
-  padding-left: 105px;
-  
+    width: calc(100vw - 250px);
+    margin-left: 105px;
+
   }
 
   @media (max-width: 1280px) {
-    padding-left: 0;
-    width: 100vw;
-    
-    .swiper-wrapper {
-      padding-right: 20px;
-    }
+    margin-left: 0;
+    width: calc(100vw - 50px);
   }
 
   @media (max-width: 767px) {
-    .swiper-wrapper {
-      padding-right: 16px;
-    }
+    width: 100vw;
   }
 }
 
@@ -210,9 +203,9 @@ $bg-light: #f5f5f5;
   border: 3px solid transparent;
   width: 100%;
   filter: drop-shadow(0 4px 5px rgba(0, 0, 0, 0.08));
-  
+
   cursor: pointer;
-    aspect-ratio: 1 / 1;
+  aspect-ratio: 1 / 1;
 
   @media (max-width: 767px) {
     height: auto;
@@ -286,17 +279,18 @@ $bg-light: #f5f5f5;
 
 // Progress Bar
 .insight-progress {
-   max-width: 1440px;
+  max-width: 1440px;
   margin: 0 auto;
   cursor: pointer;
   padding: 10px 2rem 10px 22.5%;
+
   @media (max-width: 1680px) {
-    padding-left:105px;
+    padding-left: 105px;
   }
 
   @media (max-width: 1280px) {
-    padding-left:0;
-    padding-right:0;
+    padding-left: 0;
+    padding-right: 0;
   }
 
   @media (max-width: 767px) {

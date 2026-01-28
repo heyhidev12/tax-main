@@ -203,15 +203,19 @@ const Insight: React.FC<InsightProps> = ({ articles }) => {
                 spaceBetween: 16,
               },
               576: {
-                slidesPerView: 2.8,
+                slidesPerView: 1.8,
                 spaceBetween: 18,
               },
               768: {
+                slidesPerView: 2.4,
+                spaceBetween: 22,
+              },
+              1024: {
                 slidesPerView: 3,
                 spaceBetween: 22,
               },
               1280: {
-                slidesPerView: 4,
+                slidesPerView: 3.2,
                 spaceBetween: 20,
               }
             }}
