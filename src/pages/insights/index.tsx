@@ -119,7 +119,6 @@ const InsightsPage: React.FC<InsightsPageProps> = ({
     if (typeof window !== 'undefined') {
       const urlParams = new URLSearchParams(window.location.search);
       const category = urlParams.get('category');
-      console.log('[Newsletter Init] On mount - category:', category);
       return category === 'newsletter';
     }
     return false;
@@ -182,12 +181,10 @@ const InsightsPage: React.FC<InsightsPageProps> = ({
     
     const category = String(router.query.category || "");
     
-    console.log('[Newsletter Init] Router ready - category:', category);
     
     if (category === 'newsletter') {
       setIsNewsletterMode(true);
       setSelectValue("newsletter"); // Set select value immediately
-      console.log('[Newsletter Init] Set newsletter mode');
       
       // Remove sub parameter if present (newsletter doesn't use sub)
       if (router.query.sub) {
@@ -833,7 +830,6 @@ const InsightsPage: React.FC<InsightsPageProps> = ({
         undefined,
         { shallow: true }
       );
-      console.log('[Newsletter] Category changed to newsletter');
       } else {
       // Numeric category - always parse from string
       const categoryId = parseInt(categoryValueStr, 10);
@@ -976,11 +972,9 @@ const formatDateTime = (dateString?: string) => {
       const urlParams = new URLSearchParams(window.location.search);
       const category = urlParams.get('category');
       if (category === 'newsletter') {
-        console.log('[Select Init] Initialized to newsletter from URL');
         return "newsletter";
       }
       if (category && !isNaN(Number(category))) {
-        console.log('[Select Init] Initialized to category from URL:', category);
         return category;
       }
     }
@@ -994,18 +988,14 @@ const formatDateTime = (dateString?: string) => {
   useEffect(() => {
     if (!router.isReady) return; // Wait for router to be ready
 
-    console.log('[Select State] Updating - isNewsletterCategory:', isNewsletterCategory, 'isNewsletterMode:', isNewsletterMode, 'selectedCategoryId:', selectedCategoryId);
-
     // For newsletter, always set value immediately (doesn't depend on hierarchicalData)
     if (isNewsletterCategory || isNewsletterMode) {
       setSelectValue("newsletter");
-      console.log('[Select State] Set to newsletter');
       return; // Early return for newsletter - don't wait for hierarchicalData
     }
 
     // For normal categories, wait for hierarchicalData
     const selectItems = getSelectItems();
-    console.log('[Select State] Select items length:', selectItems.length);
 
     if (selectItems.length === 0) {
       // Don't update if no items available yet (but newsletter already handled above)
@@ -1013,13 +1003,11 @@ const formatDateTime = (dateString?: string) => {
     } else if (selectedCategoryId !== null) {
       // Explicitly set select state after API load
       setSelectValue(String(selectedCategoryId));
-      console.log('[Select State] Set to category:', selectedCategoryId);
     } else {
       // Fallback to first available item
       const firstItem = selectItems[0];
       if (firstItem) {
         setSelectValue(String(firstItem.value));
-        console.log('[Select State] Set to first item:', firstItem.value);
       }
     }
   }, [router.isReady, isNewsletterCategory, isNewsletterMode, selectedCategoryId, hierarchicalData, newsletterExposed]);
@@ -1081,7 +1069,6 @@ const formatDateTime = (dateString?: string) => {
                   value: getCurrentSelectValue(), // Always string type
                   options: (() => {
                     const items = getSelectItems();
-                    console.log('[Select Render] Level2 options length:', items.length, 'isNewsletterMode:', isNewsletterMode, 'newsletterExposed:', newsletterExposed, 'hierarchicalData length:', hierarchicalData.length);
                     
                     // Map items to select options format
                     let options = items.map((item) => ({
@@ -1118,7 +1105,6 @@ const formatDateTime = (dateString?: string) => {
                       // Once hierarchicalData loads, options will have multiple items and dropdown will appear
                     }
                     
-                    console.log('[Select Render] Final options length:', options.length, 'options:', options.map(o => o.label));
                     return options;
                   })(),
                   onChange: (value) => {

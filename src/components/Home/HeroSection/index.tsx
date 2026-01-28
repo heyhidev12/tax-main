@@ -102,6 +102,7 @@ export default function HeroSection({ heroBanner }: HeroSectionProps) {
   return (
     <main ref={containerRef} className={styles.main}>
       {renderHeroBackground()}
+      <div className={styles.overlay}> </div>
       <div className={styles["main-container"]}>
         <p ref={subtitleRef}>Tax Accounting Together</p>
         <h1 ref={titleRef}>
