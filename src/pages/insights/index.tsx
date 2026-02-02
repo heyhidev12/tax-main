@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/router";
 import { GetServerSideProps } from "next";
 import Header from "@/components/common/Header";
@@ -10,7 +10,6 @@ import TextField, { SearchField } from "@/components/common/TextField";
 import FloatingButton from "@/components/common/FloatingButton";
 import Card from "@/components/common/Card";
 import Icon from "@/components/common/Icon";
-import Tab from "@/components/common/Tab";
 import SEO from "@/components/common/SEO";
 import { get as getClient, post } from "@/lib/api";
 import { get } from "@/lib/api-server";
@@ -51,12 +50,12 @@ interface InsightItem {
   createdAt?: string;
   updatedAt?: string;
   authorName?: string;
-  viewCount ?: number;
+  viewCount?: number;
   files: any[];
   subMinorCategory?: InsightSubMinorCategory;
 }
 
-interface InsightSubMinorCategory { 
+interface InsightSubMinorCategory {
   id: number;
   name: string;
 }
@@ -113,7 +112,7 @@ const InsightsPage: React.FC<InsightsPageProps> = ({
   const categoryFromQuery = String(router.query.category || "");
   const subFromQuery = String(router.query.sub || "");
   const isNewsletterCategory = categoryFromQuery === "newsletter";
-  
+
   // Newsletter mode state - initialized immediately from query (works on refresh/direct access)
   const [isNewsletterMode, setIsNewsletterMode] = useState(() => {
     if (typeof window !== 'undefined') {
@@ -163,12 +162,12 @@ const InsightsPage: React.FC<InsightsPageProps> = ({
       const urlParams = new URLSearchParams(window.location.search);
       const category = urlParams.get('category');
       const sub = urlParams.get('sub');
-      
+
       // Newsletter doesn't use sub parameter - ignore it
       if (category === 'newsletter') {
         return 0; // Default value, but not used for newsletter
       }
-      
+
       return sub ? parseInt(sub, 10) : 0;
     }
     return 0; // Default to "전체" (0)
@@ -178,14 +177,14 @@ const InsightsPage: React.FC<InsightsPageProps> = ({
   // Initialize newsletter mode from query params immediately on mount/route change
   useEffect(() => {
     if (!router.isReady) return;
-    
+
     const category = String(router.query.category || "");
-    
-    
+
+
     if (category === 'newsletter') {
       setIsNewsletterMode(true);
       setSelectValue("newsletter"); // Set select value immediately
-      
+
       // Remove sub parameter if present (newsletter doesn't use sub)
       if (router.query.sub) {
         router.replace(
@@ -263,19 +262,19 @@ const InsightsPage: React.FC<InsightsPageProps> = ({
         }
 
         // Remove old params and update URL
-      router.replace(
-        {
-          pathname: router.pathname,
+        router.replace(
+          {
+            pathname: router.pathname,
             query: {
               ...restQuery,
               ...(newCategory && { category: newCategory }),
               ...(newSub && { sub: newSub }),
             },
-        },
-        undefined,
-        { shallow: true }
-      );
-    }
+          },
+          undefined,
+          { shallow: true }
+        );
+      }
     }
   }, [router.isReady, router.query, router]);
 
@@ -285,14 +284,14 @@ const InsightsPage: React.FC<InsightsPageProps> = ({
       // Redirect to first category if newsletter is not exposed
       if (hierarchicalData.length > 0) {
         const firstCategory = hierarchicalData[0];
-      router.replace(
-        {
-          pathname: router.pathname,
+        router.replace(
+          {
+            pathname: router.pathname,
             query: { category: firstCategory.category.id },
-        },
-        undefined,
-        { shallow: true }
-      );
+          },
+          undefined,
+          { shallow: true }
+        );
       } else {
         router.replace("/insights", undefined, { shallow: true });
       }
@@ -400,14 +399,14 @@ const InsightsPage: React.FC<InsightsPageProps> = ({
     if (typeof window === 'undefined') {
       return { isLoggedIn: false, memberType: null, isApproved: null };
     }
-    
+
     const token = localStorage.getItem('accessToken');
     const userStr = localStorage.getItem('user');
-    
+
     if (!token || !userStr) {
       return { isLoggedIn: false, memberType: null, isApproved: null };
     }
-    
+
     try {
       const user = JSON.parse(userStr);
       return {
@@ -423,15 +422,15 @@ const InsightsPage: React.FC<InsightsPageProps> = ({
   // Build query params for API calls with user filtering
   const buildUserFilterParams = () => {
     const { isLoggedIn, memberType, isApproved } = getUserAuthState();
-    
+
     const params = new URLSearchParams();
-    
+
     if (!isLoggedIn) {
       // Not logged in: explicitly send memberType=null for guest filtering
       params.append('memberType', 'null');
       return `&${params.toString()}`;
     }
-    
+
     // Logged in: send actual user data
     if (memberType) {
       params.append('memberType', memberType);
@@ -439,7 +438,7 @@ const InsightsPage: React.FC<InsightsPageProps> = ({
     if (isApproved !== null) {
       params.append('isApproved', String(isApproved));
     }
-    
+
     return params.toString() ? `&${params.toString()}` : '';
   };
 
@@ -450,108 +449,19 @@ const InsightsPage: React.FC<InsightsPageProps> = ({
       // Always fetch hierarchical data to ensure dropdown has multiple options
       // This prevents static text rendering when newsletter is selected
 
-    try {
+      try {
         setIsLoadingHierarchical(true);
-      setError(null);
+        setError(null);
         const userParams = buildUserFilterParams();
         const response = await getClient<InsightHierarchicalData>(
           `${API_ENDPOINTS.INSIGHTS}/hierarchical?${userParams.replace(/^&/, '')}`
         );
+        setHierarchicalData(response?.data || []);
 
-        if (response.data && Array.isArray(response.data)) {
-          // Backend already filtered by memberType and isApproved
-          // No need for frontend filtering, just set the data
-          setHierarchicalData(response.data);
-
-          // Extract categories from backend-filtered data
-          const backendCategories = response.data.map(item => item.category);
-
-          // Initialize selection from URL query or defaults
-          // Always normalize query values to strings for comparison
-          const categoryIdFromQuery = categoryFromQuery && categoryFromQuery !== "newsletter" && categoryFromQuery !== ""
-            ? parseInt(categoryFromQuery, 10)
-            : null;
-          const subcategoryIdFromQuery = subFromQuery && subFromQuery !== ""
-            ? parseInt(subFromQuery, 10)
-            : null;
-
-          // Check if query category is visible
-          let validCategoryId: number | null = null;
-          if (categoryIdFromQuery && !isNaN(categoryIdFromQuery)) {
-            const queryCategory = backendCategories.find((cat) => cat.id === categoryIdFromQuery);
-            if (queryCategory) {
-              validCategoryId = categoryIdFromQuery;
-            }
-          }
-
-          if (validCategoryId) {
-            // Use category from query - explicitly set select state after API load
-            setSelectedCategoryId(validCategoryId);
-            setSelectValue(String(validCategoryId)); // Force string type for select
-
-            // Set subcategory: use query sub if exists, otherwise default to "전체" (0)
-            if (subcategoryIdFromQuery && !isNaN(subcategoryIdFromQuery)) {
-              setSelectedSubcategoryId(subcategoryIdFromQuery);
-            } else {
-              // Default to "전체" (0) when sub is missing
-              setSelectedSubcategoryId(0);
-
-              // Update URL to include sub=0 if not present
-              if (!subFromQuery || subFromQuery === "") {
-                router.replace(
-                  {
-                    pathname: router.pathname,
-                    query: {
-                      ...router.query,
-                      category: String(validCategoryId),
-                      sub: 0,
-                    },
-                  },
-                  undefined,
-                  { shallow: true }
-                );
-              }
-            }
-          } else if (response.data.length > 0) {
-            // Use defaults: first category from backend-filtered data, "전체" subcategory
-            const firstCategory = response.data[0];
-            const firstCategoryId = firstCategory.category.id;
-            setSelectedCategoryId(firstCategoryId);
-            setSelectedSubcategoryId(0); // "전체"
-            setSelectValue(String(firstCategoryId)); // Explicitly set select state after API load
-
-            // Update URL with defaults if not present
-            if (!categoryFromQuery || categoryFromQuery === "") {
-              router.replace(
-                {
-                  pathname: router.pathname,
-                  query: {
-                    category: String(firstCategoryId),
-                    sub: 0,
-                  },
-                },
-                undefined,
-                { shallow: true }
-              );
-            }
-          } else if (newsletterExposed) {
-            // No visible categories, redirect to newsletter if available
-            router.replace(
-              {
-                pathname: router.pathname,
-                query: { category: "newsletter" },
-              },
-              undefined,
-              { shallow: true }
-            );
-          }
-        } else {
-          setError("데이터를 불러오는데 실패했습니다.");
-          setHierarchicalData([]);
-      }
-    } catch (err) {
+        
+      } catch (err) {
         console.error("Failed to fetch hierarchical data:", err);
-      setError("데이터를 불러오는데 실패했습니다.");
+        setError("데이터를 불러오는데 실패했습니다.");
         setHierarchicalData([]);
       } finally {
         setIsLoadingHierarchical(false);
@@ -571,10 +481,10 @@ const InsightsPage: React.FC<InsightsPageProps> = ({
 
     const checkCategoryVisibility = () => {
       if (isNewsletterCategory) return; // Skip for newsletter
-      
+
       // Backend already filters categories, hierarchicalData contains only visible ones
       const visibleCategories = hierarchicalData.map(item => item.category);
-      
+
       // If current selected category is not visible, redirect
       if (selectedCategoryId) {
         const isCurrentCategoryVisible = visibleCategories.some((cat) => cat.id === selectedCategoryId);
@@ -631,152 +541,171 @@ const InsightsPage: React.FC<InsightsPageProps> = ({
   };
 
   // Update insights when selection or filters change
+  // index.tsx faylida useEffect larni o'zgartirish:
+
+  // insights ni fetch qilish uchun yangi useEffect
   useEffect(() => {
-    if (isNewsletterCategory) return; // Skip for newsletter category
+    if (isNewsletterCategory) return;
+    if (!selectedCategoryId || selectedSubcategoryId === null) return;
 
-    if (!selectedCategoryId || selectedSubcategoryId === null || hierarchicalData.length === 0) {
-      return;
-    }
+    const fetchInsights = async () => {
+      try {
+        setIsLoadingHierarchical(true);
 
-    // Find selected category
-    const selectedCategory = hierarchicalData.find(
-      (item) => item.category.id === selectedCategoryId
-    );
+        // Build query params for regular /insights API
+        const params = new URLSearchParams();
 
-    if (!selectedCategory) return;
+        // Add pagination
+        params.append('page', String(currentPage));
 
-    let filteredItems: InsightItem[] = [];
+        // Get page size based on category type
+        const categoryType = selectedCategory?.category.type?.toUpperCase() || "A";
+        const pageSizeMap: Record<string, number> = {
+          A: 9,  // Gallery
+          B: 6,  // Snippet
+          C: 10, // List
+        };
+        const limit = pageSizeMap[categoryType] || 9;
+        params.append('limit', String(limit));
 
-    // Handle virtual "전체" subcategory (id = 0)
-    if (selectedSubcategoryId === 0) {
-      // "전체": combine all items from all subcategories
-      filteredItems = selectedCategory.subcategories.reduce<InsightItem[]>(
-        (acc, subcategory) => {
-          return [...acc, ...(subcategory.items || [])];
-        },
-        []
-      );
-    } else {
-      // Specific subcategory
-      const selectedSubcategory = selectedCategory.subcategories.find(
-        (sub) => sub.id === selectedSubcategoryId
-      );
+        // Add category filter
+        params.append('categoryId', String(selectedCategoryId));
 
-      if (!selectedSubcategory) return;
-
-      filteredItems = [...(selectedSubcategory.items || [])];
-    }
-
-    // Apply search filter
-    if (searchQuery && searchQuery.trim()) {
-      const query = searchQuery.trim().toLowerCase();
-      filteredItems = filteredItems.filter((item) =>
-        item.title.toLowerCase().includes(query)
-      );
-    }
-
-    // 추가 조건: 세무사(INSURANCE) 회원일 때는 승인된 인사이트만 노출
-    const { memberType } = getUserAuthState();
-    const isInsuranceUser = memberType === "INSURANCE";
-    const categoryTargetMemberType = selectedCategory.category.targetMemberType;
-    if (isInsuranceUser && categoryTargetMemberType === "INSURANCE") {
-      // isApproved가 false인 항목은 숨기고, undefined/true는 노출
-      filteredItems = filteredItems.filter((item) => item.isApproved !== false);
-    }
-
-    // Set display type based on category.type
-    const categoryType = selectedCategory.category.type?.toUpperCase() || "A";
-    let newDisplayType: LibraryDisplayType = "gallery";
-    if (categoryType === "A") {
-      newDisplayType = "gallery";
-    } else if (categoryType === "B") {
-      newDisplayType = "snippet";
-    } else if (categoryType === "C") {
-      newDisplayType = "list";
-    }
-
-    // Reset page if display type changed
-    if (libraryDisplayType !== newDisplayType) {
-      setCurrentPage(1);
-    }
-    setLibraryDisplayType(newDisplayType);
-
-    // Apply sorting ONLY for List type (C) - BEFORE pagination
-    let sortedItems = filteredItems;
-    if (categoryType === "C" && sortField) {
-      sortedItems = [...filteredItems].sort((a, b) => {
-      let aValue: string = "";
-      let bValue: string = "";
-
-      if (sortField === "category") {
-        aValue =
-          typeof a.subcategory?.name === "string"
-            ? a.subcategory.name
-            : typeof a.category?.name === "string"
-              ? a.category.name
-              : "";
-        bValue =
-          typeof b.subcategory?.name === "string"
-            ? b.subcategory.name
-            : typeof b.category?.name === "string"
-              ? b.category.name
-              : "";
-      } else if (sortField === "author") {
-          aValue = a.authorName || "";
-          bValue = b.authorName || "";
+        // CRITICAL: sub=0 bo'lsa, subcategoryId QO'SHMAYMIZ!
+        if (selectedSubcategoryId !== 0) {
+          params.append('subcategoryId', String(selectedSubcategoryId));
         }
 
-        // Korean locale-aware comparison
-        const comparison = aValue.localeCompare(bValue, "ko-KR", { sensitivity: "base" });
-
-      if (sortOrder === "asc") {
-          return comparison;
-      } else {
-          return -comparison;
+        // ADD SEARCH QUERY
+        if (searchQuery.trim()) {
+          params.append('search', searchQuery.trim());
         }
-      });
-    }
 
-    // Get page size based on category type
-    const currentLimit = pageSizeMap[categoryType] || 9;
+        // Add member type and approval filters
+        const { isLoggedIn, memberType, isApproved } = getUserAuthState();
 
-    // Apply pagination AFTER sorting
-    const startIndex = (currentPage - 1) * currentLimit;
-    const endIndex = startIndex + currentLimit;
-    const paginatedItems = sortedItems.slice(startIndex, endIndex);
+        if (isLoggedIn && memberType) {
+          params.append('memberType', memberType);
+          if (memberType === 'INSURANCE' && isApproved !== null) {
+            params.append('isApproved', String(isApproved));
+          }
+        } else {
+          params.append('memberType', 'null');
+        }
 
-    setInsights(paginatedItems);
-    setTotal(sortedItems.length);
-    setTotalPages(Math.ceil(sortedItems.length / currentLimit));
+        console.log("Fetching /insights with params:", params.toString());
+
+        // REGULAR /insights API dan foydalanish
+        const response = await getClient<InsightResponse>(
+          `${API_ENDPOINTS.INSIGHTS}?${params.toString()}`
+        );
+
+        if (response.data) {
+          setInsights(response.data.items || []);
+          setTotal(response.data.total || 0);
+          setTotalPages(Math.ceil((response.data.total || 0) / limit));
+
+          // Set display type based on category.type
+          if (categoryType === "A") {
+            setLibraryDisplayType("gallery");
+          } else if (categoryType === "B") {
+            setLibraryDisplayType("snippet");
+          } else if (categoryType === "C") {
+            setLibraryDisplayType("list");
+          }
+        }
+      } catch (err) {
+        console.error("Failed to fetch insights:", err);
+        setError("데이터를 불러오는데 실패했습니다.");
+      } finally {
+        setIsLoadingHierarchical(false);
+      }
+    };
+
+    fetchInsights();
   }, [
     selectedCategoryId,
     selectedSubcategoryId,
-    hierarchicalData,
-    searchQuery,
     currentPage,
-    isNewsletterCategory,
-    sortField,
-    sortOrder,
-    libraryDisplayType,
-    newsletterExposed,
-    router,
+    searchQuery, // 검색어 변경 시 다시 fetch
+    isNewsletterCategory
   ]);
 
   // 검색 핸들러 (Enter 키 또는 검색 버튼 클릭 시)
+  // 검색 핸들러
+  // 검색 핸들러
+  // Search handler - faqat search query bilan
   const handleSearch = (query: string) => {
     setSearchQuery(query);
-    setCurrentPage(1); // 검색 시 첫 페이지로
+    setCurrentPage(1);
   };
 
-  // 검색어 변경 핸들러 (실시간 입력)
-  const handleSearchChange = (value: string) => {
+  // Search uchun debounce (1000ms)
+  const [searchTimeout, setSearchTimeout] = useState<NodeJS.Timeout | null>(null);
+
+  const handleSearchChangeWithDebounce = useCallback((value: string) => {
     setSearchQuery(value);
-    // 검색어가 비어있으면 즉시 검색 (필터 초기화)
-    if (value === "") {
-      setCurrentPage(1);
-    }
-  };
 
+    if (searchTimeout) {
+      clearTimeout(searchTimeout);
+    }
+
+    const newTimeout = setTimeout(() => {
+      setCurrentPage(1);
+    }, 1000);
+
+    setSearchTimeout(newTimeout);
+  }, [searchTimeout]);
+
+  // URL ni search query bilan yangilash
+  useEffect(() => {
+    if (!router.isReady) return;
+
+    const currentQuery = { ...router.query };
+
+    if (searchQuery.trim()) {
+      currentQuery.search = searchQuery.trim();
+    } else if ('search' in currentQuery) {
+      delete currentQuery.search;
+    }
+
+    if (searchQuery.trim() || 'search' in currentQuery) {
+      currentQuery.page = String(currentPage);
+
+      router.replace(
+        {
+          pathname: router.pathname,
+          query: currentQuery,
+        },
+        undefined,
+        { shallow: true }
+      );
+    }
+  }, [searchQuery, currentPage, router.isReady]);
+
+  // Game item click handler
+  const handleItemClick = (id: number) => {
+    const query: Record<string, string> = {};
+    
+    if (selectedCategoryId) {
+      query.category = String(selectedCategoryId);
+    }
+    
+    // sub=0 bo'lsa ham queryga qo'shamiz
+    if (selectedSubcategoryId !== null && selectedSubcategoryId !== undefined) {
+      query.sub = String(selectedSubcategoryId);
+    }
+    
+    if (searchQuery.trim()) {
+      query.search = searchQuery.trim();
+    }
+    
+    router.push({
+      pathname: `/insights/${id}`,
+      query: query
+    });
+  };
+  
   // 정렬 핸들러 (ONLY for List type C)
   const handleSort = (field: SortField) => {
     // Only allow sorting for List type (C)
@@ -830,7 +759,7 @@ const InsightsPage: React.FC<InsightsPageProps> = ({
         undefined,
         { shallow: true }
       );
-      } else {
+    } else {
       // Numeric category - always parse from string
       const categoryId = parseInt(categoryValueStr, 10);
       if (isNaN(categoryId)) return;
@@ -843,19 +772,19 @@ const InsightsPage: React.FC<InsightsPageProps> = ({
       setSelectedSubcategoryId(0); // Default to "전체"
       setSelectValue(String(categoryId)); // Explicitly update select state with string
       setCurrentPage(1); // Reset page when category changes
-    setSearchQuery("");
+      setSearchQuery("");
       setSortField(null); // Reset sorting
       setSortOrder("asc");
 
       // Update URL query - reset sub to default (전체 = 0), use string for category
-    router.replace(
-      {
-        pathname: router.pathname,
+      router.replace(
+        {
+          pathname: router.pathname,
           query: { category: String(categoryId), sub: 0 },
-      },
-      undefined,
-      { shallow: true }
-    );
+        },
+        undefined,
+        { shallow: true }
+      );
     }
   };
 
@@ -889,9 +818,46 @@ const InsightsPage: React.FC<InsightsPageProps> = ({
   };
 
   // 게시물 클릭 핸들러
-  const handleItemClick = (id: number) => {
-    router.push(`/insights/${id}`);
-  };
+  // const handleItemClick = (id: number) => {
+  //   // 현재 query parametrlarini olish
+  //   const query: Record<string, string> = {};
+
+  //   // 현재 URL dan barcha query parametrlarini olish
+  //   const currentUrl = new URL(window.location.href);
+  //   const queryParams = new URLSearchParams(currentUrl.search);
+
+  //   // Barcha mavjud parametrlarni o'tkazish
+  //   queryParams.forEach((value, key) => {
+  //     if (['category', 'sub', 'subMinor', 'search', 'q', 'page'].includes(key)) {
+  //       query[key] = value;
+  //     }
+  //   });
+
+  //   // category bo'lsa qo'shamiz
+  //   if (selectedCategoryId) {
+  //     query.category = String(selectedCategoryId);
+  //   }
+
+  //   // sub=0 ("전체") bo'lmasa qo'shamiz
+  //   if (selectedSubcategoryId !== null && selectedSubcategoryId !== undefined && selectedSubcategoryId !== 0) {
+  //     query.sub = String(selectedSubcategoryId);
+  //   }
+
+  //   // search query ni saqlash
+  //   if (searchQuery.trim()) {
+  //     query.query = searchQuery.trim();
+  //   }
+
+  //   // page ni reset qilish (detail page ga o'tganda)
+  //   delete query.page;
+
+  //   console.log("🔗 Navigating to detail with query:", query);
+
+  //   router.push({
+  //     pathname: `/insights/${id}`,
+  //     query: query
+  //   });
+  // };
 
   // 날짜 포맷팅
   const formatDate = (dateString: string) => {
@@ -902,23 +868,23 @@ const InsightsPage: React.FC<InsightsPageProps> = ({
     return `${year}.${month}.${day}`;
   };
 
-const formatDateTime = (dateString?: string) => {
-  if (!dateString) return "";
+  const formatDateTime = (dateString?: string) => {
+    if (!dateString) return "";
 
-  const date = new Date(dateString);
+    const date = new Date(dateString);
 
-  const seoulTime = new Date(
-    date.toLocaleString("en-US", { timeZone: "Asia/Seoul" })
-  );
+    const seoulTime = new Date(
+      date.toLocaleString("en-US", { timeZone: "Asia/Seoul" })
+    );
 
-  const yyyy = seoulTime.getFullYear();
-  const mm = String(seoulTime.getMonth() + 1).padStart(2, "0");
-  const dd = String(seoulTime.getDate()).padStart(2, "0");
-  const hh = String(seoulTime.getHours()).padStart(2, "0");
-  const min = String(seoulTime.getMinutes()).padStart(2, "0");
+    const yyyy = seoulTime.getFullYear();
+    const mm = String(seoulTime.getMonth() + 1).padStart(2, "0");
+    const dd = String(seoulTime.getDate()).padStart(2, "0");
+    const hh = String(seoulTime.getHours()).padStart(2, "0");
+    const min = String(seoulTime.getMinutes()).padStart(2, "0");
 
-  return `${yyyy}.${mm}.${dd} ${hh}:${min}`;
-};
+    return `${yyyy}.${mm}.${dd} ${hh}:${min}`;
+  };
 
 
 
@@ -933,12 +899,12 @@ const formatDateTime = (dateString?: string) => {
     // This ensures 2nd select always has options for newsletter
     const dynamicCategories = hierarchicalData.length > 0
       ? hierarchicalData
-          .map((item) => ({
-            id: item.category.id,
-            label: item.category.name,
-            value: String(item.category.id), // Force string type
-          }))
-          .filter((item) => item.label) // Filter out empty names
+        .map((item) => ({
+          id: item.category.id,
+          label: item.category.name,
+          value: String(item.category.id), // Force string type
+        }))
+        .filter((item) => item.label) // Filter out empty names
       : [];
 
     // Add newsletter as last static option
@@ -957,9 +923,9 @@ const formatDateTime = (dateString?: string) => {
         }
         return newsletterExposed;
       }
-    return true;
-  });
-    
+      return true;
+    });
+
     return filtered;
   };
 
@@ -1051,7 +1017,7 @@ const formatDateTime = (dateString?: string) => {
         isFixed={true}
       />
       <Menu isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
-     {!isNewsletterCategory ? <div className={styles.headerImage}>
+      {!isNewsletterCategory ? <div className={styles.headerImage}>
         <h1 className={styles.headerTitle}>INSIGHTS</h1>
         <p className={styles.headerSubtitle}>인사이트</p>
       </div> : <div className={styles.headerImageNews + " " + styles.headerImage}>
@@ -1069,24 +1035,24 @@ const formatDateTime = (dateString?: string) => {
                   value: getCurrentSelectValue(), // Always string type
                   options: (() => {
                     const items = getSelectItems();
-                    
+
                     // Map items to select options format
                     let options = items.map((item) => ({
                       label: item.label,
                       value: item.value, // Already string from getSelectItems
                     }));
-                    
+
                     // For newsletter mode, ensure we always have multiple options to render dropdown (not static text)
                     // SelectDropdown component renders static text when options.length === 1
                     // So we need at least 2 options to show dropdown
                     if (isNewsletterCategory || isNewsletterMode) {
                       const hasNewsletter = options.some(opt => opt.value === "newsletter");
-                      
+
                       // Ensure newsletter option exists
                       if (!hasNewsletter && newsletterExposed) {
                         options.push({ label: "뉴스레터", value: "newsletter" });
                       }
-                      
+
                       // CRITICAL: If only newsletter option exists (hierarchicalData not loaded yet),
                       // we need to ensure dropdown still renders by having at least 2 options
                       // We'll keep newsletter + wait for hierarchicalData, but ensure newsletter is always included
@@ -1095,7 +1061,7 @@ const formatDateTime = (dateString?: string) => {
                         // This should not happen if getSelectItems() works correctly, but safety check
                         options = [{ label: "뉴스레터", value: "newsletter" }];
                       }
-                      
+
                       // IMPORTANT: If we only have newsletter (1 option), SelectDropdown will render static text
                       // To ensure dropdown renders, we need at least 2 options
                       // But we can't add fake options - we need to ensure hierarchicalData loads
@@ -1104,7 +1070,7 @@ const formatDateTime = (dateString?: string) => {
                       // In this case, we should still return the options (newsletter) and let it render
                       // Once hierarchicalData loads, options will have multiple items and dropdown will appear
                     }
-                    
+
                     return options;
                   })(),
                   onChange: (value) => {
@@ -1132,7 +1098,7 @@ const formatDateTime = (dateString?: string) => {
                   <SearchField
                     placeholder="제목을 입력해주세요"
                     value={searchQuery}
-                    onChange={handleSearchChange}
+                    onChange={handleSearchChangeWithDebounce}
                     onSearch={handleSearch}
                     fullWidth
                   />
@@ -1141,19 +1107,19 @@ const formatDateTime = (dateString?: string) => {
                 <div className={styles.columnContent}>
                   <nav className={styles.categoryNav}>
                     {getCurrentSubcategories().map((subcategory) => (
-                    <button
+                      <button
                         key={subcategory.id}
                         className={`${styles.categoryItem} ${selectedSubcategoryId === subcategory.id
-                        ? styles.categoryItemActive
-                        : ""
-                        }`}
+                          ? styles.categoryItemActive
+                          : ""
+                          }`}
                         onClick={() => handleSubcategoryChange(subcategory.id)}
-                    >
+                      >
                         {selectedSubcategoryId === subcategory.id && (
-                        <span className={styles.activeDot} />
-                      )}
+                          <span className={styles.activeDot} />
+                        )}
                         <span>{subcategory.name}</span>
-                    </button>
+                      </button>
                     ))}
                   </nav>
 
@@ -1168,7 +1134,7 @@ const formatDateTime = (dateString?: string) => {
                         <SearchField
                           placeholder="제목을 입력해주세요"
                           value={searchQuery}
-                          onChange={handleSearchChange}
+                          onChange={handleSearchChangeWithDebounce}
                           onSearch={handleSearch}
                           fullWidth
                         />
@@ -1217,15 +1183,15 @@ const formatDateTime = (dateString?: string) => {
                                 category={
                                   typeof item.subMinorCategory?.name === "string"
                                     ? item.subMinorCategory.name
-                                    
-                                      : "카테고리명"
+
+                                    : "카테고리명"
                                 }
                                 description={
                                   plainContent.length > 150
                                     ? `${plainContent.substring(0, 150)}...`
                                     : plainContent
                                 }
-                                author={item.authorName || "작성자명"}
+                                author={item.authorName ? item.authorName : "작성자명"}
                                 date={
                                   item.createdAt
                                     ? formatDate(item.createdAt)
@@ -1254,85 +1220,85 @@ const formatDateTime = (dateString?: string) => {
                     ) : libraryDisplayType === "snippet" ? (
                       <>
                         <div className={styles.librarySnippet}>
-                            {insights.map((item) => {
-                              // content에서 마크다운 제거하고 텍스트만 추출
-                              const plainContent = item.content
-                                .replace(/```[\s\S]*?```/g, "") // 코드 블록 제거
-                                .replace(/#{1,6}\s+/g, "") // 헤더 제거
-                                .replace(/\*\*([^*]+)\*\*/g, "$1") // 볼드 제거
-                                .replace(/\*([^*]+)\*/g, "$1") // 이탤릭 제거
-                                .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1") // 링크 제거
-                                .trim();
+                          {insights.map((item) => {
+                            // content에서 마크다운 제거하고 텍스트만 추출
+                            const plainContent = item.content
+                              .replace(/```[\s\S]*?```/g, "") // 코드 블록 제거
+                              .replace(/#{1,6}\s+/g, "") // 헤더 제거
+                              .replace(/\*\*([^*]+)\*\*/g, "$1") // 볼드 제거
+                              .replace(/\*([^*]+)\*/g, "$1") // 이탤릭 제거
+                              .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1") // 링크 제거
+                              .trim();
 
-                              return (
-                                <div
-                                  key={item.id}
-                                  className={`${styles.libraryCard} ${styles.libraryCardTransparent
-                                    } ${item.isMainExposed
-                                      ? styles.libraryCardFeatured
-                                      : ""
-                                    }`}
-                                  onClick={() => handleItemClick(item.id)}
-                                >
-                                  <div className={styles.libraryCardImage}>
-                                    {item.thumbnail?.url ? (
-                                      <img
-                                        src={item.thumbnail.url}
-                                        alt={item.title}
-                                      />
-                                    ) : (
-                                      <div
-                                        className={styles.placeholderImage}
-                                      />
-                                    )}
-                                  </div>
-                                  <div className={styles.libraryCardContent}>
-                                    <div className={styles.libraryCardHeader}>
-                                      <p className={styles.libraryCardCategory}>
-                                        {typeof item.subcategory?.name ===
+                            return (
+                              <div
+                                key={item.id}
+                                className={`${styles.libraryCard} ${styles.libraryCardTransparent
+                                  } ${item.isMainExposed
+                                    ? styles.libraryCardFeatured
+                                    : ""
+                                  }`}
+                                onClick={() => handleItemClick(item.id)}
+                              >
+                                <div className={styles.libraryCardImage}>
+                                  {item.thumbnail?.url ? (
+                                    <img
+                                      src={item.thumbnail.url}
+                                      alt={item.title}
+                                    />
+                                  ) : (
+                                    <div
+                                      className={styles.placeholderImage}
+                                    />
+                                  )}
+                                </div>
+                                <div className={styles.libraryCardContent}>
+                                  <div className={styles.libraryCardHeader}>
+                                    <p className={styles.libraryCardCategory}>
+                                      {typeof item.subcategory?.name ===
+                                        "string"
+                                        ? item.subcategory.name
+                                        : typeof item.category?.name ===
                                           "string"
-                                          ? item.subcategory.name
-                                          : typeof item.category?.name ===
-                                            "string"
-                                            ? item.category.name
-                                            : "카테고리명"}
-                                      </p>
-                                      <h3
-                                        className={
+                                          ? item.category.name
+                                          : "카테고리명"}
+                                    </p>
+                                    <h3
+                                      className={
                                         styles.libraryCardTitle
-                                        }
-                                      >
-                                        {item.title}
-                                      </h3>
-                                      <p
-                                        className={
-                                          styles.libraryCardDescription
-                                        }
-                                      >
-                                        {plainContent}
-                                      </p>
-                                    </div>
-                                    <div className={styles.libraryCardFooter}>
-                                      <span
-                                        className={styles.libraryCardAuthor}
-                                      >
+                                      }
+                                    >
+                                      {item.title}
+                                    </h3>
+                                    <p
+                                      className={
+                                        styles.libraryCardDescription
+                                      }
+                                    >
+                                      {plainContent}
+                                    </p>
+                                  </div>
+                                  <div className={styles.libraryCardFooter}>
+                                    <span
+                                      className={styles.libraryCardAuthor}
+                                    >
                                       {item.authorName}
-                                      </span>
-                                      <span className={styles.cardDivider} />
-                                      <span className={styles.libraryCardDate}>
-                                        {item.createdAt
-                                          ? formatDate(item.createdAt)
-                                          : "2026.01.28"}
-                                      </span>
-                                    </div>
+                                    </span>
+                                    <span className={styles.cardDivider} />
+                                    <span className={styles.libraryCardDate}>
+                                      {item.createdAt
+                                        ? formatDate(item.createdAt)
+                                        : "2026.01.28"}
+                                    </span>
                                   </div>
                                 </div>
+                              </div>
 
 
 
 
-                              );
-                            })}
+                            );
+                          })}
 
 
                         </div>
@@ -1347,183 +1313,183 @@ const formatDateTime = (dateString?: string) => {
                       </>
                     ) : (
                       <> <div className={styles.libraryList}>
-                            <div className={styles.libraryListHeader}>
-                              <div className={styles.libraryListHeaderRow}>
-                                <div className={styles.libraryListHeaderCell}>
-                                  No.
-                                </div>
-                                <div
-                                  className={`${styles.libraryListHeaderCell} ${styles.sortable}`}
-                                  onClick={() => handleSort("category")}
-                                >
-                                  카테고리
+                        <div className={styles.libraryListHeader}>
+                          <div className={styles.libraryListHeaderRow}>
+                            <div className={styles.libraryListHeaderCell}>
+                              No.
+                            </div>
+                            <div
+                              className={`${styles.libraryListHeaderCell} ${styles.sortable}`}
+                              onClick={() => handleSort("category")}
+                            >
+                              카테고리
                               {sortField === "category" && (
-                                  <Icon
+                                <Icon
                                   type={sortOrder === "asc" ? "arrow-up" : "arrow-down"}
-                                    size={16}
-                                    className={styles.sortIcon}
-                                  />
+                                  size={16}
+                                  className={styles.sortIcon}
+                                />
                               )}
-                                </div>
-                                <div className={styles.libraryListHeaderCell}>
-                                  제목
-                                </div>
-                                <div
-                                  className={`${styles.libraryListHeaderCell} ${styles.sortable}`}
-                                  onClick={() => handleSort("author")}
-                                >
-                                  작성자
+                            </div>
+                            <div className={styles.libraryListHeaderCell}>
+                              제목
+                            </div>
+                            <div
+                              className={`${styles.libraryListHeaderCell} ${styles.sortable}`}
+                              onClick={() => handleSort("author")}
+                            >
+                              작성자
                               {sortField === "author" && (
-                                  <Icon
+                                <Icon
                                   type={sortOrder === "asc" ? "arrow-up" : "arrow-down"}
-                                    size={16}
-                                    className={styles.sortIcon}
-                                  />
+                                  size={16}
+                                  className={styles.sortIcon}
+                                />
                               )}
-                                </div>
-                                <div className={styles.libraryListHeaderCell}>
-                                  작성 일
-                                </div>
-                                <div className={styles.libraryListHeaderCell}>
-                                  조회수
-                                </div>
-                              </div>
                             </div>
+                            <div className={styles.libraryListHeaderCell}>
+                              작성 일
+                            </div>
+                            <div className={styles.libraryListHeaderCell}>
+                              조회수
+                            </div>
+                          </div>
+                        </div>
 
-                            {/* 모바일 헤더 */}
-                            <div className={styles.mobileListHeader}>
-                              <div
-                                className={`${styles.mobileListHeaderCell} ${styles.sortable}`}
-                                onClick={() => handleSort("category")}
-                              >
-                                카테고리
+                        {/* 모바일 헤더 */}
+                        <div className={styles.mobileListHeader}>
+                          <div
+                            className={`${styles.mobileListHeaderCell} ${styles.sortable}`}
+                            onClick={() => handleSort("category")}
+                          >
+                            카테고리
                             {sortField === "category" && (
-                                <Icon
+                              <Icon
                                 type={sortOrder === "asc" ? "arrow-up" : "arrow-down"}
-                                  size={16}
-                                  className={styles.sortIcon}
-                                />
+                                size={16}
+                                className={styles.sortIcon}
+                              />
                             )}
+                          </div>
+                          <div
+                            className={`${styles.mobileListHeaderCell} ${styles.sortable}`}
+                            onClick={() => handleSort("author")}
+                          >
+                            작성자
+                            {sortField === "author" && (
+                              <Icon
+                                type={sortOrder === "asc" ? "arrow-up" : "arrow-down"}
+                                size={16}
+                                className={styles.sortIcon}
+                              />
+                            )}
+                          </div>
+                        </div>
+
+                        {/* 데스크톱 바디 */}
+                        <div className={styles.libraryListBody}>
+                          {getSortedInsights().map((item, index) => (
+                            <div
+                              key={item.id}
+                              className={styles.libraryListRow}
+                              onClick={() => handleItemClick(item.id)}
+                            >
+                              <div className={styles.libraryListCell}>
+                                {(currentPage - 1) * 10 + index + 1}
                               </div>
                               <div
-                                className={`${styles.mobileListHeaderCell} ${styles.sortable}`}
-                                onClick={() => handleSort("author")}
+                                className={`${styles.libraryListCell} ${styles.categoryCell}`}
                               >
-                                작성자
-                            {sortField === "author" && (
-                                <Icon
-                                type={sortOrder === "asc" ? "arrow-up" : "arrow-down"}
-                                  size={16}
-                                  className={styles.sortIcon}
-                                />
-                            )}
+                                {typeof item.subcategory?.name === "string"
+                                  ? item.subcategory.name
+                                  : typeof item.category?.name === "string"
+                                    ? item.category.name
+                                    : "카테고리 명"}
+                              </div>
+                              <div
+                                className={`${styles.libraryListCell} ${styles.titleCell}`}
+                              >
+                                <span className={styles.libraryListTitle}>
+                                  {item.title}
+                                  {item?.files?.length > 0 && (
+                                    <img
+                                      src="/images/common/insightFile-icon.svg"
+                                      alt="첨부 파일"
+                                      className={styles.mobileListFileIcon}
+                                    />
+                                  )}
+                                </span>
+                              </div>
+                              <div className={styles.libraryListCell}>
+                                {item.authorName || "작성자명"}
+                              </div>
+                              <div className={styles.libraryListCell}>
+                                {item.createdAt
+                                  ? formatDateTime(item.createdAt)
+                                  : "2025.10.14 13:05"}
+                              </div>
+                              <div className={styles.libraryListCell}>
+                                {item.viewCount ? item.viewCount : "0"}
                               </div>
                             </div>
+                          ))}
+                        </div>
 
-                            {/* 데스크톱 바디 */}
-                            <div className={styles.libraryListBody}>
-                              {getSortedInsights().map((item, index) => (
-                                <div
-                                  key={item.id}
-                                  className={styles.libraryListRow}
-                                  onClick={() => handleItemClick(item.id)}
-                                >
-                                  <div className={styles.libraryListCell}>
-                                {(currentPage - 1) * 10 + index + 1}
-                                  </div>
-                                  <div
-                                    className={`${styles.libraryListCell} ${styles.categoryCell}`}
-                                  >
-                                    {typeof item.subcategory?.name === "string"
-                                      ? item.subcategory.name
-                                      : typeof item.category?.name === "string"
-                                        ? item.category.name
-                                        : "카테고리 명"}
-                                  </div>
-                                  <div
-                                    className={`${styles.libraryListCell} ${styles.titleCell}`}
-                                  >
-                                    <span className={styles.libraryListTitle}>
-                                      {item.title}
-                                  {item?.files?.length > 0  && (
+                        {/* 모바일 바디 */}
+                        <div className={styles.mobileListBody}>
+                          {getSortedInsights().map((item, index) => (
+                            <div
+                              key={item.id}
+                              className={styles.mobileListRow}
+                              onClick={() => handleItemClick(item.id)}
+                            >
+                              <div className={styles.mobileListRowTop}>
+                                <span className={styles.mobileListCategory}>
+                                  {typeof item.subcategory?.name ===
+                                    "string"
+                                    ? item.subcategory.name
+                                    : typeof item.category?.name ===
+                                      "string"
+                                      ? item.category.name
+                                      : "카테고리 명"}
+                                </span>
+                                <span className={styles.mobileListDate}>
+                                  {item.createdAt
+                                    ? formatDate(item.createdAt)
+                                    : "2025.06.08"}
+                                </span>
+                              </div>
+                              <div className={styles.mobileListTitle}>
+                                {item.title}
+                                {item?.files?.length > 0 && (
                                   <img
                                     src="/images/common/insightFile-icon.svg"
                                     alt="첨부 파일"
                                     className={styles.mobileListFileIcon}
                                   />
                                 )}
-                                    </span>
-                                  </div>
-                                  <div className={styles.libraryListCell}>
-                                {item.authorName || "작성자명"}
-                                  </div>
-                                  <div className={styles.libraryListCell}>
-                                    {item.createdAt
-                                  ? formatDateTime(item.createdAt)
-                                      : "2025.10.14 13:05"}
-                                  </div>
-                                  <div className={styles.libraryListCell}>
-                                {item.viewCount ? item.viewCount : "0"}
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-
-                            {/* 모바일 바디 */}
-                            <div className={styles.mobileListBody}>
-                              {getSortedInsights().map((item, index) => (
-                                <div
-                                  key={item.id}
-                                  className={styles.mobileListRow}
-                                  onClick={() => handleItemClick(item.id)}
-                                >
-                                  <div className={styles.mobileListRowTop}>
-                                    <span className={styles.mobileListCategory}>
-                                      {typeof item.subcategory?.name ===
-                                        "string"
-                                        ? item.subcategory.name
-                                        : typeof item.category?.name ===
-                                          "string"
-                                          ? item.category.name
-                                          : "카테고리 명"}
-                                    </span>
-                                    <span className={styles.mobileListDate}>
-                                      {item.createdAt
-                                        ? formatDate(item.createdAt)
-                                        : "2025.06.08"}
-                                    </span>
-                                  </div>
-                                  <div className={styles.mobileListTitle}>
-                                    {item.title}
-                                {item?.files?.length > 0  && (
-                                  <img
-                                    src="/images/common/insightFile-icon.svg"
-                                    alt="첨부 파일"
-                                    className={styles.mobileListFileIcon}
-                                  />
-                                )}
-                                  </div>
-                                  <div className={styles.mobileListAuthor}>
-                                    작성자명
-                                  </div>
-                                  <div className={styles.mobileListBottom}>
-                                    <span className={styles.mobileListNo}>
-                                      NO.{(currentPage - 1) * 10 + index + 1}
-                                    </span>
+                              </div>
+                              <div className={styles.mobileListAuthor}>
+                                "작성자명"
+                              </div>
+                              <div className={styles.mobileListBottom}>
+                                <span className={styles.mobileListNo}>
+                                  NO.{(currentPage - 1) * 10 + index + 1}
+                                </span>
                                 <span className={styles.mobileListDivider}></span>
-                                    <span className={styles.mobileListViews}>
-                                      <img
+                                <span className={styles.mobileListViews}>
+                                  <img
                                     src="/images/common/eye-icon.svg"
-                                        alt="조회수"
-                                        className={styles.mobileListEyeIcon}
-                                      />
+                                    alt="조회수"
+                                    className={styles.mobileListEyeIcon}
+                                  />
                                   {item.viewCount ? item.viewCount : "0"}
-                                    </span>
-                                  </div>
-                                </div>
-                              ))}
+                                </span>
+                              </div>
                             </div>
-                  </div>
+                          ))}
+                        </div>
+                      </div>
 
                         <div className={styles.paginationWrapper}>
                           <Pagination
@@ -1532,7 +1498,7 @@ const formatDateTime = (dateString?: string) => {
                             onPageChange={handlePageChange}
                             visiblePages={4}
                           />
-                </div>
+                        </div>
 
                       </>
 
@@ -1542,7 +1508,7 @@ const formatDateTime = (dateString?: string) => {
               </>
             )}
 
-            
+
 
             {isNewsletterCategory && (
               <div className={styles.newsletterSection}>
@@ -1652,11 +1618,14 @@ const formatDateTime = (dateString?: string) => {
   );
 };
 
+// index.tsx da getServerSideProps:
+
+// index.tsx da getServerSideProps:
+
 export const getServerSideProps: GetServerSideProps<InsightsPageProps> = async (context) => {
-  const { category, sub } = context.query;
+  const { category, sub, search } = context.query;
   const isNewsletter = category === "newsletter";
 
-  // For newsletter category, return empty data
   if (isNewsletter) {
     return {
       props: {
@@ -1672,76 +1641,46 @@ export const getServerSideProps: GetServerSideProps<InsightsPageProps> = async (
   }
 
   try {
-    // Fetch hierarchical data
     const hierarchicalResponse = await get<InsightHierarchicalData>(
       `${API_ENDPOINTS.INSIGHTS}/hierarchical`
     );
 
-    if (hierarchicalResponse.data && Array.isArray(hierarchicalResponse.data)) {
-      const hierarchicalData = hierarchicalResponse.data;
+    let selectedCategoryId: number | null = null;
+    if (category && category !== "newsletter") {
+      selectedCategoryId = parseInt(category as string, 10);
+    }
 
-      // Determine selected category and subcategory from query or defaults
-      let selectedCategoryId: number | null = null;
-      let selectedSubcategoryId: number | null = null;
+    let initialItems: InsightItem[] = [];
+    let displayType: LibraryDisplayType | null = null;
 
-      if (category && category !== "newsletter") {
-        const parsedCategory = parseInt(category as string, 10);
-        if (!isNaN(parsedCategory)) {
-          selectedCategoryId = parsedCategory;
+    if (selectedCategoryId) {
+      const params = new URLSearchParams();
+      params.append('page', '1');
+      params.append('limit', '10');
+      params.append('categoryId', String(selectedCategoryId));
 
-          // Handle sub: use query sub if exists, otherwise default to "전체" (0)
-          if (sub) {
-            const parsedSub = parseInt(sub as string, 10);
-            if (!isNaN(parsedSub)) {
-              selectedSubcategoryId = parsedSub;
-            } else {
-              selectedSubcategoryId = 0; // "전체"
-            }
-          } else {
-            selectedSubcategoryId = 0; // "전체" (default)
-          }
-        }
+      if (sub && sub !== '0') {
+        params.append('subcategoryId', String(sub));
       }
 
-      // Use defaults if no valid category in query
-      if (!selectedCategoryId && hierarchicalData.length > 0) {
-        const firstCategory = hierarchicalData[0];
-        selectedCategoryId = firstCategory.category.id;
-        selectedSubcategoryId = 0; // "전체" (default)
+      // Faqat search query ishlatish
+      if (search && typeof search === 'string') {
+        params.append('search', search);
       }
 
-      // Get items from selected subcategory
-      let initialItems: InsightItem[] = [];
-      let displayType: LibraryDisplayType | null = null;
+      const insightsResponse = await get<InsightResponse>(
+        `${API_ENDPOINTS.INSIGHTS}?${params.toString()}`
+      );
 
-      if (selectedCategoryId !== null && selectedSubcategoryId !== null) {
-        const selectedCategory = hierarchicalData.find(
-          (item) => item.category.id === selectedCategoryId
+      if (insightsResponse.data) {
+        initialItems = insightsResponse.data.items || [];
+
+        const categoryData = hierarchicalResponse.data?.find(
+          item => item.category.id === selectedCategoryId
         );
 
-        if (selectedCategory) {
-          // Handle virtual "전체" subcategory (id = 0)
-          if (selectedSubcategoryId === 0) {
-            // "전체": combine all items from all subcategories
-            initialItems = selectedCategory.subcategories.reduce<InsightItem[]>(
-              (acc, subcategory) => {
-                return [...acc, ...(subcategory.items || [])];
-              },
-              []
-            );
-          } else {
-            // Specific subcategory
-            const selectedSubcategory = selectedCategory.subcategories.find(
-              (sub) => sub.id === selectedSubcategoryId
-            );
-
-            if (selectedSubcategory) {
-              initialItems = selectedSubcategory.items || [];
-            }
-          }
-
-          // Set display type based on category.type
-          const categoryType = selectedCategory.category.type?.toUpperCase() || "A";
+        if (categoryData) {
+          const categoryType = categoryData.category.type?.toUpperCase() || "A";
           if (categoryType === "A") {
             displayType = "gallery";
           } else if (categoryType === "B") {
@@ -1749,70 +1688,33 @@ export const getServerSideProps: GetServerSideProps<InsightsPageProps> = async (
           } else if (categoryType === "C") {
             displayType = "list";
           }
-
-          // Use page size based on category type
-          const pageSizeMap: Record<string, number> = {
-            A: 9,  // Gallery
-            B: 6,  // Snippet
-            C: 10, // List
-          };
-          const limit = pageSizeMap[categoryType] || 9;
-          const paginatedItems = initialItems.slice(0, limit);
-          const calculatedTotalPages = Math.ceil(initialItems.length / limit);
-
-      return {
-        props: {
-              initialInsights: paginatedItems,
-              initialTotal: initialItems.length,
-          initialTotalPages: calculatedTotalPages,
-              initialActiveTab: "column", // Legacy prop, not used in new format
-              initialLibraryDisplayType: displayType,
-              initialCategoryValue: selectedCategoryId ?? "",
-              error: null,
-            },
-          };
         }
       }
-
-      // Fallback if no category found
-      return {
-        props: {
-          initialInsights: [],
-          initialTotal: 0,
-          initialTotalPages: 1,
-          initialActiveTab: "column",
-          initialLibraryDisplayType: null,
-          initialCategoryValue: "",
-          error: null,
-        },
-      };
-    } else {
-      return {
-        props: {
-          initialInsights: [],
-          initialTotal: 0,
-          initialTotalPages: 1,
-          initialActiveTab: "column",
-          initialLibraryDisplayType: null,
-          initialCategoryValue: "",
-          error: hierarchicalResponse.error || null,
-        },
-      };
     }
+
+    return {
+      props: {
+        initialInsights: initialItems,
+        initialTotal: initialItems.length,
+        initialTotalPages: 1,
+        initialActiveTab: "column",
+        initialLibraryDisplayType: displayType,
+        initialCategoryValue: selectedCategoryId ?? "",
+        error: null,
+      },
+    };
   } catch (err) {
-    console.error("Failed to fetch insights:", err);
     return {
       props: {
         initialInsights: [],
         initialTotal: 0,
         initialTotalPages: 1,
         initialActiveTab: "column",
-        initialLibraryDisplayType: undefined,
+        initialLibraryDisplayType: null,
         initialCategoryValue: "",
         error: "데이터를 불러오는데 실패했습니다.",
       },
     };
   }
 };
-
 export default InsightsPage;

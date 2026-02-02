@@ -44,26 +44,6 @@ const EducationPage: React.FC<EducationPageProps> = ({
   const router = useRouter();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-  // Query-based tab management (like History page)
-  // Currently only 'education' tab exists, but keeping query-based structure for consistency
-  // const tabFromQuery = router.query.tab as string;
-  // const validTabs = ['education'];
-
-  // Ensure URL has correct tab parameter if missing or invalid
-  // useEffect(() => {
-  //   if (!tabFromQuery || !validTabs.includes(tabFromQuery)) {
-  //     router.replace(
-  //       {
-  //         pathname: router.pathname,
-  //         query: { ...router.query, tab: 'education' },
-  //       },
-  //       undefined,
-  //       { shallow: true }
-  //     );
-  //   }
-  // }, [tabFromQuery, router]);
-
-  // Separate states for swiper and list - initialize with server-side data
   const [swiperItems, setSwiperItems] = useState<EducationItem[]>(initialNewEducationList);
   const [listItems, setListItems] = useState<EducationItem[]>(initialEducationList);
   const [error, setError] = useState<string | null>(initialError);

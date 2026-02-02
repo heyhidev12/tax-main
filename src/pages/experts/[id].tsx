@@ -76,6 +76,11 @@ interface Expert {
   tags?: string[];
 }
 
+interface SubMinorCategory {
+  id: number;
+  name: string;
+}
+
 interface InsightItem {
   id: number;
   title: string;
@@ -86,7 +91,10 @@ interface InsightItem {
   createdAt?: string;
   category?: string | { id: number; name: string; type: string };
   authorName?: string;
+  subMinorCategory?: SubMinorCategory;
 }
+
+
 
 interface InsightResponse {
   items: InsightItem[];
@@ -203,19 +211,70 @@ const ExpertDetailPage: React.FC<ExpertDetailPageProps> = ({
     }
   }, [data?.workAreas, id]);
 
+  const getUserAuthState = () => {
+    if (typeof window === 'undefined') {
+      return { isLoggedIn: false, memberType: null, isApproved: null };
+    }
+    
+    const token = localStorage.getItem('accessToken');
+    const userStr = localStorage.getItem('user');
+    
+    if (!token || !userStr) {
+      return { isLoggedIn: false, memberType: null, isApproved: null };
+    }
+    
+    try {
+      const user = JSON.parse(userStr);
+      return {
+        isLoggedIn: true,
+        memberType: user.memberType || null,
+        isApproved: user.memberType === 'INSURANCE' ? user.isApproved : null,
+      };
+    } catch {
+      return { isLoggedIn: false, memberType: null, isApproved: null };
+    }
+  };
+
+  // Build query params for API calls with user filtering
+  const buildUserFilterParams = () => {
+    const { isLoggedIn, memberType, isApproved } = getUserAuthState();
+    
+    const params = new URLSearchParams();
+    
+    if (!isLoggedIn) {
+      // Not logged in: explicitly send memberType=null for guest filtering
+      params.append('memberType', 'null');
+      return `&${params.toString()}`;
+    }
+    
+    // Logged in: send actual user data
+    if (memberType) {
+      params.append('memberType', memberType);
+    }
+    if (isApproved !== null) {
+      params.append('isApproved', String(isApproved));
+    }
+    
+    return params.toString() ? `&${params.toString()}` : '';
+  };
+
   const fetchRelatedNews = async () => {
     try {
+      const userParams = buildUserFilterParams();
+
       const response = await getClient<InsightResponse>(
-        `${API_ENDPOINTS.INSIGHTS}?page=1&limit=20`,
+        `${API_ENDPOINTS.INSIGHTS}?page=1&limit=100${userParams}`,
       );
 
       if (response.data) {
+        console.log("response.data", response.data);
         // Filter news to only show items where authorName matches current expert's name
         const allNews = response.data.items || [];
         const filteredNews = allNews.filter(
           (news) => news.authorName === data?.name
         );
         setRelatedNews(filteredNews);
+        console.log("filteredNews", filteredNews);
       }
     } catch (err) {
       console.error("관련 소식을 불러오는 중 오류:", err);
@@ -1058,11 +1117,9 @@ const ExpertDetailPage: React.FC<ExpertDetailPageProps> = ({
                                 <div className={styles.newsHeader}>
                                   {news.category && (
                                     <p className={styles.newsCategory}>
-                                      {typeof news.category === "string"
-                                        ? news.category
-                                        : typeof news.category === "object" &&
-                                          news.category?.name
-                                          ? news.category.name
+                                      {
+                                          news?.subMinorCategory
+                                          ? news.subMinorCategory.name
                                           : "카테고리"}
                                     </p>
                                   )}

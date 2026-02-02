@@ -91,14 +91,18 @@ const FindPassword: React.FC = () => {
         });
 
         if (response.error) {
-          if (response.status === 404) {
-            setError('해당 정보로 가입된 회원이 없습니다.');
-          } else {
-            setError(response.error || '인증번호 발송에 실패했습니다.');
-          }
+          const message =
+            response.error ||
+            (response.status === 404
+              ? '해당 정보로 가입된 회원이 없습니다.'
+              : '인증번호 발송에 실패했습니다.');
+          // 백엔드 메시지를 알림으로 보여주고, 다음 단계로 이동하지 않음
+          alert(message);
+          setError(message);
           return;
         }
 
+        // 성공한 경우에만 인증번호 단계로 이동
         setTimeLeft(300); // 5:00 (5 minutes)
         setIsTimerActive(true);
         setFailCount(0); // Reset fail count on new code
@@ -125,14 +129,18 @@ const FindPassword: React.FC = () => {
         });
 
         if (response.error) {
-          if (response.status === 404) {
-            setError('해당 정보로 가입된 회원이 없습니다.');
-          } else {
-            setError(response.error || '인증번호 발송에 실패했습니다.');
-          }
+          const message =
+            response.error ||
+            (response.status === 404
+              ? '해당 정보로 가입된 회원이 없습니다.'
+              : '인증번호 발송에 실패했습니다.');
+          // 백엔드 메시지를 알림으로 보여주고, 다음 단계로 이동하지 않음
+          alert(message);
+          setError(message);
           return;
         }
 
+        // 성공한 경우에만 인증번호 단계로 이동
         setTimeLeft(300); // 5:00 (5 minutes)
         setIsTimerActive(true);
         setFailCount(0); // Reset fail count on new code
@@ -140,8 +148,12 @@ const FindPassword: React.FC = () => {
         setVerificationCode(''); // Clear previous code
         setStep('verification');
       }
-    } catch {
-      setError('인증번호 발송에 실패했습니다. 다시 시도해주세요.');
+    } catch (err: any) {
+      const message =
+        err?.response?.data?.message ||
+        '인증번호 발송에 실패했습니다. 다시 시도해주세요.';
+      alert(message);
+      setError(message);
     } finally {
       setIsLoading(false);
     }
@@ -271,7 +283,8 @@ const FindPassword: React.FC = () => {
                   type="line-white"
                   size="medium"
                   onClick={handleRequestVerification}
-                  disabled={!userId || !phone || isLoading}
+                  disabled={!userId.trim() || !phone.trim() || isLoading}
+                  className={userId.trim() && phone.trim() ? 'active' : ''}
                 >
                   {isLoading ? '발송 중...' : '인증 요청'}
                 </Button>

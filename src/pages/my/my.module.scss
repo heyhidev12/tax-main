@@ -1844,6 +1844,10 @@
 
   }
 
+  &.active {
+    background-color: $gray-10;
+    cursor: pointer;
+  }
  
 }
 
@@ -3064,6 +3068,18 @@
   &:hover {
     background-color: $gray-10;
   }
+
+  &.active {
+    background-color: $gray-10;
+    cursor: pointer;
+  }
+
+  &:disabled {
+    color: $gray-40;
+    border: 1px solid $gray-40;
+    background: $gray-5;
+    cursor: not-allowed;
+  }
 }
 
 .mobileVerificationField {
@@ -3108,6 +3124,18 @@
 
   &:hover {
     background-color: $gray-10;
+  }
+
+  &.active {
+    background-color: $gray-10;
+    cursor: pointer;
+  }
+
+  &:disabled {
+    color: $gray-40;
+    border: 1px solid $gray-40;
+    background: $gray-5;
+    cursor: not-allowed;
   }
 }
 

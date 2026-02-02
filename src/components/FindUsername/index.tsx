@@ -47,13 +47,13 @@ const FindUsername: React.FC = () => {
 
   const handleRequestVerification = useCallback(async () => {
     setError('');
-  
+
     if (activeTab === 'sms') {
       if (!name || !phoneNumber) {
         setError('이름과 휴대폰 번호를 입력해주세요.');
         return;
       }
-  
+
       const cleanPhone = phoneNumber.replace(/[^0-9]/g, '');
       if (cleanPhone.length < 10 || cleanPhone.length > 11) {
         setError('올바른 휴대폰 번호를 입력해주세요.');
@@ -64,29 +64,41 @@ const FindUsername: React.FC = () => {
         setError('이름과 이메일을 입력해주세요.');
         return;
       }
-  
+
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(email)) {
         setError('올바른 이메일 형식을 입력해주세요.');
         return;
       }
     }
-  
+
     setIsLoading(true);
     try {
+      let response;
       if (activeTab === 'sms') {
-        await post(API_ENDPOINTS.AUTH.FIND_ID_PHONE_SEND, {
+        response = await post(API_ENDPOINTS.AUTH.FIND_ID_PHONE_SEND, {
           phoneNumber: phoneNumber.replace(/[^0-9]/g, ''),
         });
       } else {
-        await post(API_ENDPOINTS.AUTH.FIND_ID_EMAIL_SEND, { email });
+        response = await post(API_ENDPOINTS.AUTH.FIND_ID_EMAIL_SEND, { email });
       }
-  
+
+      // 백엔드에서 에러 메시지를 내려주는 경우 알림으로 표시하고 다음 단계로 진행하지 않음
+      if (response && response.error) {
+        alert(response.error);
+        return;
+      }
+
+      // 성공한 경우에만 다음 단계(인증번호 입력 화면)로 이동
       setTimeLeft(300);
       setIsTimerActive(true);
       setStep('verification');
-    } catch {
-      setError('인증번호 발송에 실패했습니다. 다시 시도해주세요.');
+    } catch (err: any) {
+      const message =
+        err?.response?.data?.message ||
+        '인증번호 발송에 실패했습니다. 다시 시도해주세요.';
+      alert(message);
+      setError(message);
     } finally {
       setIsLoading(false);
     }
@@ -184,7 +196,8 @@ const FindUsername: React.FC = () => {
                   type="line-white"
                   size="medium"
                   onClick={handleRequestVerification}
-                  disabled={!name || !phoneNumber || isLoading}
+                  disabled={!name.trim() || !phoneNumber.trim() || isLoading}
+                  className={name.trim() && phoneNumber.trim() ? 'active' : ''}
                 >
                   {isLoading ? '발송 중...' : '인증 요청'}
                 </Button>
@@ -268,6 +281,7 @@ const FindUsername: React.FC = () => {
                     size="medium"
                     onClick={handleRequestVerification}
                     disabled={!isTimerActive || isLoading}
+                    className={phoneNumber ? "button active" : 'button'}
                   >
                     {isLoading ? '발송 중...' : '인증 재요청'}
                   </Button>

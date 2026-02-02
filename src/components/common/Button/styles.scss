@@ -23,6 +23,11 @@ $navy-100: #000000;
   &:disabled {
     cursor: not-allowed;
   }
+  &.active {
+    background-color: transparent;
+    border: 1px solid $primary-50;
+    color: $primary-50;
+  }
 
   &--full-width {
     width: 100%;

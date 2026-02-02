@@ -89,8 +89,14 @@ interface InsightItem {
   createdAt?: string;
   category?: string | { id: number; name: string; type: string }; // 카테고리 (문자열 또는 객체)
   authorName?: string; // 작성자
+  subMinorCategory?: SubMinorCategory;
 }
 
+interface SubMinorCategory {
+  id: number;
+  name: string;
+  majorCategory: { id: number; name: string };
+}
 interface InsightResponse {
   items: InsightItem[];
   total: number;
@@ -412,6 +418,54 @@ const BusinessAreaDetailPage: React.FC<BusinessAreaDetailPageProps> = ({
     updateMinorCategories();
   }, [data?.majorCategory.id, data?.minorCategory.id]);
 
+  // Helper function to check if user is logged in and get memberType & isApproved
+  const getUserAuthState = () => {
+    if (typeof window === 'undefined') {
+      return { isLoggedIn: false, memberType: null, isApproved: null };
+    }
+    
+    const token = localStorage.getItem('accessToken');
+    const userStr = localStorage.getItem('user');
+    
+    if (!token || !userStr) {
+      return { isLoggedIn: false, memberType: null, isApproved: null };
+    }
+    
+    try {
+      const user = JSON.parse(userStr);
+      return {
+        isLoggedIn: true,
+        memberType: user.memberType || null,
+        isApproved: user.memberType === 'INSURANCE' ? user.isApproved : null,
+      };
+    } catch {
+      return { isLoggedIn: false, memberType: null, isApproved: null };
+    }
+  };
+
+  // Build query params for API calls with user filtering
+  const buildUserFilterParams = () => {
+    const { isLoggedIn, memberType, isApproved } = getUserAuthState();
+    
+    const params = new URLSearchParams();
+    
+    if (!isLoggedIn) {
+      // Not logged in: explicitly send memberType=null for guest filtering
+      params.append('memberType', 'null');
+      return `&${params.toString()}`;
+    }
+    
+    // Logged in: send actual user data
+    if (memberType) {
+      params.append('memberType', memberType);
+    }
+    if (isApproved !== null) {
+      params.append('isApproved', String(isApproved));
+    }
+    
+    return params.toString() ? `&${params.toString()}` : '';
+  };
+
   const fetchRelatedData = async () => {
     try {
       // 관련 업무 세무사 가져오기 (workArea 파라미터 사용)
@@ -441,8 +495,8 @@ const BusinessAreaDetailPage: React.FC<BusinessAreaDetailPageProps> = ({
               ...expert,
               tags: expert.workAreas
                 ? expert.workAreas.map((area) =>
-                    typeof area === "string" ? area : area.value,
-                  )
+                  typeof area === "string" ? area : area.value,
+                )
                 : expert.tags || [],
               tel: expert.tel || expert.phoneNumber,
               position: expert.position || expert.affiliation || "세무사",
@@ -457,8 +511,9 @@ const BusinessAreaDetailPage: React.FC<BusinessAreaDetailPageProps> = ({
 
       // 관련 소식 가져오기
       try {
+        const userParams = buildUserFilterParams();
         const newsResponse = await getClient<InsightResponse>(
-          `${API_ENDPOINTS.INSIGHTS}?page=1&limit=20`,
+          `${API_ENDPOINTS.INSIGHTS}?page=1&limit=10${userParams}&subMinorCategoryId=${data?.minorCategory.id}`,
         );
         if (newsResponse.data?.items) {
           setRelatedNews(newsResponse.data.items);
@@ -589,13 +644,13 @@ const BusinessAreaDetailPage: React.FC<BusinessAreaDetailPageProps> = ({
   // Breadcrumb 생성 (fallback for mobile)
   const breadcrumbs = [
     { label: "업무 분야", href: "/business-areas/hierarchical" },
-    { 
-      label: data.majorCategory.name, 
-      href: `/business-areas/hierarchical?tab=${data.majorCategory.id}` 
+    {
+      label: data.majorCategory.name,
+      href: `/business-areas/hierarchical?tab=${data.majorCategory.id}`
     },
-    { 
-      label: data.minorCategory.name, 
-      href: `/business-areas/hierarchical?tab=${data.majorCategory.id}&subtab=${data.minorCategory.id}` 
+    {
+      label: data.minorCategory.name,
+      href: `/business-areas/hierarchical?tab=${data.majorCategory.id}&subtab=${data.minorCategory.id}`
     },
     { label: data.name }, // 현재 페이지는 링크 없음
   ];
@@ -605,44 +660,44 @@ const BusinessAreaDetailPage: React.FC<BusinessAreaDetailPageProps> = ({
     level2:
       majorCategories.length > 0
         ? {
-            value: data.majorCategory.id,
-            options: majorCategories.map((cat) => ({
-              label: cat.name,
-              value: cat.id,
-            })),
-            onChange: (value: string | number) => {
-              router.push(`/business-areas/hierarchical?tab=${value}`);
-            },
-          }
+          value: data.majorCategory.id,
+          options: majorCategories.map((cat) => ({
+            label: cat.name,
+            value: cat.id,
+          })),
+          onChange: (value: string | number) => {
+            router.push(`/business-areas/hierarchical?tab=${value}`);
+          },
+        }
         : undefined,
     level3:
       minorCategories.length > 0
         ? {
-            value: data.minorCategory.id,
-            options: minorCategories.map((cat) => ({
-              label: cat.name,
-              value: cat.id,
-            })),
-            onChange: (value: string | number) => {
-              // Navigate to hierarchical page with selected minor category expanded
-              router.push(
-                `/business-areas/hierarchical?tab=${data.majorCategory.id}&subtab=${value}`
-              );
-            },
-          }
+          value: data.minorCategory.id,
+          options: minorCategories.map((cat) => ({
+            label: cat.name,
+            value: cat.id,
+          })),
+          onChange: (value: string | number) => {
+            // Navigate to hierarchical page with selected minor category expanded
+            router.push(
+              `/business-areas/hierarchical?tab=${data.majorCategory.id}&subtab=${value}`
+            );
+          },
+        }
         : undefined,
     level4:
       minorCategoryItems.length > 0
         ? {
-            value: data.id,
-            options: minorCategoryItems.map((item) => ({
-              label: item.name,
-              value: item.id,
-            })),
-            onChange: (value: string | number) => {
-              router.push(`/business-areas/${value}`);
-            },
-          }
+          value: data.id,
+          options: minorCategoryItems.map((item) => ({
+            label: item.name,
+            value: item.id,
+          })),
+          onChange: (value: string | number) => {
+            router.push(`/business-areas/${value}`);
+          },
+        }
         : undefined,
   };
 
@@ -661,62 +716,98 @@ const BusinessAreaDetailPage: React.FC<BusinessAreaDetailPageProps> = ({
         <Menu isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
 
         <div className={styles.headerImage}>
-        <h1 className={styles.headerTitle}> PRACTICE AREAS</h1>
-        <p className={styles.headerSubtitle}>업무분야</p>
-      </div>
-      <div className="container">
-        {/* Page Header with Selects */}
-        <div className={styles.pageHeaderWrapper}>
-          <PageHeader
-            title={data.name}
-            breadcrumbs={breadcrumbs}
-            selects={selects}
-            size="web"
-          />
+          <h1 className={styles.headerTitle}> PRACTICE AREAS</h1>
+          <p className={styles.headerSubtitle}>업무분야</p>
         </div>
-
-        <div className={styles.heroContent}>
-          {data.subDescription && (
-            <p className={styles.heroDescription}>{data.subDescription}</p>
-          )}
-        </div>
-
-        <div className={styles.heroSection}>
-          {data.image?.url && !imageError ? (
-            <img
-              src={data.image.url}
-              alt={data.name}
-              className={styles.heroImage}
-              onError={() => setImageError(true)}
-              onLoad={() => setImageError(false)}
+        <div className="container">
+          {/* Page Header with Selects */}
+          <div className={styles.pageHeaderWrapper}>
+            <PageHeader
+              title={data.name}
+              breadcrumbs={breadcrumbs}
+              selects={selects}
+              size="web"
             />
-          ) : (
-            <div className={styles.imagePlaceholder}>
-              <span>{data.name}</span>
-            </div>
-          )}
-          <div className={styles.heroOverlay} />
-        </div>
+          </div>
 
-        {/* Fixed Overview Banner - Shows when Overview section is not visible */}
-        {isOverviewPassed && data.overview && (
-          <div
-            className={`${styles.overviewFixedBanner} ${
-              isOverviewBannerExpanded ? styles.expanded : ""
-            }`}
-            onClick={() =>
-              setIsOverviewBannerExpanded(!isOverviewBannerExpanded)
-            }
-          >
-            <div className="container">
-              <div className={styles.overviewFixedBannerContent}>
-                {/* 모바일 헤더 (OVERVIEW + 토글) */}
-                <div className={styles.overviewFixedBannerHeader}>
-                  <div className={styles.overviewFixedBannerTitle}>
+          <div className={styles.heroContent}>
+            {data.subDescription && (
+              <p className={styles.heroDescription}>{data.subDescription}</p>
+            )}
+          </div>
+
+          <div className={styles.heroSection}>
+            {data.image?.url && !imageError ? (
+              <img
+                src={data.image.url}
+                alt={data.name}
+                className={styles.heroImage}
+                onError={() => setImageError(true)}
+                onLoad={() => setImageError(false)}
+              />
+            ) : (
+              <div className={styles.imagePlaceholder}>
+                <span>{data.name}</span>
+              </div>
+            )}
+            <div className={styles.heroOverlay} />
+          </div>
+
+          {/* Fixed Overview Banner - Shows when Overview section is not visible */}
+          {isOverviewPassed && data.overview && (
+            <div
+              className={`${styles.overviewFixedBanner} ${isOverviewBannerExpanded ? styles.expanded : ""
+                }`}
+              onClick={() =>
+                setIsOverviewBannerExpanded(!isOverviewBannerExpanded)
+              }
+            >
+              <div className="container">
+                <div className={styles.overviewFixedBannerContent}>
+                  {/* 모바일 헤더 (OVERVIEW + 토글) */}
+                  <div className={styles.overviewFixedBannerHeader}>
+                    <div className={styles.overviewFixedBannerTitle}>
+                      <span></span>
+                      Overview
+                    </div>
+                    <div className={styles.overviewFixedBannerToggle}>
+                      <svg
+                        width="20"
+                        height="20"
+                        viewBox="0 0 20 20"
+                        fill="none"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          d={
+                            isOverviewBannerExpanded
+                              ? "M5 12.5L10 7.5L15 12.5"
+                              : "M5 7.5L10 12.5L15 7.5"
+                          }
+                          stroke="#2d2d2d"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                    </div>
+                  </div>
+                  {/* 데스크탑 타이틀 */}
+                  <div className={styles.overviewFixedBannerTitleDesktop}>
                     <span></span>
                     Overview
                   </div>
-                  <div className={styles.overviewFixedBannerToggle}>
+                  <div className={styles.overviewFixedBannerDivider} />
+                  <div
+                    className={`${styles.overviewFixedBannerBody} ${!isOverviewBannerExpanded ? styles.collapsed : ""
+                      }`}
+                  >
+                    <div className={styles.overviewContentInner}>
+                      <Viewer initialValue={data.overview} />
+                    </div>
+                  </div>
+                  {/* 데스크탑 토글 */}
+                  <div className={styles.overviewFixedBannerToggleDesktop}>
                     <svg
                       width="20"
                       height="20"
@@ -738,766 +829,713 @@ const BusinessAreaDetailPage: React.FC<BusinessAreaDetailPageProps> = ({
                     </svg>
                   </div>
                 </div>
-                {/* 데스크탑 타이틀 */}
-                <div className={styles.overviewFixedBannerTitleDesktop}>
-                  <span></span>
-                  Overview
-                </div>
-                <div className={styles.overviewFixedBannerDivider} />
-                <div
-                  className={`${styles.overviewFixedBannerBody} ${
-                    !isOverviewBannerExpanded ? styles.collapsed : ""
-                  }`}
-                >
-                  <div className={styles.overviewContentInner}>
-                    <Viewer initialValue={data.overview} />
-                  </div>
-                </div>
-                {/* 데스크탑 토글 */}
-                <div className={styles.overviewFixedBannerToggleDesktop}>
-                  <svg
-                    width="20"
-                    height="20"
-                    viewBox="0 0 20 20"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      d={
-                        isOverviewBannerExpanded
-                          ? "M5 12.5L10 7.5L15 12.5"
-                          : "M5 7.5L10 12.5L15 7.5"
-                      }
-                      stroke="#2d2d2d"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Mobile Sticky Tab Navigation - Shows when scrolled past overview */}
-        {isOverviewPassed && (
-          <nav className={styles.mobileStickyNav}>
-            {data.majorCategory.sections.includes("발생원인") && (
-              <button
-                className={`${styles.mobileTabItem} ${
-                  activeSection === "rootcause"
-                    ? styles.mobileTabItemActive
-                    : ""
-                }`}
-                onClick={() =>
-                  document
-                    .getElementById("rootcause")
-                    ?.scrollIntoView({ behavior: "smooth" })
-                }
-              >
-                <span>발생원인</span>
-              </button>
-            )}
-            {data.majorCategory.sections.includes("리스크") && (
-              <button
-                className={`${styles.mobileTabItem} ${
-                  activeSection === "risk" ? styles.mobileTabItemActive : ""
-                }`}
-                onClick={() =>
-                  document
-                    .getElementById("risk")
-                    ?.scrollIntoView({ behavior: "smooth" })
-                }
-              >
-                <span>리스크</span>
-              </button>
-            )}
-            {data.majorCategory.sections.includes("체크포인트") && (
-              <button
-                className={`${styles.mobileTabItem} ${
-                  activeSection === "checkpoint"
-                    ? styles.mobileTabItemActive
-                    : ""
-                }`}
-                onClick={() =>
-                  document
-                    .getElementById("checkpoint")
-                    ?.scrollIntoView({ behavior: "smooth" })
-                }
-              >
-                <span>체크포인트</span>
-              </button>
-            )}
-            {data.majorCategory.sections.includes("함께 실행방안") && (
-              <button
-                className={`${styles.mobileTabItem} ${
-                  activeSection === "execution"
-                    ? styles.mobileTabItemActive
-                    : ""
-                }`}
-                onClick={() =>
-                  document
-                    .getElementById("execution")
-                    ?.scrollIntoView({ behavior: "smooth" })
-                }
-              >
-                <span>함께 실행방안</span>
-              </button>
-            )}
-            {data.majorCategory.sections.includes("케이스") && (
-              <button
-                className={`${styles.mobileTabItem} ${
-                  activeSection === "cases" ? styles.mobileTabItemActive : ""
-                }`}
-                onClick={() =>
-                  document
-                    .getElementById("cases")
-                    ?.scrollIntoView({ behavior: "smooth" })
-                }
-              >
-                <span>케이스</span>
-              </button>
-            )}
-          </nav>
-        )}
-
-        {/* Overview Section - Below Hero Image */}
-        {data.overview && (
-          <div ref={overviewRef} className={styles.overviewSectionWrapper}>
-            <h2 className={styles.overviewTitle}>Overview</h2>
-            <div className={styles.overviewContent}>
-              <p>개요</p>
-              <div className={styles.overviewContentInner}>
-                <Viewer initialValue={data.overview} />
-              </div>
-            </div>
-          </div>
-        )}
-
-        <div className={styles.contentWrapper}>
-          {/* Main Content */}
-          <div className={styles.mainContent}>
-            {data.majorCategory.sections.includes("발생원인") && (
-              <section
-                id="rootcause"
-                ref={rootCauseRef}
-                className={styles.section}
-              >
-                <div className={styles.sectionHeader}>
-                  <h2 className={styles.sectionTitle}>Root Cause</h2>
-                </div>
-                <div className={styles.sectionContent}>
-                  <h3 className={styles.subSectionTitle}>발생원인</h3>
-                  <ContentBox>
-                    <div className={styles.overlay} />
-                    <div className={styles.executionContent}>
-                      {getSectionContent("발생원인") && (
-                        <div className={styles.contentText}>
-                          <Viewer
-                            initialValue={getSectionContent("발생원인")}
-                          />
-                        </div>
-                      )}
-                    </div>
-                  </ContentBox>
-                </div>
-              </section>
-            )}
-            {data.majorCategory.sections.includes("리스크") && (
-              <section id="risk" ref={riskRef} className={styles.section}>
-                <div className={styles.sectionHeader}>
-                  <h2 className={styles.sectionTitle}>Risk</h2>
-                </div>
-                <div className={styles.sectionContent}>
-                  <h3 className={styles.subSectionTitle}>리스크</h3>
-                  <ContentBox>
-                    <div className={styles.overlay} />
-                    <div className={styles.casesContent}>
-                      {getSectionContent("리스크") && (
-                        <div className={styles.contentText}>
-                          <Viewer initialValue={getSectionContent("리스크")} />
-                        </div>
-                      )}
-                    </div>
-                  </ContentBox>
-                </div>
-              </section>
-            )}
-            {/* Check Point Section */}
-            {data.majorCategory.sections.includes("체크포인트") && (
-              <section
-                id="checkpoint"
-                ref={checkpointRef}
-                className={styles.section}
-              >
-                <div className={styles.sectionHeader}>
-                  <h2 className={styles.sectionTitle}>Check Point</h2>
-                </div>
-                <div className={styles.sectionContent}>
-                  <h3 className={styles.subSectionTitle}>체크포인트</h3>
-                  <ContentBox>
-                    <div className={styles.overlay} />
-                    <div className={styles.checkPointContent}>
-                      {getSectionContent("체크포인트") && (
-                        <div className={styles.contentText}>
-                          <Viewer
-                            initialValue={getSectionContent("체크포인트")}
-                          />
-                        </div>
-                      )}
-                    </div>
-                  </ContentBox>
-                </div>
-              </section>
-            )}
-
-            {/* Execution Strategy Section */}
-            {data.majorCategory.sections.includes("함께 실행방안") && (
-              <section
-                id="execution"
-                ref={executionRef}
-                className={styles.section}
-              >
-                <div className={styles.sectionHeader}>
-                  <h2 className={styles.sectionTitle}>Execution Strategy</h2>
-                </div>
-                <div className={styles.sectionContent}>
-                  <h3 className={styles.subSectionTitle}>함께 실행방안</h3>
-                  <ContentBox>
-                    <div className={styles.overlay} />
-                    <div className={styles.executionContent}>
-                      {getSectionContent("함께 실행방안") && (
-                        <div className={styles.contentText}>
-                          <Viewer
-                            initialValue={getSectionContent("함께 실행방안")}
-                          />
-                        </div>
-                      )}
-                    </div>
-                  </ContentBox>
-                </div>
-              </section>
-            )}
-
-            {/* Cases Section */}
-            {data.majorCategory.sections.includes("케이스") && (
-              <section id="cases" ref={casesRef} className={styles.section}>
-                <div className={styles.sectionHeader}>
-                  <h2 className={styles.sectionTitle}>Cases</h2>
-                </div>
-                <div className={styles.sectionContent}>
-                  <h3 className={styles.subSectionTitle}>케이스</h3>
-                  <ContentBox>
-                    <div className={styles.overlay} />
-                    <div className={styles.casesContent}>
-                      {getSectionContent("케이스") && (
-                        <div className={styles.contentText}>
-                          <Viewer initialValue={getSectionContent("케이스")} />
-                        </div>
-                      )}
-                    </div>
-                  </ContentBox>
-                </div>
-              </section>
-            )}
-          </div>
-
-          {/* Left Sidebar Navigation */}
-          <div className={styles.sidebarNav}>
-            {data.majorCategory.sections.includes("발생원인") && (
-              <a
-                href="#rootcause"
-                className={`${styles.navItem} ${
-                  activeSection === "rootcause" ? styles.active : ""
-                }`}
-                onClick={(e) => {
-                  e.preventDefault();
-                  document
-                    .getElementById("rootcause")
-                    ?.scrollIntoView({ behavior: "smooth" });
-                }}
-              >
-                <span className={styles.navText}>발생원인</span>
-              </a>
-            )}
-            {data.majorCategory.sections.includes("리스크") && (
-              <a
-                href="#risk"
-                className={`${styles.navItem} ${
-                  activeSection === "risk" ? styles.active : ""
-                }`}
-                onClick={(e) => {
-                  e.preventDefault();
-                  document
-                    .getElementById("risk")
-                    ?.scrollIntoView({ behavior: "smooth" });
-                }}
-              >
-                <span className={styles.navText}>리스크</span>
-              </a>
-            )}
-            {data.majorCategory.sections.includes("체크포인트") && (
-              <a
-                href="#checkpoint"
-                className={`${styles.navItem} ${
-                  activeSection === "checkpoint" ? styles.active : ""
-                }`}
-                onClick={(e) => {
-                  e.preventDefault();
-                  document
-                    .getElementById("checkpoint")
-                    ?.scrollIntoView({ behavior: "smooth" });
-                }}
-              >
-                <span className={styles.navText}>체크포인트</span>
-              </a>
-            )}
-            {data.majorCategory.sections.includes("함께 실행방안") && (
-              <a
-                href="#execution"
-                className={`${styles.navItem} ${
-                  activeSection === "execution" ? styles.active : ""
-                }`}
-                onClick={(e) => {
-                  e.preventDefault();
-                  document
-                    .getElementById("execution")
-                    ?.scrollIntoView({ behavior: "smooth" });
-                }}
-              >
-                <span className={styles.navText}>함께 실행방안</span>
-              </a>
-            )}
-            {data.majorCategory.sections.includes("케이스") && (
-              <a
-                href="#cases"
-                className={`${styles.navItem} ${
-                  activeSection === "cases" ? styles.active : ""
-                }`}
-                onClick={(e) => {
-                  e.preventDefault();
-                  document
-                    .getElementById("cases")
-                    ?.scrollIntoView({ behavior: "smooth" });
-                }}
-              >
-                <span className={styles.navText}>케이스</span>
-              </a>
-            )}
-          </div>
-        </div>
-
-        <div className={styles.floatingButtons}>
-          <FloatingButton
-            variant="consult"
-            label="상담 신청하기"
-            onClick={handleConsultClick}
-          />
-          <FloatingButton variant="top" onClick={handleTopClick} />
-        </div>
-      </div>
-      <div className={styles.infoWrapper}>
-        <div className="container">
-          {experts.length > 0 && (
-            <div className={styles.fullWidthSection}>
-              <div className={styles.fullWidthContainer}>
-                <section className={styles.section}>
-                  <div className={styles.sectionHeader}>
-                    <div className={styles.sectionHeaderContent}>
-                      <div>
-                        <h2 className={styles.sectionTitle}>Related Experts</h2>
-                        <p className={styles.sectionSubtitle}>
-                          <span /> 관련 업무 세무사
-                        </p>
-                      </div>
-                      <div className={styles.navigationButtons}>
-                        <button
-                          className={styles.navButton}
-                          onClick={handleExpertPrev}
-                          id="experts-prev-btn"
-                          disabled={expertsButtonsDisabled.prev}
-                        >
-                          <Icon
-                            type="arrow-left2-green"
-                            className={styles.arrow}
-                            size={20}
-                          />
-                        </button>
-                        <button
-                          className={styles.navButton}
-                          onClick={handleExpertNext}
-                          id="experts-next-btn"
-                          disabled={expertsButtonsDisabled.next}
-                        >
-                          <Icon type="arrow-right2-green" size={20} />
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                  <div className={styles.expertsContent}>
-                    <Swiper
-                      modules={[Navigation]}
-                      grabCursor={true}
-                      allowTouchMove={true}
-                      navigation={{
-                        prevEl: "#experts-prev-btn",
-                        nextEl: "#experts-next-btn",
-                      }}
-                      breakpoints={{
-                        0: {
-                          slidesPerView: 1.55,
-                          spaceBetween: 16,
-                        },
-                        576: {
-                          slidesPerView: 2,
-                          spaceBetween: 18,
-                        },
-                        768: {
-                          slidesPerView: 3,
-                          spaceBetween: 20,
-                        },
-                        1024: {
-                          slidesPerView: 4,
-                          spaceBetween: 24,
-                        },
-                      }}
-                      onSwiper={(swiper) => {
-                        expertsSwiperRef.current = swiper;
-                        updateExpertsButtons();
-                      }}
-                      onSlideChange={() => {
-                        updateExpertsButtons();
-                      }}
-                      className={styles.expertsSwiper}
-                    >
-                      {experts.map((expert, index) => (
-                        <SwiperSlide key={expert.id || index}>
-                          <div
-                            className={styles.expertCard}
-                            onClick={() => router.push(`/experts/${expert.id}`)}
-                          >
-                            <div className={styles.expertImage}>
-                              <img
-                                src={
-                                  expert.mainPhoto?.url ||
-                                  expert.imageUrl ||
-                                  "/images/common/default-avatar.png"
-                                }
-                                alt={expert.name}
-                                onError={(e) => {
-                                  (e.target as HTMLImageElement).src =
-                                    "/images/common/default-avatar.png";
-                                }}
-                              />
-                            </div>
-
-                            <div className={styles.expertInfo}>
-                              <div className={styles.expertNameRow}>
-                                <p className={styles.expertName}>
-                                  {expert.name}
-                                </p>
-                                <p className={styles.expertPositionLabel}>
-                                  {expert.position || "세무사"}
-                                </p>
-                              </div>
-
-                              <div className={styles.expertContact}>
-                                {(expert.tel || expert.phoneNumber) && (
-                                  <div className={styles.expertContactItem}>
-                                    <span className={styles.expertContactLabel}>
-                                      TEL
-                                    </span>
-                                    <span className={styles.expertContactValue}>
-                                      {expert.tel || expert.phoneNumber}
-                                    </span>
-                                  </div>
-                                )}
-
-                                {expert.email && (
-                                  <div className={styles.expertContactItem}>
-                                    <span className={styles.expertContactLabel}>
-                                      EMAIL
-                                    </span>
-                                    <span className={styles.expertContactValue}>
-                                      {expert.email}
-                                    </span>
-                                  </div>
-                                )}
-                              </div>
-
-                              {expert.tags && expert.tags.length > 0 && (
-                                <div className={styles.expertTags}>
-                                  {" "}
-                                  {expert.tags.map((tag, tagIndex) => {
-                                    let indicator = "";
-                                    if (tagIndex === 0) {
-                                      indicator = " ■■■";
-                                    } else if (tagIndex === 1) {
-                                      indicator = " ■■□";
-                                    } else if (tagIndex === 2) {
-                                      indicator = " ■□□";
-                                    }
-                                    return (
-                                      <span
-                                        key={tagIndex}
-                                        className={styles.expertTag}
-                                      >
-                                        {" "}
-                                        {tag} {indicator}{" "}
-                                      </span>
-                                    );
-                                  })}{" "}
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        </SwiperSlide>
-                      ))}
-                    </Swiper>
-                  </div>
-                </section>
               </div>
             </div>
           )}
 
-          {data.youtubeUrls && data.youtubeUrls.length > 0 && (
-            <div className={styles.fullWidthSection}>
-              <div className={styles.fullWidthContainer}>
-                <section className={styles.section}>
+          {/* Mobile Sticky Tab Navigation - Shows when scrolled past overview */}
+          {isOverviewPassed && (
+            <nav className={styles.mobileStickyNav}>
+              {data.majorCategory.sections.includes("발생원인") && (
+                <button
+                  className={`${styles.mobileTabItem} ${activeSection === "rootcause"
+                      ? styles.mobileTabItemActive
+                      : ""
+                    }`}
+                  onClick={() =>
+                    document
+                      .getElementById("rootcause")
+                      ?.scrollIntoView({ behavior: "smooth" })
+                  }
+                >
+                  <span>발생원인</span>
+                </button>
+              )}
+              {data.majorCategory.sections.includes("리스크") && (
+                <button
+                  className={`${styles.mobileTabItem} ${activeSection === "risk" ? styles.mobileTabItemActive : ""
+                    }`}
+                  onClick={() =>
+                    document
+                      .getElementById("risk")
+                      ?.scrollIntoView({ behavior: "smooth" })
+                  }
+                >
+                  <span>리스크</span>
+                </button>
+              )}
+              {data.majorCategory.sections.includes("체크포인트") && (
+                <button
+                  className={`${styles.mobileTabItem} ${activeSection === "checkpoint"
+                      ? styles.mobileTabItemActive
+                      : ""
+                    }`}
+                  onClick={() =>
+                    document
+                      .getElementById("checkpoint")
+                      ?.scrollIntoView({ behavior: "smooth" })
+                  }
+                >
+                  <span>체크포인트</span>
+                </button>
+              )}
+              {data.majorCategory.sections.includes("함께 실행방안") && (
+                <button
+                  className={`${styles.mobileTabItem} ${activeSection === "execution"
+                      ? styles.mobileTabItemActive
+                      : ""
+                    }`}
+                  onClick={() =>
+                    document
+                      .getElementById("execution")
+                      ?.scrollIntoView({ behavior: "smooth" })
+                  }
+                >
+                  <span>함께 실행방안</span>
+                </button>
+              )}
+              {data.majorCategory.sections.includes("케이스") && (
+                <button
+                  className={`${styles.mobileTabItem} ${activeSection === "cases" ? styles.mobileTabItemActive : ""
+                    }`}
+                  onClick={() =>
+                    document
+                      .getElementById("cases")
+                      ?.scrollIntoView({ behavior: "smooth" })
+                  }
+                >
+                  <span>케이스</span>
+                </button>
+              )}
+            </nav>
+          )}
+
+          {/* Overview Section - Below Hero Image */}
+          {data.overview && (
+            <div ref={overviewRef} className={styles.overviewSectionWrapper}>
+              <h2 className={styles.overviewTitle}>Overview</h2>
+              <div className={styles.overviewContent}>
+                <p>개요</p>
+                <div className={styles.overviewContentInner}>
+                  <Viewer initialValue={data.overview} />
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className={styles.contentWrapper}>
+            {/* Main Content */}
+            <div className={styles.mainContent}>
+              {data.majorCategory.sections.includes("발생원인") && (
+                <section
+                  id="rootcause"
+                  ref={rootCauseRef}
+                  className={styles.section}
+                >
                   <div className={styles.sectionHeader}>
-                    <div className={styles.sectionHeaderContent}>
-                      <div>
-                        <h2 className={styles.sectionTitle}>Youtube</h2>
-                        <p className={styles.sectionSubtitle}>
-                          <span></span> 함께공식 유튜브
-                        </p>
+                    <h2 className={styles.sectionTitle}>Root Cause</h2>
+                  </div>
+                  <div className={styles.sectionContent}>
+                    <h3 className={styles.subSectionTitle}>발생원인</h3>
+                    <ContentBox>
+                      <div className={styles.overlay} />
+                      <div className={styles.executionContent}>
+                        {getSectionContent("발생원인") && (
+                          <div className={styles.contentText}>
+                            <Viewer
+                              initialValue={getSectionContent("발생원인")}
+                            />
+                          </div>
+                        )}
                       </div>
-                      <div className={styles.navigationButtons}>
-                        <button
-                          className={styles.navButton}
-                          onClick={handleYoutubePrev}
-                          id="youtube-prev-btn"
-                          disabled={youtubeButtonsDisabled.prev}
-                        >
-                          <Icon type="arrow-left2-green" size={20} />
-                        </button>
-                        <button
-                          className={styles.navButton}
-                          onClick={handleYoutubeNext}
-                          id="youtube-next-btn"
-                          disabled={youtubeButtonsDisabled.next}
-                        >
-                          <Icon type="arrow-right2-green" size={20} />
-                        </button>
+                    </ContentBox>
+                  </div>
+                </section>
+              )}
+              {data.majorCategory.sections.includes("리스크") && (
+                <section id="risk" ref={riskRef} className={styles.section}>
+                  <div className={styles.sectionHeader}>
+                    <h2 className={styles.sectionTitle}>Risk</h2>
+                  </div>
+                  <div className={styles.sectionContent}>
+                    <h3 className={styles.subSectionTitle}>리스크</h3>
+                    <ContentBox>
+                      <div className={styles.overlay} />
+                      <div className={styles.casesContent}>
+                        {getSectionContent("리스크") && (
+                          <div className={styles.contentText}>
+                            <Viewer initialValue={getSectionContent("리스크")} />
+                          </div>
+                        )}
+                      </div>
+                    </ContentBox>
+                  </div>
+                </section>
+              )}
+              {/* Check Point Section */}
+              {data.majorCategory.sections.includes("체크포인트") && (
+                <section
+                  id="checkpoint"
+                  ref={checkpointRef}
+                  className={styles.section}
+                >
+                  <div className={styles.sectionHeader}>
+                    <h2 className={styles.sectionTitle}>Check Point</h2>
+                  </div>
+                  <div className={styles.sectionContent}>
+                    <h3 className={styles.subSectionTitle}>체크포인트</h3>
+                    <ContentBox>
+                      <div className={styles.overlay} />
+                      <div className={styles.checkPointContent}>
+                        {getSectionContent("체크포인트") && (
+                          <div className={styles.contentText}>
+                            <Viewer
+                              initialValue={getSectionContent("체크포인트")}
+                            />
+                          </div>
+                        )}
+                      </div>
+                    </ContentBox>
+                  </div>
+                </section>
+              )}
+
+              {/* Execution Strategy Section */}
+              {data.majorCategory.sections.includes("함께 실행방안") && (
+                <section
+                  id="execution"
+                  ref={executionRef}
+                  className={styles.section}
+                >
+                  <div className={styles.sectionHeader}>
+                    <h2 className={styles.sectionTitle}>Execution Strategy</h2>
+                  </div>
+                  <div className={styles.sectionContent}>
+                    <h3 className={styles.subSectionTitle}>함께 실행방안</h3>
+                    <ContentBox>
+                      <div className={styles.overlay} />
+                      <div className={styles.executionContent}>
+                        {getSectionContent("함께 실행방안") && (
+                          <div className={styles.contentText}>
+                            <Viewer
+                              initialValue={getSectionContent("함께 실행방안")}
+                            />
+                          </div>
+                        )}
+                      </div>
+                    </ContentBox>
+                  </div>
+                </section>
+              )}
+
+              {/* Cases Section */}
+              {data.majorCategory.sections.includes("케이스") && (
+                <section id="cases" ref={casesRef} className={styles.section}>
+                  <div className={styles.sectionHeader}>
+                    <h2 className={styles.sectionTitle}>Cases</h2>
+                  </div>
+                  <div className={styles.sectionContent}>
+                    <h3 className={styles.subSectionTitle}>케이스</h3>
+                    <ContentBox>
+                      <div className={styles.overlay} />
+                      <div className={styles.casesContent}>
+                        {getSectionContent("케이스") && (
+                          <div className={styles.contentText}>
+                            <Viewer initialValue={getSectionContent("케이스")} />
+                          </div>
+                        )}
+                      </div>
+                    </ContentBox>
+                  </div>
+                </section>
+              )}
+            </div>
+
+            {/* Left Sidebar Navigation */}
+            <div className={styles.sidebarNav}>
+              {data.majorCategory.sections.includes("발생원인") && (
+                <a
+                  href="#rootcause"
+                  className={`${styles.navItem} ${activeSection === "rootcause" ? styles.active : ""
+                    }`}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    document
+                      .getElementById("rootcause")
+                      ?.scrollIntoView({ behavior: "smooth" });
+                  }}
+                >
+                  <span className={styles.navText}>발생원인</span>
+                </a>
+              )}
+              {data.majorCategory.sections.includes("리스크") && (
+                <a
+                  href="#risk"
+                  className={`${styles.navItem} ${activeSection === "risk" ? styles.active : ""
+                    }`}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    document
+                      .getElementById("risk")
+                      ?.scrollIntoView({ behavior: "smooth" });
+                  }}
+                >
+                  <span className={styles.navText}>리스크</span>
+                </a>
+              )}
+              {data.majorCategory.sections.includes("체크포인트") && (
+                <a
+                  href="#checkpoint"
+                  className={`${styles.navItem} ${activeSection === "checkpoint" ? styles.active : ""
+                    }`}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    document
+                      .getElementById("checkpoint")
+                      ?.scrollIntoView({ behavior: "smooth" });
+                  }}
+                >
+                  <span className={styles.navText}>체크포인트</span>
+                </a>
+              )}
+              {data.majorCategory.sections.includes("함께 실행방안") && (
+                <a
+                  href="#execution"
+                  className={`${styles.navItem} ${activeSection === "execution" ? styles.active : ""
+                    }`}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    document
+                      .getElementById("execution")
+                      ?.scrollIntoView({ behavior: "smooth" });
+                  }}
+                >
+                  <span className={styles.navText}>함께 실행방안</span>
+                </a>
+              )}
+              {data.majorCategory.sections.includes("케이스") && (
+                <a
+                  href="#cases"
+                  className={`${styles.navItem} ${activeSection === "cases" ? styles.active : ""
+                    }`}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    document
+                      .getElementById("cases")
+                      ?.scrollIntoView({ behavior: "smooth" });
+                  }}
+                >
+                  <span className={styles.navText}>케이스</span>
+                </a>
+              )}
+            </div>
+          </div>
+
+          <div className={styles.floatingButtons}>
+            <FloatingButton
+              variant="consult"
+              label="상담 신청하기"
+              onClick={handleConsultClick}
+            />
+            <FloatingButton variant="top" onClick={handleTopClick} />
+          </div>
+        </div>
+        <div className={styles.infoWrapper}>
+          <div className="container">
+            {experts.length > 0 && (
+              <div className={styles.fullWidthSection}>
+                <div className={styles.fullWidthContainer}>
+                  <section className={styles.section}>
+                    <div className={styles.sectionHeader}>
+                      <div className={styles.sectionHeaderContent}>
+                        <div>
+                          <h2 className={styles.sectionTitle}>Related Experts</h2>
+                          <p className={styles.sectionSubtitle}>
+                            <span /> 관련 업무 세무사
+                          </p>
+                        </div>
+                        <div className={styles.navigationButtons}>
+                          <button
+                            className={styles.navButton}
+                            onClick={handleExpertPrev}
+                            id="experts-prev-btn"
+                            disabled={expertsButtonsDisabled.prev}
+                          >
+                            <Icon
+                              type="arrow-left2-green"
+                              className={styles.arrow}
+                              size={20}
+                            />
+                          </button>
+                          <button
+                            className={styles.navButton}
+                            onClick={handleExpertNext}
+                            id="experts-next-btn"
+                            disabled={expertsButtonsDisabled.next}
+                          >
+                            <Icon type="arrow-right2-green" size={20} />
+                          </button>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                  <div className={styles.youtubeContent}>
-                    <Swiper
-                      modules={[Navigation]}
-                      grabCursor={true}
-                      allowTouchMove={true}
-                      navigation={{
-                        prevEl: "#youtube-prev-btn",
-                        nextEl: "#youtube-next-btn",
-                      }}
-                      breakpoints={{
-                        0: {
-                          slidesPerView: 1.3,
-                          spaceBetween: 16,
-                        },
-                        576: {
-                          slidesPerView: 2,
-                          spaceBetween: 18,
-                        },
-                        768: {
-                          slidesPerView: 3,
-                          spaceBetween: 20,
-                        },
-                        1024: {
-                          slidesPerView: 4,
-                          spaceBetween: 24,
-                        },
-                      }}
-                      onSwiper={(swiper) => {
-                        youtubeSwiperRef.current = swiper;
-                        updateYoutubeButtons();
-                      }}
-                      onSlideChange={() => {
-                        updateYoutubeButtons();
-                      }}
-                      className={styles.youtubeSwiper}
-                    >
-                      {data.youtubeUrls.map((url, index) => {
-                        const videoId = extractYouTubeId(url);
-                        if (!videoId) return null;
-                        return (
-                          <SwiperSlide key={index}>
+                    <div className={styles.expertsContent}>
+                      <Swiper
+                        modules={[Navigation]}
+                        grabCursor={true}
+                        allowTouchMove={true}
+                        navigation={{
+                          prevEl: "#experts-prev-btn",
+                          nextEl: "#experts-next-btn",
+                        }}
+                        breakpoints={{
+                          0: {
+                            slidesPerView: 1.55,
+                            spaceBetween: 16,
+                          },
+                          576: {
+                            slidesPerView: 2,
+                            spaceBetween: 18,
+                          },
+                          768: {
+                            slidesPerView: 3,
+                            spaceBetween: 20,
+                          },
+                          1024: {
+                            slidesPerView: 4,
+                            spaceBetween: 24,
+                          },
+                        }}
+                        onSwiper={(swiper) => {
+                          expertsSwiperRef.current = swiper;
+                          updateExpertsButtons();
+                        }}
+                        onSlideChange={() => {
+                          updateExpertsButtons();
+                        }}
+                        className={styles.expertsSwiper}
+                      >
+                        {experts.map((expert, index) => (
+                          <SwiperSlide key={expert.id || index}>
                             <div
-                              className={styles.youtubeCard}
-                              onClick={() => window.open(url, "_blank")}
+                              className={styles.expertCard}
+                              onClick={() => router.push(`/experts/${expert.id}`)}
                             >
-                              <div className={styles.youtubeThumbnail}>
+                              <div className={styles.expertImage}>
                                 <img
-                                  src={`https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`}
-                                  alt={`YouTube video ${index + 1}`}
+                                  src={
+                                    expert.mainPhoto?.url ||
+                                    expert.imageUrl ||
+                                    "/images/common/default-avatar.png"
+                                  }
+                                  alt={expert.name}
                                   onError={(e) => {
                                     (e.target as HTMLImageElement).src =
-                                      `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
+                                      "/images/common/default-avatar.png";
                                   }}
                                 />
                               </div>
-                              <div className={styles.youtubeInfo}>
-                                <p className={styles.youtubeChannel}>
-                                  {youtubeVideos[url]?.author_name ||
-                                    "세무법인함께 TV"}
-                                </p>
-                                <p className={styles.youtubeTitle}>
-                                  {youtubeVideos[url]?.title ||
-                                    "세무 관련 정보를 제공하는 영상입니다"}
-                                </p>
+
+                              <div className={styles.expertInfo}>
+                                <div className={styles.expertNameRow}>
+                                  <p className={styles.expertName}>
+                                    {expert.name}
+                                  </p>
+                                  <p className={styles.expertPositionLabel}>
+                                    {expert.position || "세무사"}
+                                  </p>
+                                </div>
+
+                                <div className={styles.expertContact}>
+                                  {(expert.tel || expert.phoneNumber) && (
+                                    <div className={styles.expertContactItem}>
+                                      <span className={styles.expertContactLabel}>
+                                        TEL
+                                      </span>
+                                      <span className={styles.expertContactValue}>
+                                        {expert.tel || expert.phoneNumber}
+                                      </span>
+                                    </div>
+                                  )}
+
+                                  {expert.email && (
+                                    <div className={styles.expertContactItem}>
+                                      <span className={styles.expertContactLabel}>
+                                        EMAIL
+                                      </span>
+                                      <span className={styles.expertContactValue}>
+                                        {expert.email}
+                                      </span>
+                                    </div>
+                                  )}
+                                </div>
+
+                                {expert.tags && expert.tags.length > 0 && (
+                                  <div className={styles.expertTags}>
+                                    {" "}
+                                    {expert.tags.map((tag, tagIndex) => {
+                                      let indicator = "";
+                                      if (tagIndex === 0) {
+                                        indicator = " ■■■";
+                                      } else if (tagIndex === 1) {
+                                        indicator = " ■■□";
+                                      } else if (tagIndex === 2) {
+                                        indicator = " ■□□";
+                                      }
+                                      return (
+                                        <span
+                                          key={tagIndex}
+                                          className={styles.expertTag}
+                                        >
+                                          {" "}
+                                          {tag} {indicator}{" "}
+                                        </span>
+                                      );
+                                    })}{" "}
+                                  </div>
+                                )}
                               </div>
                             </div>
                           </SwiperSlide>
-                        );
-                      })}
-                    </Swiper>
-                  </div>
-                </section>
+                        ))}
+                      </Swiper>
+                    </div>
+                  </section>
+                </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {relatedNews.length > 0 && (
-            <div className={styles.fullWidthSection}>
-              <div className={styles.fullWidthContainer}>
-                <section className={styles.section}>
-                  <div className={styles.sectionHeader}>
-                    <div className={styles.sectionHeaderContent}>
-                      <div>
-                        <h2 className={styles.sectionTitle}>Related News</h2>
-                        <p className={styles.sectionSubtitle}>
-                          <span></span> 관련 소식
-                        </p>
-                      </div>
-                      <div className={styles.navigationButtons}>
-                        <button
-                          className={styles.navButton}
-                          onClick={handleNewsPrev}
-                          id="news-prev-btn"
-                          disabled={newsButtonsDisabled.prev}
-                        >
-                          <Icon type="arrow-left2-green" size={20} />
-                        </button>
-                        <button
-                          className={styles.navButton}
-                          onClick={handleNewsNext}
-                          id="news-next-btn"
-                          disabled={newsButtonsDisabled.next}
-                        >
-                          <Icon type="arrow-right2-green" size={20} />
-                        </button>
+            {data.youtubeUrls && data.youtubeUrls.length > 0 && (
+              <div className={styles.fullWidthSection}>
+                <div className={styles.fullWidthContainer}>
+                  <section className={styles.section}>
+                    <div className={styles.sectionHeader}>
+                      <div className={styles.sectionHeaderContent}>
+                        <div>
+                          <h2 className={styles.sectionTitle}>Youtube</h2>
+                          <p className={styles.sectionSubtitle}>
+                            <span></span> 함께공식 유튜브
+                          </p>
+                        </div>
+                        <div className={styles.navigationButtons}>
+                          <button
+                            className={styles.navButton}
+                            onClick={handleYoutubePrev}
+                            id="youtube-prev-btn"
+                            disabled={youtubeButtonsDisabled.prev}
+                          >
+                            <Icon type="arrow-left2-green" size={20} />
+                          </button>
+                          <button
+                            className={styles.navButton}
+                            onClick={handleYoutubeNext}
+                            id="youtube-next-btn"
+                            disabled={youtubeButtonsDisabled.next}
+                          >
+                            <Icon type="arrow-right2-green" size={20} />
+                          </button>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                  <div className={styles.newsContent}>
-                    <Swiper
-                      modules={[Navigation]}
-                      grabCursor={true}
-                      allowTouchMove={true}
-                      navigation={{
-                        prevEl: "#news-prev-btn",
-                        nextEl: "#news-next-btn",
-                      }}
-                      breakpoints={{
-                        0: {
-                          slidesPerView: 1.3,
-                          spaceBetween: 16,
-                        },
-                        576: {
-                          slidesPerView: 2,
-                          spaceBetween: 18,
-                        },
-                        768: {
-                          slidesPerView: 3,
-                          spaceBetween: 20,
-                        },
-                        1024: {
-                          slidesPerView: 4,
-                          spaceBetween: 24,
-                        },
-                      }}
-                      onSwiper={(swiper) => {
-                        newsSwiperRef.current = swiper;
-                        updateNewsButtons();
-                      }}
-                      onSlideChange={() => {
-                        updateNewsButtons();
-                      }}
-                      className={styles.newsSwiper}
-                    >
-                      {relatedNews.map((news) => (
-                        <SwiperSlide key={news.id}>
-                          <div
-                            className={styles.newsCard}
-                            onClick={() => router.push(`/insights/${news.id}`)}
-                          >
-                            {news.thumbnail && (
-                              <div className={styles.newsThumbnail}>
-                                <img
-                                  src={news.thumbnail.url}
-                                  alt={news.title}
-                                />
-                              </div>
-                            )}
-                            <div className={styles.newsInfo}>
-                              <div className={styles.newsHeader}>
-                                {news.category && (
-                                  <p className={styles.newsCategory}>
-                                    {typeof news.category === "string"
-                                      ? news.category
-                                      : typeof news.category === "object" &&
-                                          news.category?.name
-                                        ? news.category.name
-                                        : "카테고리"}
+                    <div className={styles.youtubeContent}>
+                      <Swiper
+                        modules={[Navigation]}
+                        grabCursor={true}
+                        allowTouchMove={true}
+                        navigation={{
+                          prevEl: "#youtube-prev-btn",
+                          nextEl: "#youtube-next-btn",
+                        }}
+                        breakpoints={{
+                          0: {
+                            slidesPerView: 1.3,
+                            spaceBetween: 16,
+                          },
+                          576: {
+                            slidesPerView: 2,
+                            spaceBetween: 18,
+                          },
+                          768: {
+                            slidesPerView: 3,
+                            spaceBetween: 20,
+                          },
+                          1024: {
+                            slidesPerView: 4,
+                            spaceBetween: 24,
+                          },
+                        }}
+                        onSwiper={(swiper) => {
+                          youtubeSwiperRef.current = swiper;
+                          updateYoutubeButtons();
+                        }}
+                        onSlideChange={() => {
+                          updateYoutubeButtons();
+                        }}
+                        className={styles.youtubeSwiper}
+                      >
+                        {data.youtubeUrls.map((url, index) => {
+                          const videoId = extractYouTubeId(url);
+                          if (!videoId) return null;
+                          return (
+                            <SwiperSlide key={index}>
+                              <div
+                                className={styles.youtubeCard}
+                                onClick={() => window.open(url, "_blank")}
+                              >
+                                <div className={styles.youtubeThumbnail}>
+                                  <img
+                                    src={`https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`}
+                                    alt={`YouTube video ${index + 1}`}
+                                    onError={(e) => {
+                                      (e.target as HTMLImageElement).src =
+                                        `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
+                                    }}
+                                  />
+                                </div>
+                                <div className={styles.youtubeInfo}>
+                                  <p className={styles.youtubeChannel}>
+                                    {youtubeVideos[url]?.author_name ||
+                                      "세무법인함께 TV"}
                                   </p>
-                                )}
-                                <h3 className={styles.newsTitle}>
-                                  {news.title}
-                                </h3>
+                                  <p className={styles.youtubeTitle}>
+                                    {youtubeVideos[url]?.title ||
+                                      "세무 관련 정보를 제공하는 영상입니다"}
+                                  </p>
+                                </div>
                               </div>
-                              <div className={styles.newsMeta}>
-                                {news.authorName && (
-                                  <>
-                                    <span className={styles.newsAuthor}>
-                                      {news.authorName}
+                            </SwiperSlide>
+                          );
+                        })}
+                      </Swiper>
+                    </div>
+                  </section>
+                </div>
+              </div>
+            )}
+
+            {relatedNews.length > 0 && (
+              <div className={styles.fullWidthSection}>
+                <div className={styles.fullWidthContainer}>
+                  <section className={styles.section}>
+                    <div className={styles.sectionHeader}>
+                      <div className={styles.sectionHeaderContent}>
+                        <div>
+                          <h2 className={styles.sectionTitle}>Related News</h2>
+                          <p className={styles.sectionSubtitle}>
+                            <span></span> 관련 소식
+                          </p>
+                        </div>
+                        <div className={styles.navigationButtons}>
+                          <button
+                            className={styles.navButton}
+                            onClick={handleNewsPrev}
+                            id="news-prev-btn"
+                            disabled={newsButtonsDisabled.prev}
+                          >
+                            <Icon type="arrow-left2-green" size={20} />
+                          </button>
+                          <button
+                            className={styles.navButton}
+                            onClick={handleNewsNext}
+                            id="news-next-btn"
+                            disabled={newsButtonsDisabled.next}
+                          >
+                            <Icon type="arrow-right2-green" size={20} />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                    <div className={styles.newsContent}>
+                      <Swiper
+                        modules={[Navigation]}
+                        grabCursor={true}
+                        allowTouchMove={true}
+                        navigation={{
+                          prevEl: "#news-prev-btn",
+                          nextEl: "#news-next-btn",
+                        }}
+                        breakpoints={{
+                          0: {
+                            slidesPerView: 1.3,
+                            spaceBetween: 16,
+                          },
+                          576: {
+                            slidesPerView: 2,
+                            spaceBetween: 18,
+                          },
+                          768: {
+                            slidesPerView: 3,
+                            spaceBetween: 20,
+                          },
+                          1024: {
+                            slidesPerView: 4,
+                            spaceBetween: 24,
+                          },
+                        }}
+                        onSwiper={(swiper) => {
+                          newsSwiperRef.current = swiper;
+                          updateNewsButtons();
+                        }}
+                        onSlideChange={() => {
+                          updateNewsButtons();
+                        }}
+                        className={styles.newsSwiper}
+                      >
+                        {relatedNews.map((news) => (
+                          <SwiperSlide key={news.id}>
+                            <div
+                              className={styles.newsCard}
+                              onClick={() => router.push(`/insights/${news.id}`)}
+                            >
+                              {news.thumbnail && (
+                                <div className={styles.newsThumbnail}>
+                                  <img
+                                    src={news.thumbnail.url}
+                                    alt={news.title}
+                                  />
+                                </div>
+                              )}
+                              <div className={styles.newsInfo}>
+                                <div className={styles.newsHeader}>
+                                  {  news.subMinorCategory && (
+                                    <p className={styles.newsCategory}>
+                                      {news.subMinorCategory?.name}
+                                    </p>
+                                  )}
+                                  <h3 className={styles.newsTitle}>
+                                    {news.title}
+                                  </h3>
+                                </div>
+                                <div className={styles.newsMeta}>
+                                  {news.authorName && (
+                                    <>
+                                      <span className={styles.newsAuthor}>
+                                        {news.authorName}
+                                      </span>
+                                      <span className={styles.newsSeparator}>
+                                      </span>
+                                    </>
+                                  )}
+                                  {news.createdAt && (
+                                    <span className={styles.newsDate}>
+                                      {formatDate(news.createdAt)}
                                     </span>
-                                    <span className={styles.newsSeparator}>
-                                    </span>
-                                  </>
-                                )}
-                                {news.createdAt && (
-                                  <span className={styles.newsDate}>
-                                    {formatDate(news.createdAt)}
-                                  </span>
-                                )}
+                                  )}
+                                </div>
                               </div>
                             </div>
-                          </div>
-                        </SwiperSlide>
-                      ))}
-                    </Swiper>
-                  </div>
-                </section>
+                          </SwiperSlide>
+                        ))}
+                      </Swiper>
+                    </div>
+                  </section>
+                </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
-      </div>
-      <ContactUs categoryId={data?.minorCategory?.id} />
-    
-      <Footer />
+        <ContactUs categoryId={data?.minorCategory?.id} />
+
+        <Footer />
       </div>
     </>
   );

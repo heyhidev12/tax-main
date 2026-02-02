@@ -57,11 +57,17 @@
     flex-shrink: 0;
     width: 101px;
     height: 48px;
-    // label 높이 (15px * 1.5 = 22.5px) + TextField gap (8px) = 30.5px
-    // input container 높이 (48px)와 버튼 높이 (48px)를 맞추기 위해
-    // 버튼을 input container의 하단에 맞추려면 margin-top을 조정
     margin-top: 30.5px; // label 높이 + gap
+    
+    &.active {
+      background-color: transparent;
+      border: 1px solid $primary-50;
+      color: $primary-50;
+      cursor: pointer;
+    }
   }
+  
+ 
 }
 
 // Button wrapper

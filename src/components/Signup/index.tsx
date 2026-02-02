@@ -711,9 +711,9 @@ const Signup: React.FC = () => {
               <Button
                 type="line-white"
                 size="xsmall"
-                disabled={!userId || isLoading}
+                disabled={!userId.trim() || isLoading}
                 onClick={handleCheckUserId}
-                className="signup-check-duplicate-button"
+                className={userId.trim() ? "signup-check-duplicate-button active" : "signup-check-duplicate-button"}
               >
                 {isLoading ? "확인 중..." : "중복 확인"}
               </Button>
@@ -859,9 +859,9 @@ const Signup: React.FC = () => {
               <Button
                 type="line-white"
                 size="medium"
-                disabled={!phone || isPhoneVerified || isLoading}
+                disabled={!phone.trim() || isPhoneVerified || isLoading}
                 onClick={handleRequestVerification}
-                className="signup-request-verification-button"
+                className={phone.trim() ? "signup-request-verification-button active" : "signup-request-verification-button"}
               >
                 {isLoading ? "발송 중..." : "인증 요청"}
               </Button>
@@ -898,9 +898,9 @@ const Signup: React.FC = () => {
                 <Button
                   type="line-white"
                   size="medium"
-                  disabled={!verificationCode || isLoading}
+                  disabled={!verificationCode.trim() || isLoading}
                   onClick={handleVerifyCode}
-                  className="signup-verify-code-button"
+                  className={verificationCode.trim() ? "signup-verify-code-button active" : "signup-verify-code-button"}
                 >
                   {isLoading ? "확인 중..." : "확인"}
                 </Button>

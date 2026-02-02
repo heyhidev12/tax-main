@@ -510,6 +510,12 @@
   align-items: center;
 }
 
+.signup-check-duplicate-button.active {
+  background-color: transparent;
+  border: 1px solid $primary-50;
+  color: $primary-50;
+}
+
 .signup-phone-input-group {
   display: flex;
   align-items: flex-end;
@@ -619,6 +625,11 @@
   padding: 6px !important;
 }
 
+.signup-request-verification-button.active {
+  background-color: transparent;
+  border: 1px solid $primary-50;
+  color: $primary-50;
+}
 // Verification Code Input Group
 .signup-verification-code-group {
   display: flex;
@@ -634,6 +645,12 @@
   width: 101px; // Figma 디자인: 101px width
   height: 48px; // Figma 디자인: 48px height
   flex-shrink: 0;
+}
+
+.signup-verify-code-button.active {
+  background-color: transparent;
+  border: 1px solid $primary-50;
+  color: $primary-50;
 }
 
 // Step 2 Buttons

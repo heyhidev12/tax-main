@@ -55,13 +55,19 @@ interface TrainingSeminarApplication {
   appliedAt: string;
 }
 
+// 상담 상태 enum - 백엔드와 동일
+enum ConsultationStatus {
+  PENDING = "PENDING",
+  COMPLETED = "COMPLETED",
+}
+
 interface ConsultationApplication {
   id: number;
   date: string;
   content: string;
   field: string;
   consultant: string;
-  status: "completed" | "received" | "pending" | "waiting";
+  status: ConsultationStatus;
   reply?: string;
 }
 
@@ -414,26 +420,23 @@ const MyPage: React.FC = () => {
       }
     };
 
-    // API status를 UI status로 변환
+    // API status를 상담 상태 enum으로 변환
     const mapStatus = (
       status: string,
-    ): "completed" | "received" | "pending" | "waiting" => {
-      const statusMap: Record<
-        string,
-        "completed" | "received" | "pending" | "waiting"
-      > = {
-        COMPLETED: "completed",
-        RECEIVED: "received",
-        WAITING: "waiting", // ✅ Backend uses WAITING, not PENDING
-        CONFIRMED: "completed", // ✅ CONFIRMED maps to completed for UI
-        CANCELLED: "pending", // ✅ CANCELLED shows as pending for UI
-        // 소문자 버전도 지원
-        completed: "completed",
-        received: "received",
-        pending: "pending",
-        waiting: "waiting",
-      };
-      return statusMap[status] || "pending";
+    ): ConsultationStatus => {
+      const normalized = status.toUpperCase();
+
+      switch (normalized) {
+        case "COMPLETED":
+        case "RECEIVED":
+        case "WAITING":
+        case "CONFIRMED":
+          return ConsultationStatus.COMPLETED;
+        case "CANCELLED":
+        case "PENDING":
+        default:
+          return ConsultationStatus.PENDING;
+      }
     };
 
     return {
@@ -1089,33 +1092,23 @@ const MyPage: React.FC = () => {
     setIsDetailModalOpen(true);
   };
 
-  const getStatusLabel = (status: string) => {
+  const getStatusLabel = (status: ConsultationStatus) => {
     switch (status) {
-      case "completed":
+      case ConsultationStatus.COMPLETED:
         return "상담완료";
-      case "received":
-        return "접수완료";
-      case "pending":
-        return "대기중";
-      case "waiting":
-        return "세무사 승인 대기중";
+      case ConsultationStatus.PENDING:
       default:
-        return status;
+        return "대기중";
     }
   };
 
-  const getStatusClass = (status: string) => {
+  const getStatusClass = (status: ConsultationStatus) => {
     switch (status) {
-      case "completed":
+      case ConsultationStatus.COMPLETED:
         return styles.statusCompleted;
-      case "received":
-        return styles.statusReceived;
-      case "pending":
-        return styles.statusPending;
-      case "waiting":
-        return styles.statusWaiting;
+      case ConsultationStatus.PENDING:
       default:
-        return "";
+        return styles.statusPending;
     }
   };
 
@@ -1754,10 +1747,12 @@ const MyPage: React.FC = () => {
                           fullWidth
                         />
                         <button
-                          className={styles.mobileVerifyRequestButton}
+                          className={`${styles.mobileVerifyRequestButton} ${
+                            phoneChangeForm.phoneNumber?.trim() ? styles.active : ''
+                          }`}
                           onClick={handleRequestPhoneVerification}
                           disabled={
-                            !phoneChangeForm.phoneNumber ||
+                            !phoneChangeForm.phoneNumber?.trim() ||
                             isRequestingVerification
                           }
                         >
@@ -1790,9 +1785,11 @@ const MyPage: React.FC = () => {
                             </span>
                           )}
                           <button
-                            className={styles.mobileVerifyCodeButton}
+                            className={`${styles.mobileVerifyCodeButton} ${
+                              verificationCode.trim() ? styles.active : ''
+                            }`}
                             onClick={handleVerifyPhoneCode}
-                            disabled={!verificationCode || isVerifyingCode}
+                            disabled={!verificationCode.trim() || isVerifyingCode}
                           >
                             {isVerifyingCode ? "확인 중..." : "인증 확인"}
                           </button>
@@ -2180,16 +2177,11 @@ const MyPage: React.FC = () => {
                               <span className={styles.mobileMemberCardField}>
                                 기장
                               </span>
-                              <span
-                                className={`${styles.mobileMemberCardStatus} ${
-                                  item.status === "completed"
-                                    ? styles.mobileMemberCardStatusCompleted
-                                    : item.status === "waiting" ||
-                                        item.status === "pending"
-                                      ? styles.mobileMemberCardStatusWaiting
-                                      : styles.mobileMemberCardStatusReceived
-                                }`}
-                              >
+                              <span className={`${styles.mobileMemberCardStatus} ${
+                                item.status === ConsultationStatus.COMPLETED
+                                  ? styles.mobileMemberCardStatusCompleted
+                                  : styles.mobileMemberCardStatusWaiting
+                              }`}>
                                 {getStatusLabel(item.status)}
                               </span>
                             </div>
@@ -2769,14 +2761,14 @@ const MyPage: React.FC = () => {
                             {!isVerificationRequested ? (
                               <button
                                 className={`${styles.changePasswordButton} ${
-                                  phoneChangeForm.phoneNumber &&
+                                  phoneChangeForm.phoneNumber?.trim() &&
                                   !phoneChangeError
                                     ? styles.changePasswordButtonActive
                                     : ""
                                 }`}
                                 onClick={handleRequestPhoneVerification}
                                 disabled={
-                                  !phoneChangeForm.phoneNumber ||
+                                  !phoneChangeForm.phoneNumber?.trim() ||
                                   !!phoneChangeError ||
                                   isRequestingVerification
                                 }
@@ -2854,13 +2846,13 @@ const MyPage: React.FC = () => {
                               )}
                               <button
                                 className={`${styles.changePasswordButton} ${
-                                  verificationCode && !isCodeVerified
+                                  verificationCode.trim() && !isCodeVerified
                                     ? styles.verifyCodeButtonActive
                                     : ""
                                 }`}
                                 onClick={handleVerifyPhoneCode}
                                 disabled={
-                                  !verificationCode ||
+                                  !verificationCode.trim() ||
                                   isCodeVerified ||
                                   isVerifyingCode ||
                                   !isTimerActive

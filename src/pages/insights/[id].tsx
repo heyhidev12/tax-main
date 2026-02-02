@@ -16,7 +16,6 @@ import { get } from "@/lib/api-server";
 import { API_ENDPOINTS, API_BASE_URL } from "@/config/api";
 import styles from "./detail.module.scss";
 
-// Toast UI Viewer는 클라이언트 사이드에서만 로드
 const Viewer = dynamic(
   () => import("@toast-ui/react-editor").then((mod) => mod.Viewer),
   { ssr: false },
@@ -111,12 +110,8 @@ const InsightDetailPage: React.FC<InsightDetailPageProps> = ({
   const { id } = router.query;
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [insight, setInsight] = useState<InsightDetail | null>(initialInsight);
-  const [prevInsight, setPrevInsight] = useState<InsightNavigation | null>(
-    null,
-  );
-  const [nextInsight, setNextInsight] = useState<InsightNavigation | null>(
-    null,
-  );
+  const [prevInsight, setPrevInsight] = useState<InsightNavigation | null>(null);
+  const [nextInsight, setNextInsight] = useState<InsightNavigation | null>(null);
   const [error, setError] = useState<string | null>(initialError);
   const [comments, setComments] = useState<Comment[]>([]);
   const [commentTotal, setCommentTotal] = useState(0);
@@ -129,7 +124,6 @@ const InsightDetailPage: React.FC<InsightDetailPageProps> = ({
     loginId?: string;
   } | null>(null);
 
-  // Refetch insight data when ID changes (for prev/next navigation)
   useEffect(() => {
     if (!id) return;
 
@@ -143,38 +137,31 @@ const InsightDetailPage: React.FC<InsightDetailPageProps> = ({
           setError(null);
         }
       } catch (err) {
-        console.error('Failed to fetch insight:', err);
         setError('Failed to load insight');
       }
     };
 
-    // Only fetch if the ID is different from current insight
     if (insight?.id !== Number(id)) {
       fetchInsightData();
     }
   }, [id]);
 
-  // Client-side: fetch comments, view increment, navigation
   useEffect(() => {
     if (!id || !insight) return;
 
-    // 로그인 상태 확인 및 사용자 정보 가져오기
     if (typeof window !== "undefined") {
       const token = localStorage.getItem("accessToken");
       setIsAuthenticated(!!token);
 
-      // 로그인된 경우 사용자 정보 가져오기
       if (token) {
         fetchCurrentUser();
       }
     }
 
-    // 댓글이 활성화되어 있으면 댓글 목록 가져오기
     if (insight.enableComments) {
-      const token =
-        typeof window !== "undefined"
-          ? localStorage.getItem("accessToken")
-          : null;
+      const token = typeof window !== "undefined"
+        ? localStorage.getItem("accessToken")
+        : null;
       if (token) {
         fetchCurrentUser().then((user) => fetchComments(user));
       } else {
@@ -182,28 +169,70 @@ const InsightDetailPage: React.FC<InsightDetailPageProps> = ({
       }
     }
 
-    // 조회수 증가 (클라이언트에서만 실행)
     if (typeof window !== "undefined") {
-      post(`${API_ENDPOINTS.INSIGHTS}/${id}/increment-view`).catch((err) => {
-        console.log("조회수 증가 실패:", err);
-      });
+      post(`${API_ENDPOINTS.INSIGHTS}/${id}/increment-view`).catch(() => {});
     }
 
-    // 이전/다음 글 가져오기 (같은 카테고리 내에서만)
     setPrevInsight(null);
     setNextInsight(null);
 
     (async () => {
       try {
-        // 현재 글의 카테고리 타입으로 필터링
-        const categoryType = insight.category?.type;
-        if (!categoryType) {
-          console.log('No category type found for insight');
-          return;
+        const urlParams = new URLSearchParams(window.location.search);
+        const categoryId = urlParams.get('category');
+        const subcategoryId = urlParams.get('sub');
+        const subMinorCategoryId = urlParams.get('subMinor');
+        const searchQuery = urlParams.get('search') || '';
+
+        let memberType = null;
+        let isApproved = null;
+        if (typeof window !== 'undefined') {
+          const token = localStorage.getItem("accessToken");
+          const userStr = localStorage.getItem("user");
+          if (token && userStr) {
+            try {
+              const user = JSON.parse(userStr);
+              memberType = user.memberType || null;
+              if (memberType === 'INSURANCE') {
+                isApproved = user.isApproved || null;
+              }
+            } catch (e) {}
+          }
         }
 
-        const navResponse = await getClient<{ items: InsightDetail[] }>(
-          `${API_ENDPOINTS.INSIGHTS}?page=1&limit=1000&category=${categoryType}`,
+        const params = new URLSearchParams();
+        params.append('page', '1');
+        params.append('limit', '1000');
+
+        const targetCategoryId = categoryId || (insight?.category?.id ? String(insight.category.id) : '');
+        if (targetCategoryId && targetCategoryId !== 'newsletter') {
+          params.append('categoryId', targetCategoryId);
+        }
+
+        if (subcategoryId && subcategoryId !== '0') {
+          params.append('subcategoryId', subcategoryId);
+        }
+
+        if (subMinorCategoryId) {
+          params.append('subMinorCategoryId', subMinorCategoryId);
+        }
+
+        if (searchQuery.trim()) {
+          params.append('search', searchQuery.trim());
+        }
+
+        if (memberType) {
+          params.append('memberType', memberType);
+        } else {
+          params.append('memberType', 'null');
+        }
+
+        if (isApproved !== null) {
+          params.append('isApproved', String(isApproved));
+        }
+
+        const navResponse = await getClient<{ items: InsightDetail[]; total: number }>(
+          `${API_ENDPOINTS.INSIGHTS}?${params.toString()}`,
         );
 
         if (navResponse.data && navResponse.data.items) {
@@ -212,9 +241,7 @@ const InsightDetailPage: React.FC<InsightDetailPageProps> = ({
             (item) => item.id === Number(id),
           );
 
-          // 현재 글을 찾았을 때만 처리
           if (currentIndex >= 0) {
-            // 이전 글 설정 (같은 카테고리 내에서)
             if (currentIndex > 0) {
               setPrevInsight({
                 id: items[currentIndex - 1].id,
@@ -222,7 +249,6 @@ const InsightDetailPage: React.FC<InsightDetailPageProps> = ({
               });
             }
 
-            // 다음 글 설정 (같은 카테고리 내에서)
             if (currentIndex < items.length - 1) {
               setNextInsight({
                 id: items[currentIndex + 1].id,
@@ -231,10 +257,7 @@ const InsightDetailPage: React.FC<InsightDetailPageProps> = ({
             }
           }
         }
-      } catch (err) {
-        // 네비게이션 실패는 무시
-        console.log("Navigation fetch failed:", err);
-      }
+      } catch (err) {}
     })();
   }, [id, insight]);
 
@@ -282,18 +305,67 @@ const InsightDetailPage: React.FC<InsightDetailPageProps> = ({
   };
 
   const handleBackToList = () => {
-    router.push("/insights");
+    const urlParams = new URLSearchParams(window.location.search);
+    const query: Record<string, string> = {};
+    
+    const category = urlParams.get('category');
+    const sub = urlParams.get('sub');
+    const search = urlParams.get('search');
+  
+    if (category) {
+      query.category = category;
+    } else if (insight?.category?.id) {
+      query.category = String(insight.category.id);
+    }
+    
+    // sub=0 bo'lsa ham qo'shamiz
+    if (sub) {
+      query.sub = sub;
+    } else if (insight?.subcategory?.id !== undefined) {
+      query.sub = String(insight.subcategory.id);
+    }
+    
+    if (search) {
+      query.search = search;
+    }
+  
+    router.push({
+      pathname: "/insights",
+      query: query
+    });
   };
 
   const handlePrevClick = () => {
     if (prevInsight && prevInsight.id) {
-      router.push(`/insights/${prevInsight.id}`);
+      const currentUrl = new URL(window.location.href);
+      const queryParams = new URLSearchParams(currentUrl.search);
+      const query: Record<string, string> = {};
+      
+      queryParams.forEach((value, key) => {
+        query[key] = value;
+      });
+
+      router.push({
+        pathname: `/insights/${prevInsight.id}`,
+        query: query
+      });
     }
   };
 
   const handleNextClick = () => {
     if (nextInsight && nextInsight.id) {
-      router.push(`/insights/${nextInsight.id}`);
+      const currentUrl = new URL(window.location.href);
+      const queryParams = new URLSearchParams(currentUrl.search);
+      const query: Record<string, string> = {};
+      
+      queryParams.forEach((value, key) => {
+        query[key] = value;
+      });
+
+      router.push({
+        pathname: `/insights/${nextInsight.id}`,
+        query: query
+      });
     }
   };
 
@@ -305,12 +377,11 @@ const InsightDetailPage: React.FC<InsightDetailPageProps> = ({
 
   const handleShare = async () => {
     if (typeof window === "undefined") return;
-  
+
     const url = window.location.href;
     const title = insight?.title || "인사이트";
     const text = `${title} - 세무 상담`;
-  
-    // Mobile share API
+
     if (navigator.share) {
       try {
         await navigator.share({
@@ -319,26 +390,19 @@ const InsightDetailPage: React.FC<InsightDetailPageProps> = ({
           url,
         });
         return;
-      } catch (err) {
-        // cancel bo‘lsa ham fallback qilamiz
-        console.warn("Share canceled or failed", err);
-      }
+      } catch (err) {}
     }
-  
-    // Clipboard fallback
+
     try {
       await navigator.clipboard.writeText(url);
       alert("링크가 클립보드에 복사되었습니다.");
     } catch (err) {
       alert("공유를 지원하지 않는 브라우저입니다.");
-      console.error("Clipboard error:", err);
     }
   };
-  
 
   const handleDownload = async (attachmentId: number, fileName: string) => {
     try {
-      // Prepare headers for authenticated requests
       const headers: HeadersInit = {};
       if (typeof window !== 'undefined') {
         const token = localStorage.getItem('accessToken');
@@ -346,21 +410,18 @@ const InsightDetailPage: React.FC<InsightDetailPageProps> = ({
           headers['Authorization'] = `Bearer ${token}`;
         }
       }
-      
-      // Use the API endpoint to download the file
+
       const downloadUrl = `${API_BASE_URL}/attachments/${attachmentId}/download`;
       const response = await fetch(downloadUrl, {
         method: 'GET',
         headers,
       });
-      
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      
+
       const blob = await response.blob();
-      
-      // Get the filename from Content-Disposition header if available, otherwise use provided fileName
       const contentDisposition = response.headers.get('Content-Disposition');
       let finalFileName = fileName;
       if (contentDisposition) {
@@ -369,8 +430,7 @@ const InsightDetailPage: React.FC<InsightDetailPageProps> = ({
           finalFileName = fileNameMatch[1].replace(/['"]/g, '');
         }
       }
-      
-      // Create a blob URL and trigger download
+
       const blobUrl = window.URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = blobUrl;
@@ -378,12 +438,10 @@ const InsightDetailPage: React.FC<InsightDetailPageProps> = ({
       link.style.display = "none";
       document.body.appendChild(link);
       link.click();
-      
-      // Clean up
+
       document.body.removeChild(link);
       window.URL.revokeObjectURL(blobUrl);
     } catch (error) {
-      console.error("다운로드 실패:", error);
       alert("파일 다운로드 중 오류가 발생했습니다.");
     }
   };
@@ -402,7 +460,6 @@ const InsightDetailPage: React.FC<InsightDetailPageProps> = ({
         setCurrentUser(response.data);
         return response.data;
       } else {
-        // localStorage에서 사용자 정보 가져오기 (fallback)
         const userStr = localStorage.getItem("user");
         if (userStr) {
           try {
@@ -415,14 +472,12 @@ const InsightDetailPage: React.FC<InsightDetailPageProps> = ({
             setCurrentUser(userInfo);
             return userInfo;
           } catch (e) {
-            // 파싱 실패 시 무시
             return null;
           }
         }
         return null;
       }
     } catch (err) {
-      // 인증 실패 시 localStorage에서 사용자 정보 가져오기
       const userStr = localStorage.getItem("user");
       if (userStr) {
         try {
@@ -435,7 +490,6 @@ const InsightDetailPage: React.FC<InsightDetailPageProps> = ({
           setCurrentUser(userInfo);
           return userInfo;
         } catch (e) {
-          // 파싱 실패 시 무시
           return null;
         }
       }
@@ -448,7 +502,6 @@ const InsightDetailPage: React.FC<InsightDetailPageProps> = ({
   ) => {
     if (!id) return;
 
-    // currentUser state 또는 파라미터로 전달된 user 사용
     const userToCompare = user !== undefined ? user : currentUser;
 
     try {
@@ -457,42 +510,29 @@ const InsightDetailPage: React.FC<InsightDetailPageProps> = ({
       );
 
       if (response.data) {
-        // 디버깅용 로그
-        if (process.env.NODE_ENV === "development") {
-          console.log("댓글 API 응답:", response.data);
-          console.log("현재 사용자:", userToCompare);
-        }
-
-        // isMine 필드가 없거나 false인 경우, 현재 사용자와 비교해서 설정
         const commentsWithIsMine = (response.data.items || []).map(
           (comment) => {
-            // API에서 isMine이 이미 true로 오면 그대로 사용
             if (comment.isMine === true) {
               return comment;
             }
 
-            // API에서 isMine이 없거나 false인 경우, 현재 사용자와 비교
             if (userToCompare && userToCompare.id) {
               let isMyComment = false;
 
-              // 1. member.id와 현재 사용자 id 비교 (가장 정확)
               if (comment.member?.id) {
                 isMyComment = comment.member.id === userToCompare.id;
               }
 
-              // 2. memberId와 현재 사용자 id 비교
               if (!isMyComment && comment.memberId) {
                 isMyComment = comment.memberId === userToCompare.id;
               }
 
-              // 3. authorId 또는 userId와 현재 사용자 id 비교
               if (!isMyComment && (comment.authorId || comment.userId)) {
                 isMyComment =
                   comment.authorId === userToCompare.id ||
                   comment.userId === userToCompare.id;
               }
 
-              // 4. authorName과 현재 사용자 name 또는 loginId 비교
               if (
                 !isMyComment &&
                 comment.authorName &&
@@ -501,20 +541,6 @@ const InsightDetailPage: React.FC<InsightDetailPageProps> = ({
                 isMyComment =
                   comment.authorName === userToCompare.name ||
                   comment.authorName === userToCompare.loginId;
-              }
-
-              if (process.env.NODE_ENV === "development") {
-                console.log(`댓글 ${comment.id}:`, {
-                  authorName: comment.authorName,
-                  memberId: comment.memberId,
-                  memberObjId: comment.member?.id,
-                  authorId: comment.authorId,
-                  userId: comment.userId,
-                  currentUserId: userToCompare.id,
-                  currentUserName: userToCompare.name,
-                  currentUserLoginId: userToCompare.loginId,
-                  isMyComment,
-                });
               }
 
               return { ...comment, isMine: isMyComment };
@@ -527,15 +553,12 @@ const InsightDetailPage: React.FC<InsightDetailPageProps> = ({
         setComments(commentsWithIsMine);
         setCommentTotal(response.data.total || 0);
       }
-    } catch (err) {
-      console.error("댓글 불러오기 실패:", err);
-    }
+    } catch (err) {}
   };
 
   const handleSubmitComment = async () => {
     if (!id || !commentText.trim() || isSubmittingComment) return;
 
-    // 로그인 체크
     if (!isAuthenticated) {
       if (
         confirm(
@@ -558,13 +581,11 @@ const InsightDetailPage: React.FC<InsightDetailPageProps> = ({
         const newComment = response.data;
         setCommentText("");
 
-        // 새로 작성한 댓글은 무조건 isMine: true로 설정하여 즉시 추가
         const newCommentWithIsMine: Comment = {
           ...newComment,
           isMine: true,
         };
 
-        // 댓글 목록에 새 댓글을 직접 추가 (맨 앞 또는 맨 뒤에 추가)
         setComments((prevComments) => [...prevComments, newCommentWithIsMine]);
         setCommentTotal((prevTotal) => prevTotal + 1);
       } else if (response.error) {
@@ -576,7 +597,6 @@ const InsightDetailPage: React.FC<InsightDetailPageProps> = ({
         }
       }
     } catch (err) {
-      console.error("댓글 작성 실패:", err);
       alert("댓글 작성 중 오류가 발생했습니다.");
     } finally {
       setIsSubmittingComment(false);
@@ -586,7 +606,6 @@ const InsightDetailPage: React.FC<InsightDetailPageProps> = ({
   const handleDeleteComment = async (commentId: number) => {
     if (!id || !confirm("댓글을 삭제하시겠습니까?")) return;
 
-    // 로그인 체크
     if (!isAuthenticated) {
       alert("로그인이 필요합니다.");
       return;
@@ -598,7 +617,6 @@ const InsightDetailPage: React.FC<InsightDetailPageProps> = ({
       );
 
       if (!response.error) {
-        // 댓글 목록 새로고침
         await fetchComments(currentUser);
       } else {
         if (response.status === 401) {
@@ -611,7 +629,6 @@ const InsightDetailPage: React.FC<InsightDetailPageProps> = ({
         }
       }
     } catch (err) {
-      console.error("댓글 삭제 실패:", err);
       alert("댓글 삭제 중 오류가 발생했습니다.");
     }
   };
@@ -619,7 +636,6 @@ const InsightDetailPage: React.FC<InsightDetailPageProps> = ({
   const handleReportComment = async (commentId: number) => {
     if (!id || !confirm("이 댓글을 신고하시겠습니까?")) return;
 
-    // 로그인 체크
     if (!isAuthenticated) {
       if (
         confirm(
@@ -650,7 +666,6 @@ const InsightDetailPage: React.FC<InsightDetailPageProps> = ({
         }
       }
     } catch (err) {
-      console.error("댓글 신고 실패:", err);
       alert("댓글 신고 중 오류가 발생했습니다.");
     }
   };
@@ -863,9 +878,8 @@ const InsightDetailPage: React.FC<InsightDetailPageProps> = ({
                         <>
                           <div
                             key={comment.id}
-                            className={`${styles.commentItem} ${
-                              comment.isHidden ? styles.commentHidden : ""
-                            }`}
+                            className={`${styles.commentItem} ${comment.isHidden ? styles.commentHidden : ""
+                              }`}
                           >
                             <div className={styles.commentHeader}>
                               <span className={styles.commentAuthorName}>
@@ -997,7 +1011,6 @@ export const getServerSideProps: GetServerSideProps<
       };
     }
   } catch (err) {
-    console.error("Failed to fetch insight detail:", err);
     return {
       props: {
         insight: null,
