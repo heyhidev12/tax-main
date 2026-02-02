@@ -601,6 +601,7 @@
   width: 100%;
   aspect-ratio: 400 / 300;
   overflow: hidden;
+  position: relative;
 
   img {
     width: 100%;
@@ -617,6 +618,15 @@
       border-radius: 4px !important;
     }
   }
+}
+.cardImageDimmedOverlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.40);
+  border-radius: 8px;
 }
 
 .cardContent {

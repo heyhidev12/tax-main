@@ -214,10 +214,6 @@ const EducationDetailPage: React.FC<EducationDetailPageProps> = ({ education: in
     return diffDays > 0 ? diffDays : 0;
   };
 
-  const formatDate = (dateString: string) => {
-    return dateString.replace(/\./g, ".");
-  };
-
   // 교육 일자 포맷팅 (첫 번째 날짜 ~ 마지막 날짜 형식)
   const formatEducationDates = (dates: string[]) => {
     if (!dates || dates.length === 0) return "";
@@ -332,10 +328,21 @@ const EducationDetailPage: React.FC<EducationDetailPageProps> = ({ education: in
   }
 
   const daysLeft = getDaysUntilDeadline(education.recruitmentEndDate);
+  const checkRecruitmentClosed = () => {
+    if (!education.recruitmentEndDate) return false;
+    const today = new Date();
+    const endDate = new Date(education.recruitmentEndDate);
 
+    // 날짜만 비교 (시/분/초 무시) → 마감일 당일(endDate와 같은 날)에는 신청 가능
+    today.setHours(0, 0, 0, 0);
+    endDate.setHours(0, 0, 0, 0);
+
+    return today > endDate;
+  };
+
+  const isRecruitmentClosed = checkRecruitmentClosed();
   // ✅ Use myApplication from dedicated API endpoint (not education.applications array)
   const userApplication = myApplication;
-  const hasApplication = !!userApplication;
 
   // 버튼 상태 결정 - 올바른 ApplicationStatus만 사용 (백엔드 enum과 정확히 일치)
   const getButtonState = () => {
@@ -416,6 +423,13 @@ const EducationDetailPage: React.FC<EducationDetailPageProps> = ({ education: in
 
   // 버튼 렌더링 함수 - 올바른 상태만 처리
   const renderActionButton = () => {
+    if (isRecruitmentClosed) {
+      return (
+        <button className={styles.closedButton} disabled>
+          모집 종료
+        </button>
+      );
+    }
     // State: WAITING - 승인 대기중
     if (buttonState === "waiting") {
       return (
@@ -440,12 +454,12 @@ const EducationDetailPage: React.FC<EducationDetailPageProps> = ({ education: in
           <button className={styles.pendingButton} disabled>
             신청 완료
           </button>
-          <button
+         {daysLeft > 0 && <button
             className={styles.cancelLink}
             onClick={handleCancelApplication}
           >
             신청 취소
-          </button>
+          </button>}
         </>
       );
     }

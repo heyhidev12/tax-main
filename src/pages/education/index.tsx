@@ -76,7 +76,7 @@ const EducationPage: React.FC<EducationPageProps> = ({
   const fetchUserProfile = async () => {
     try {
       setIsLoadingAuth(true);
-      
+
       // Check for token before calling /me
       const token = localStorage.getItem('accessToken');
       if (!token) {
@@ -85,7 +85,7 @@ const EducationPage: React.FC<EducationPageProps> = ({
         setIsLoadingAuth(false);
         return;
       }
-      
+
       // Token exists: fetch user profile
       const response = await getClient<UserProfile>(API_ENDPOINTS.AUTH.ME);
       if (response.data) {
@@ -105,13 +105,13 @@ const EducationPage: React.FC<EducationPageProps> = ({
   // Build query params for API calls with user filtering
   const buildUserFilterParams = () => {
     const params = new URLSearchParams();
-    
+
     if (!userProfile) {
       // Not logged in: explicitly send memberType=null for guest filtering
       params.append('memberType', 'null');
       return `&${params.toString()}`;
     }
-    
+
     // Logged in: send actual user data
     if (userProfile.memberType) {
       params.append('memberType', userProfile.memberType);
@@ -120,7 +120,7 @@ const EducationPage: React.FC<EducationPageProps> = ({
     if (userProfile.memberType === 'INSURANCE' && 'isApproved' in userProfile) {
       params.append('isApproved', String((userProfile as any).isApproved));
     }
-    
+
     return params.toString() ? `&${params.toString()}` : '';
   };
 
@@ -162,17 +162,17 @@ const EducationPage: React.FC<EducationPageProps> = ({
   useEffect(() => {
     // Don't fetch until auth is initialized
     if (isLoadingAuth) return;
-    
+
     if (initialNewEducationList.length === 0) {
       const fetchSwiperData = async () => {
         setIsLoadingSwiper(true);
         setError(null);
-        
+
         try {
           const params = new URLSearchParams({
             page: '1',
             limit: '8',
-            sort: 'latest',
+            sort: 'new',
           });
           const userParams = buildUserFilterParams();
 
@@ -202,11 +202,11 @@ const EducationPage: React.FC<EducationPageProps> = ({
   useEffect(() => {
     // Don't fetch until auth is initialized
     if (isLoadingAuth) return;
-    
+
     const fetchListData = async () => {
       setIsLoadingEducationList(true);
       setError(null);
-      
+
       try {
         const params = new URLSearchParams({
           page: currentPage.toString(),
@@ -265,7 +265,7 @@ const EducationPage: React.FC<EducationPageProps> = ({
       const createdDate = new Date(item.createdAt);
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-      
+
       // If created more than 30 days ago, exclude from "New Education"
       if (createdDate < thirtyDaysAgo) {
         return false;
@@ -341,9 +341,9 @@ const EducationPage: React.FC<EducationPageProps> = ({
         <Header variant="white" onMenuClick={() => setIsMenuOpen(true)} isFixed={true} />
         <Menu isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
         <div className={styles.headerImage}>
-        <h1 className={styles.headerTitle}>EDUCATION</h1>
-        <p className={styles.headerSubtitle}>교육/세미나</p>
-      </div>
+          <h1 className={styles.headerTitle}>EDUCATION</h1>
+          <p className={styles.headerSubtitle}>교육/세미나</p>
+        </div>
         <div className="container">
           <div className={styles.pageHeaderWrapper}>
             <PageHeader
@@ -476,19 +476,20 @@ const EducationPage: React.FC<EducationPageProps> = ({
                                 onClick={() => router.push(`/education/${item.id}`)}
                               >
                                 <div className={styles.cardImage}>
+                                  {daysLeft <= 0 && (<div className={styles.cardImageDimmedOverlay}></div>)}
                                   <img src={item.image?.url || '/images/education/default-thumbnail.png'} alt={item.name} />
                                 </div>
                                 <div className={styles.cardContent}>
                                   <div className={styles.cardLabels}>
-                                  {daysLeft > 0 ? (
-                                        <span className={styles.labelRed}>
-                                          신청마감 D-{daysLeft}
-                                        </span>
-                                      ) : (
-                                        <span className={styles.labelGray}>
-                                          신청마감
-                                        </span>
-                                      )}
+                                    {daysLeft > 0 ? (
+                                      <span className={styles.labelRed}>
+                                        신청마감 D-{daysLeft}
+                                      </span>
+                                    ) : (
+                                      <span className={styles.labelGray}>
+                                        신청마감
+                                      </span>
+                                    )}
                                     <span className={styles.labelWhite}>
                                       {item.typeLabel}
                                     </span>
@@ -498,7 +499,7 @@ const EducationPage: React.FC<EducationPageProps> = ({
                                     <p className={styles.cardLocation}>{item.location}</p>
                                     <div className={styles.cardDateWrapper}>
                                       <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className={styles.cardDateIcon}>
-                                        <path d="M3 2V4M13 2V4M2 6H14M3 2H13C13.5523 2 14 2.44772 14 3V13C14 13.5523 13.5523 14 13 14H3C2.44772 14 2 13.5523 2 13V3C2 2.44772 2.44772 2 3 2Z" stroke="#aaaaaa" strokeWidth="1" strokeLinecap="round" />
+                                        <path d="M3 2V4M13 2V4M2 6H14M3 2H13C13.5523 2 14 2.44772 14 3V13C14 13.5523 13.5523 14 13 14H3C2.44772 14 2 13.5523 2 13V3C2 2.44772 2.44772 2 3 2Z" stroke="#555555" strokeWidth="1" strokeLinecap="round" />
                                       </svg>
                                       <p className={styles.cardDate}>
                                         {item.educationDates[0]} {item.educationTimeSlots[0]}
@@ -576,6 +577,8 @@ const EducationPage: React.FC<EducationPageProps> = ({
                                   onClick={() => router.push(`/education/${item.id}`)}
                                 >
                                   <div className={styles.cardImage}>
+                                  {daysLeft <= 0 && (<div className={styles.cardImageDimmedOverlay}></div>)}
+
                                     <img className={styles.cardImageImg} src={item.image?.url || '/images/education/default-thumbnail.png'} alt={item.name} />
                                   </div>
                                   <div className={styles.cardContent}>
@@ -598,7 +601,7 @@ const EducationPage: React.FC<EducationPageProps> = ({
                                       <p className={styles.cardLocation}>{item.location}</p>
                                       <div className={styles.cardDateWrapper}>
                                         <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className={styles.cardDateIcon}>
-                                          <path d="M3 2V4M13 2V4M2 6H14M3 2H13C13.5523 2 14 2.44772 14 3V13C14 13.5523 13.5523 14 13 14H3C2.44772 14 2 13.5523 2 13V3C2 2.44772 2.44772 2 3 2Z" stroke="#d8d8d8" strokeWidth="1" strokeLinecap="round" />
+                                          <path d="M3 2V4M13 2V4M2 6H14M3 2H13C13.5523 2 14 2.44772 14 3V13C14 13.5523 13.5523 14 13 14H3C2.44772 14 2 13.5523 2 13V3C2 2.44772 2.44772 2 3 2Z" stroke="#555555" strokeWidth="1" strokeLinecap="round" />
                                         </svg>
                                         <p className={styles.cardDate}>
                                           {item.educationDates[0]} {item.educationTimeSlots[0]}
@@ -658,10 +661,11 @@ const EducationPage: React.FC<EducationPageProps> = ({
 export const getServerSideProps: GetServerSideProps<EducationPageProps> = async () => {
   try {
     // Fetch initial swiper data (new education section) server-side
+    // ✅ Use the same sort key as client-side: 'new'
     const swiperParams = new URLSearchParams({
       page: '1',
       limit: '8',
-      sort: 'latest',
+      sort: 'new',
     });
 
     const swiperResponse = await get<EducationListResponse>(
