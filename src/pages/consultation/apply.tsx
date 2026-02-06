@@ -711,7 +711,7 @@ const ConsultationApplyPage: React.FC = () => {
 
       const phoneResult = validatePhone(formData.phone);
       if (!phoneResult.valid) {
-        setFieldErrors(prev => ({ ...prev, phone: phoneResult.error ?? undefined }));
+        setFieldErrors(prev => ({ ...prev, phone: phoneResult.error || '유효하지 않은 전화번호입니다' }));
         setIsSubmitting(false);
         return;
       }
