@@ -208,14 +208,10 @@ const ExpertDetailPage: React.FC<ExpertDetailPageProps> = ({
   }, [id, data]);
 
   useEffect(() => {
-    if (
-      data?.categories &&
-      data.categories.length > 0 &&
-      typeof id === "string"
-    ) {
+    if (data?.id) {
       fetchRelatedExperts();
     }
-  }, [data?.categories, id]);
+  }, [data?.id]);
 
   const getUserAuthState = () => {
     if (typeof window === 'undefined') {
@@ -289,43 +285,23 @@ const ExpertDetailPage: React.FC<ExpertDetailPageProps> = ({
 
   const fetchRelatedExperts = async () => {
     try {
-      if (!data?.categories || data.categories.length === 0) return;
+      if (!data?.id) return;
 
-      // Get first category ID (categories are already sorted by displayOrder from backend)
-      const firstCategory = data.categories[0];
-      const categoryId = firstCategory.categoryId;
+      // Use the new backend API for related experts
+      // Backend handles: category matching, deduplication, display order, random ordering, excluding current expert
+      const url = `${API_ENDPOINTS.MEMBERS}/${data.id}/related`;
+      const membersResponse = await getClient<Expert[]>(url);
 
-      if (!categoryId) return;
-
-      const url = `${API_ENDPOINTS.MEMBERS}?page=1&limit=20&categoryId=${categoryId}`;
-      const membersResponse = await getClient<
-        Expert[] | { items: Expert[]; data: Expert[] }
-      >(url);
-
-      if (membersResponse.data) {
-        let expertsList: Expert[] = [];
-        if (Array.isArray(membersResponse.data)) {
-          expertsList = membersResponse.data;
-        } else {
-          const response = membersResponse.data as {
-            items?: Expert[];
-            data?: Expert[];
-          };
-          expertsList = response.items || response.data || [];
-        }
-
-        // Filter out current expert and transform data
-        // Use categories from backend (already sorted by displayOrder)
-        expertsList = expertsList
-          .filter((expert) => expert.id !== data?.id)
-          .map((expert) => ({
-            ...expert,
-            tags: expert.categories
-              ? expert.categories.map((cat) => cat.categoryName)
-              : expert.tags || [],
-            tel: expert.tel || expert.phoneNumber,
-            position: expert.position || expert.affiliation || "세무사",
-          }));
+      if (membersResponse.data && Array.isArray(membersResponse.data)) {
+        // Transform data for display - no sorting/filtering, just map categories to tags
+        const expertsList = membersResponse.data.map((expert) => ({
+          ...expert,
+          tags: expert.categories
+            ? expert.categories.map((cat) => cat.categoryName)
+            : expert.tags || [],
+          tel: expert.tel || expert.phoneNumber,
+          position: expert.position || expert.affiliation || "세무사",
+        }));
 
         setExperts(expertsList);
       }

@@ -1153,9 +1153,13 @@ const HistoryPage: React.FC = () => {
               <div className={styles.ciGuideSection}>
                 {/* Main Logo Block */}
                 <div className={styles.ciMainLogoBlock}>
-                  <div className={styles.ciMainLogo}>
+                  <a
+                    href="/images/logo/logo_big.png"
+                    download="together-logo-big.png"
+                    className={styles.ciMainLogo}
+                  >
                     <img src="/images/logo/logo_big.png" alt="세무법인 함께" />
-                  </div>
+                  </a>
                   <div className={styles.ciDivider} />
                   <p className={styles.ciTagline}>
                     세무법인 함께 컬러는,{" "} <br className="mobileBr" />
@@ -1223,38 +1227,54 @@ const HistoryPage: React.FC = () => {
                       <div className={styles.ciLogoVariations}>
                         <div className={styles.ciLogoVariationsTop}>
                           <div className={styles.ciLogoVariation}>
-                            <div className={styles.ciLogoWhiteBg}>
+                            <a
+                              href="/images/logo/logo_main.png"
+                              download="together-logo-main.png"
+                              className={styles.ciLogoWhiteBg}
+                            >
                               <img
                                 src="/images/logo/logo_main.png"
                                 alt="세무법인 함께"
                               />
-                            </div>
+                            </a>
                           </div>
                           <div className={styles.ciLogoVariation}>
-                            <div className={styles.ciLogoWhiteBg}>
+                            <a
+                              href="/images/logo/logo_square.png"
+                              download="together-logo-square.png"
+                              className={styles.ciLogoWhiteBg}
+                            >
                               <img
                                 src="/images/logo/logo_square.png"
                                 alt="세무법인 함께"
                               />
-                            </div>
+                            </a>
                           </div>
                         </div>
                         <div className={styles.ciLogoVariationsBottom}>
                           <div className={styles.ciLogoVariation}>
-                            <div className={styles.ciLogoGreenBg}>
+                            <a
+                              href="/images/logo/logo.svg"
+                              download="together-logo-white.svg"
+                              className={styles.ciLogoGreenBg}
+                            >
                               <img
                                 src="/images/logo/logo.svg"
                                 alt="세무법인 함께"
                               />
-                            </div>
+                            </a>
                           </div>
                           <div className={styles.ciLogoVariation}>
-                            <div className={styles.ciLogoGreenBg}>
+                            <a
+                              href="/images/logo/logo_square_white.svg"
+                              download="together-logo-square-white.svg"
+                              className={styles.ciLogoGreenBg}
+                            >
                               <img
                                 src="/images/logo/logo_square_white.svg"
                                 alt="세무법인 함께"
                               />
-                            </div>
+                            </a>
                           </div>
                         </div>
                       </div>
