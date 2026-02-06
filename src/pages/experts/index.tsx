@@ -7,6 +7,7 @@ import PageHeader from "@/components/common/PageHeader";
 import FloatingButton from "@/components/common/FloatingButton";
 import Icon from "@/components/common/Icon";
 import Card, { ProfileTag } from "@/components/common/Card";
+import Pagination from "@/components/common/Pagination";
 import SEO from "@/components/common/SEO";
 import { get } from "@/lib/api";
 import { API_ENDPOINTS } from "@/config/api";
@@ -332,44 +333,6 @@ const ExpertsPage: React.FC = () => {
     router.push("/consultation/apply");
   };
 
-  // Generate pagination numbers
-  const getPaginationNumbers = () => {
-    const pages: (number | string)[] = [];
-    const maxVisiblePages = isMobile ? 5 : 7;
-    
-    if (totalPages <= maxVisiblePages) {
-      for (let i = 1; i <= totalPages; i++) {
-        pages.push(i);
-      }
-    } else {
-      if (currentPage <= 3) {
-        for (let i = 1; i <= Math.min(5, totalPages); i++) {
-          pages.push(i);
-        }
-        if (totalPages > 5) {
-          pages.push("...");
-          pages.push(totalPages);
-        }
-      } else if (currentPage >= totalPages - 2) {
-        pages.push(1);
-        pages.push("...");
-        for (let i = totalPages - 4; i <= totalPages; i++) {
-          if (i > 1) pages.push(i);
-        }
-      } else {
-        pages.push(1);
-        pages.push("...");
-        for (let i = currentPage - 1; i <= currentPage + 1; i++) {
-          pages.push(i);
-        }
-        pages.push("...");
-        pages.push(totalPages);
-      }
-    }
-    
-    return pages;
-  };
-
   // Get result title
   const getResultTitle = () => {
     if (selectedCategoryName && searchKeyword.trim()) {
@@ -595,46 +558,13 @@ const ExpertsPage: React.FC = () => {
 
                         {/* Pagination */}
                         {totalPages > 1 && (
-                          <div className={styles.pagination}>
-                            <button
-                              className={styles.paginationArrow}
-                              onClick={() => handlePageChange(currentPage - 1)}
-                              disabled={currentPage === 1}
-                              aria-label="이전 페이지"
-                            >
-                              <Icon type="arrow-left" size={20} />
-                            </button>
-                            
-                            <div className={styles.paginationNumbers}>
-                              {getPaginationNumbers().map((page, index) => (
-                                typeof page === "number" ? (
-                                  <button
-                                    key={index}
-                                    className={`${styles.paginationNumber} ${
-                                      currentPage === page
-                                        ? styles.paginationNumberActive
-                                        : ""
-                                    }`}
-                                    onClick={() => handlePageChange(page)}
-                                  >
-                                    {page}
-                                  </button>
-                                ) : (
-                                  <span key={index} className={styles.paginationEllipsis}>
-                                    {page}
-                                  </span>
-                                )
-                              ))}
-                            </div>
-                            
-                            <button
-                              className={styles.paginationArrow}
-                              onClick={() => handlePageChange(currentPage + 1)}
-                              disabled={currentPage === totalPages}
-                              aria-label="다음 페이지"
-                            >
-                              <Icon type="arrow-right" size={20} />
-                            </button>
+                          <div className={styles.paginationWrapper}>
+                            <Pagination
+                              currentPage={currentPage}
+                              totalPages={totalPages}
+                              onPageChange={handlePageChange}
+                              visiblePages={4}
+                            />
                           </div>
                         )}
                       </>

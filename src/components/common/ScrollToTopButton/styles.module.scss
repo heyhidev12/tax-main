@@ -18,7 +18,8 @@
   }
 
   @media (max-width: 767px) {
-    bottom: 116px; /* Above consult (~40 + 64 + 12) */
+    /* Use CSS variable for bottom position, allowing page-specific overrides */
+    bottom: var(--scroll-top-bottom, 116px);
     right: 20px;
   }
 }

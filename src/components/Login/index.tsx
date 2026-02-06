@@ -3,7 +3,7 @@ import { useRouter } from 'next/router';
 import Link from 'next/link';
 import Header from '@/components/common/Header';
 import Menu from '@/components/Menu';
-import { post } from '@/lib/api';
+import { post, setAuthToken } from '@/lib/api';
 import { API_BASE_URL, API_ENDPOINTS } from '@/config/api';
 import Footer from '../Footer';
 
@@ -70,7 +70,7 @@ const Login: React.FC = () => {
       // 토큰 저장
       if (data.accessToken) {
         localStorage.setItem('accessToken', data.accessToken);
-
+        setAuthToken(data.accessToken, rememberMe);
         // 자동 로그인 설정 시 토큰을 더 오래 유지
         if (rememberMe) {
           localStorage.setItem('autoLogin', 'true');

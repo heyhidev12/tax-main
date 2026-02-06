@@ -64,6 +64,17 @@ html {
   scroll-behavior: smooth;
   overflow-x: hidden;
   overflow-y: scroll;
+
+  // Default ScrollToTop button position for mobile
+  --scroll-top-bottom: 116px;
+}
+
+// Education detail page: position ScrollToTop 16px above consult button
+// Consult button is at bottom: 120px, height 64px, so ScrollToTop bottom = 120 + 64 + 16 = 200px
+html:has([class*="stickyButtonWrapper"]) {
+  @media (max-width: 767px) {
+    --scroll-top-bottom: 200px;
+  }
 }
 
 body {

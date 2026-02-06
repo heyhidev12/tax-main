@@ -103,6 +103,12 @@
       &:hover {
         background: #fff;
         color: #002c2c;
+
+        svg {
+          path {
+            stroke: #002c2c;
+          }
+        }
       }
     }
   }

@@ -539,107 +539,16 @@
 }
 
 // Pagination
-.pagination {
+.paginationWrapper {
   display: flex;
-  align-items: center;
   justify-content: center;
-  gap: 8px;
+  align-items: center;
   margin-top: 40px;
   padding-bottom: 40px;
 
   @media (max-width: $breakpoint-tablet) {
-    gap: 4px;
     margin-top: 24px;
     padding-bottom: 24px;
-  }
-}
-
-.paginationArrow {
-  width: 40px;
-  height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid $gray-20;
-  border-radius: 8px;
-  background: #fff;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  color: $gray-70;
-
-  &:hover:not(:disabled) {
-    border-color: $primary-50;
-    color: $primary-50;
-  }
-
-  &:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
-  }
-
-  @media (max-width: $breakpoint-tablet) {
-    width: 36px;
-    height: 36px;
-  }
-}
-
-.paginationNumbers {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.paginationNumber {
-  min-width: 40px;
-  height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: none;
-  border-radius: 8px;
-  background: transparent;
-  font-family: $font-pretendard;
-  font-weight: 500;
-  font-size: 15px;
-  color: $gray-70;
-  cursor: pointer;
-  transition: all 0.2s ease;
-
-  &:hover {
-    background: $gray-10;
-  }
-
-  @media (max-width: $breakpoint-tablet) {
-    min-width: 36px;
-    height: 36px;
-    font-size: 14px;
-  }
-}
-
-.paginationNumberActive {
-  background: $primary-50;
-  color: #fff;
-
-  &:hover {
-    background: $primary-60;
-  }
-}
-
-.paginationEllipsis {
-  min-width: 40px;
-  height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-family: $font-pretendard;
-  font-weight: 500;
-  font-size: 15px;
-  color: $gray-50;
-
-  @media (max-width: $breakpoint-tablet) {
-    min-width: 32px;
-    height: 36px;
-    font-size: 14px;
   }
 }
 

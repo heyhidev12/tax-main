@@ -257,12 +257,19 @@ const ServiceAreas = React.memo(function ServiceAreas({ initialData }: ServiceAr
     const isHovered = hoveredCard === card.id;
     const majorId = activeGroup?.majorCategory?.id;
 
+    const handleCardClick = () => {
+      if (!majorId) return;
+      router.push(`/business-areas/hierarchical?tab=${majorId}&subtab=${card.id}`);
+    };
+
     return (
       <div
         key={card.id}
         className={`${styles["service-card"]} ${isHovered ? styles["service-card--hovered"] : ""}`}
         onMouseEnter={() => setHoveredCard(card.id)}
         onMouseLeave={() => setHoveredCard(null)}
+        onClick={isMobile ? handleCardClick : undefined}
+        style={isMobile ? { cursor: "pointer" } : undefined}
       >
         <div className={styles["service-card__image"]}>
           <img src={card.image} alt={card.title} />
@@ -275,10 +282,7 @@ const ServiceAreas = React.memo(function ServiceAreas({ initialData }: ServiceAr
               className={styles["service-card__arrow"]}
               onClick={(e) => {
                 e.stopPropagation();
-                if (!majorId) return;
-                router.push(
-                  `/business-areas/hierarchical?tab=${majorId}&subtab=${card.id}`,
-                );
+                handleCardClick();
               }}
             >
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
