@@ -157,7 +157,7 @@ export const getServerSideProps: GetServerSideProps<HomePageProps> = async () =>
       get<{ items: Award[]; isExposed: boolean }>(
         `${API_ENDPOINTS.AWARDS}?page=1&limit=10&isMainExposed=true`
       ).catch(() => ({ data: { items: [], isExposed: false } })),
-      get<{ items: InsightItem[] }>(`${API_ENDPOINTS.INSIGHTS}?page=1&limit=10`).catch(() => ({
+      get<{ items: InsightItem[] }>(`${API_ENDPOINTS.INSIGHTS}?page=1&limit=10&isMainExposed=true&memberType=ALL`).catch(() => ({
         data: { items: [] },
       })),
       get<{ items: KeyCustomer[] }>(`${API_ENDPOINTS.KEY_CUSTOMERS}?page=1&limit=20&isMainExposed=true`).catch(() => ({
@@ -168,10 +168,7 @@ export const getServerSideProps: GetServerSideProps<HomePageProps> = async () =>
     // Process hero banner
     let heroBanner: BannerMedia | null = null;
     if (bannersResponse.data && Array.isArray(bannersResponse.data) && bannersResponse.data.length > 0) {
-      const sorted = [...bannersResponse.data].sort(
-        (a, b) => (a.displayOrder ?? 0) - (b.displayOrder ?? 0)
-      );
-      heroBanner = sorted[0];
+      heroBanner = bannersResponse.data[0];
     }
 
     // Process service areas
@@ -222,9 +219,7 @@ export const getServerSideProps: GetServerSideProps<HomePageProps> = async () =>
       }
       
       if (expertsList.length > 0) {
-        experts = [...expertsList].sort(
-          (a, b) => (a.displayOrder ?? 0) - (b.displayOrder ?? 0)
-        );
+        experts = expertsList;
       }
     }
 
@@ -236,22 +231,15 @@ export const getServerSideProps: GetServerSideProps<HomePageProps> = async () =>
       Array.isArray(awardsResponse.data.items) &&
       awardsResponse.data.isExposed === true
     ) {
-      // Backend already filtered by isMainExposed=true, just sort by displayOrder
-      awards = [...awardsResponse.data.items].sort(
-        (a, b) => (a.displayOrder ?? 0) - (b.displayOrder ?? 0)
-      );
+      // Backend already filtered by isMainExposed=true and returns correct order
+      awards = awardsResponse.data.items;
       awardsIsExposed = true;
     }
 
     // Process insights
     let insights: InsightItem[] = [];
     if (insightsResponse.data?.items && Array.isArray(insightsResponse.data.items)) {
-      const exposedItems = insightsResponse.data.items.filter(
-        (item) => item.isMainExposed === true
-      );
-      insights = exposedItems.filter(
-        (item) => item.category?.targetMemberType === 'ALL'
-      );
+      insights = insightsResponse.data.items;
     }
 
     // Process clients - backend filters by isMainExposed=true
