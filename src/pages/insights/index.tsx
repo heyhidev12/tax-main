@@ -490,7 +490,24 @@ const InsightsPage: React.FC<InsightsPageProps> = ({
         );
         setHierarchicalData(response?.data || []);
 
-        
+        // Auto-redirect to first category when no category is in URL
+        const currentCategory = String(router.query.category || "");
+        if (!currentCategory && response?.data && response.data.length > 0) {
+          const firstCategory = response.data[0];
+          const firstCategoryId = firstCategory.category.id;
+          setSelectedCategoryId(firstCategoryId);
+          setSelectedSubcategoryId(0);
+          setSelectValue(String(firstCategoryId));
+          router.replace(
+            {
+              pathname: router.pathname,
+              query: { category: String(firstCategoryId), sub: 0 },
+            },
+            undefined,
+            { shallow: true }
+          );
+        }
+
       } catch (err) {
         console.error("Failed to fetch hierarchical data:", err);
         setError("데이터를 불러오는데 실패했습니다.");
